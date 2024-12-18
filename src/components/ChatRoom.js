@@ -58,12 +58,14 @@ const ChatRoom = ({ serverId, channelId }) => {
   return (
     <div className="chat-room-container">
       <div className="chat-header">
-        <h3># 채널 {channelId}</h3>
+        {channelId ? <h3>{channelId}</h3> : <h3>채널을 선택하세요</h3>}
       </div>
 
       <div className="chat-messages-container" ref={messageListRef}>
         <div className="message-list">
-          {messages.length === 0 ? (
+          {!channelId ? (
+            <div className="no-messages">왼쪽에서 채널을 선택하세요</div>
+          ) : messages.length === 0 ? (
             <div className="no-messages">
               아직 메시지가 없습니다. 첫 메시지를 보내보세요!
             </div>
@@ -91,13 +93,16 @@ const ChatRoom = ({ serverId, channelId }) => {
             value={newMessage}
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder={`# 채널 ${channelId}에 메시지 보내기`}
+            placeholder={
+              channelId ? `#${channelId}에 메시지 보내기` : "채널을 선택하세요"
+            }
             maxLength={2000}
+            disabled={!channelId}
           />
           <button
             type="submit"
             className="send-button"
-            disabled={!newMessage.trim()}
+            disabled={!newMessage.trim() || !channelId}
           >
             전송
           </button>

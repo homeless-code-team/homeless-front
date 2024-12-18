@@ -26,9 +26,9 @@ const ChatRoomList = ({ serverId, onSelectChannel, selectedChannel }) => {
           className={`channel-item ${
             selectedChannel === channel.id ? "selected" : ""
           }`}
-          onClick={() => onSelectChannel(channel.id)}
+          onClick={() => onSelectChannel(channel.id, channel.name)}
         >
-          # {channel.name}
+          {channel.name}
         </div>
       ))}
     </div>

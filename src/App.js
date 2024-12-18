@@ -14,23 +14,22 @@ function App() {
     setIsLoggedIn(true);
   };
 
-  // 서버 선택 핸들러
   const handleSelectServer = (serverId) => {
     setSelectedServer(serverId);
-    setSelectedChannel(null); // 서버 변경 시 선택된 채널 초기화
+    setSelectedChannel(null);
   };
 
-  // 채널 선택 핸들러
-  const handleSelectChannel = (channelId) => {
-    setSelectedChannel(channelId);
+  const handleSelectChannel = (channelId, channelName) => {
+    setSelectedChannel({
+      id: channelId,
+      name: channelName,
+    });
   };
 
-  // 로그인하지 않은 경우 로그인 페이지 표시
   if (!isLoggedIn) {
     return <SignIn onLogin={handleLogin} />;
   }
 
-  // 로그인한 경우 메인 화면 표시
   return (
     <div className="app-container">
       <ServerList
@@ -40,10 +39,14 @@ function App() {
       <ChatRoomList
         serverId={selectedServer}
         onSelectChannel={handleSelectChannel}
-        selectedChannel={selectedChannel}
+        selectedChannel={selectedChannel?.id}
       />
       <div className="main-content">
-        <ChatRoom serverId={selectedServer} channelId={selectedChannel} />
+        <ChatRoom
+          serverId={selectedServer}
+          channelId={selectedChannel?.id}
+          channelName={selectedChannel?.name}
+        />
       </div>
     </div>
   );
