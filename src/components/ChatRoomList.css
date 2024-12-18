@@ -1,6 +1,8 @@
 .channel-list {
   padding: 16px 8px;
   color: #96989d;
+  width: 230px;
+  background-color: #292a2d;
 }
 
 .channel-header {
@@ -14,6 +16,8 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  width: 100%;
+  max-width: 200px;
 }
 
 .channel-item {
