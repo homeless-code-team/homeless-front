@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect } from "react";
 import "./ChatRoom.css";
 
-const ChatRoom = ({ serverId, channelId }) => {
+const ChatRoom = ({ serverId, channelId, channelName }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const messageEndRef = useRef(null);
@@ -58,7 +58,7 @@ const ChatRoom = ({ serverId, channelId }) => {
   return (
     <div className="chat-room-container">
       <div className="chat-header">
-        {channelId ? <h3>{channelId}</h3> : <h3>채널을 선택하세요</h3>}
+        {channelName ? <h3>{channelName}</h3> : <h3>채널을 선택하세요</h3>}
       </div>
 
       <div className="chat-messages-container" ref={messageListRef}>
@@ -94,7 +94,9 @@ const ChatRoom = ({ serverId, channelId }) => {
             onChange={(e) => setNewMessage(e.target.value)}
             onKeyDown={handleKeyPress}
             placeholder={
-              channelId ? `#${channelId}에 메시지 보내기` : "채널을 선택하세요"
+              channelName
+                ? `#${channelName}에 메시지 보내기`
+                : "채널을 선택하세요"
             }
             maxLength={2000}
             disabled={!channelId}
