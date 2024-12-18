@@ -1,59 +1,36 @@
-import { app, BrowserWindow, Menu, nativeTheme, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain } from "electron";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const __dirname = path.resolve();
-let win;
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+let mainWindow;
 
 function createWindow() {
-  nativeTheme.themeSource = "dark";
-
-  win = new BrowserWindow({
-    width: 1280,
+  mainWindow = new BrowserWindow({
+    width: 1200,
     height: 800,
-    minWidth: 800,
-    title: "Homeless Code",
     frame: false,
-    backgroundColor: "#1e1f22",
-    autoHideMenuBar: true,
     webPreferences: {
-      preload: path.join(__dirname, "preload.js"),
       nodeIntegration: false,
       contextIsolation: true,
+      preload: path.join(__dirname, "preload.js"),
     },
   });
 
-  win.loadURL("http://localhost:3000");
-  Menu.setApplicationMenu(null);
+  mainWindow.loadURL("http://localhost:3000");
 
-  ipcMain.on("minimize-window", () => {
-    win.minimize();
-  });
-
-  ipcMain.on("maximize-window", () => {
-    if (win.isMaximized()) {
-      win.unmaximize();
-    } else {
-      win.maximize();
-    }
-  });
-
-  ipcMain.on("close-window", () => {
-    win.close();
+  ipcMain.handle("window:close", () => {
+    mainWindow.close();
+    return true;
   });
 }
 
-if (process.platform === "darwin") {
-  app.dock.setIcon(path.join(__dirname, "icon.png"));
-}
-
-app.whenReady().then(() => {
-  createWindow();
-
-  app.on("activate", () => {
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
-});
+app.whenReady().then(createWindow);
 
 app.on("window-all-closed", () => {
-  if (process.platform !== "darwin") app.quit();
+  if (process.platform !== "darwin") {
+    app.quit();
+  }
 });
