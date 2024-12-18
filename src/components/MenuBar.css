@@ -1,0 +1,54 @@
+.menu-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  background-color: #2b2d31;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 16px;
+  z-index: 1000;
+  -webkit-app-region: drag;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.menu-title {
+  color: #b5bac1;
+  font-size: 13px;
+  font-weight: 500;
+  user-select: none;
+}
+
+.window-controls {
+  display: flex;
+  -webkit-app-region: no-drag;
+}
+
+.control-button {
+  width: 45px;
+  height: 28px;
+  border: none;
+  background: transparent;
+  color: #b5bac1;
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.control-button:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.control-button.close:hover {
+  background-color: #f04747;
+  color: white;
+}
+
+.control-button.close {
+  color: #dcddde;
+}

@@ -1,42 +1,13 @@
 import React from "react";
+import "./SignIn.css";
 
 const SignIn = ({ onLogin }) => {
   return (
-    <div
-      style={{
-        display: "flex",
-        justifyContent: "center",
-        alignItems: "center",
-        height: "100vh",
-        backgroundColor: "#36393f",
-      }}
-    >
-      <div
-        style={{
-          backgroundColor: "#2f3136",
-          padding: "2rem",
-          borderRadius: "5px",
-          width: "300px",
-        }}
-      >
-        <h2
-          style={{ color: "#fff", textAlign: "center", marginBottom: "2rem" }}
-        >
-          로그인
-        </h2>
-        <button
-          onClick={onLogin}
-          style={{
-            width: "100%",
-            padding: "10px",
-            backgroundColor: "#5865f2",
-            color: "white",
-            border: "none",
-            borderRadius: "3px",
-            cursor: "pointer",
-            fontSize: "16px",
-          }}
-        >
+    <div className="signin-container">
+      <div className="signin-box">
+        <h2>Homeless Code에 오신 것을 환영합니다</h2>
+        <p>임시 로그인 버튼을 눌러 시작하세요</p>
+        <button className="signin-button" onClick={onLogin}>
           임시 로그인
         </button>
       </div>

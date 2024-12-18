@@ -3,6 +3,7 @@ import ServerList from "./components/ServerList.js";
 import ChatRoomList from "./components/ChatRoomList.js";
 import ChatRoom from "./components/ChatRoom.js";
 import SignIn from "./components/SignIn.js";
+import MenuBar from "./components/MenuBar.js";
 import "./App.css";
 
 function App() {
@@ -29,27 +30,37 @@ function App() {
   };
 
   if (!isLoggedIn) {
-    return <SignIn onLogin={handleLogin} />;
+    return (
+      <div className="login-container">
+        <MenuBar />
+        <SignIn onLogin={handleLogin} />
+      </div>
+    );
   }
 
   return (
     <div className="app-container">
+      <MenuBar />
       <ServerList
         onSelectServer={handleSelectServer}
         selectedServer={selectedServer}
       />
-      <ChatRoomList
-        serverId={selectedServer}
-        serverName={serverName}
-        onSelectChannel={handleSelectChannel}
-        selectedChannel={selectedChannel?.id}
-      />
-      <div className="main-content">
-        <ChatRoom
-          serverId={selectedServer}
-          channelId={selectedChannel?.id}
-          channelName={selectedChannel?.name}
-        />
+      <div className="app-content">
+        <div className="content-wrapper">
+          <ChatRoomList
+            serverId={selectedServer}
+            serverName={serverName}
+            onSelectChannel={handleSelectChannel}
+            selectedChannel={selectedChannel?.id}
+          />
+          <div className="main-content">
+            <ChatRoom
+              serverId={selectedServer}
+              channelId={selectedChannel?.id}
+              channelName={selectedChannel?.name}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

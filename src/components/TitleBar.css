@@ -1,0 +1,18 @@
+.title-bar {
+  height: 32px;
+  background-color: #1e1f22;
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  -webkit-app-region: drag;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  color: #b5bac1;
+  font-size: 14px;
+  font-weight: 500;
+  -webkit-app-region: no-drag;
+  user-select: none;
+}
