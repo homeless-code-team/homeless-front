@@ -1,15 +1,35 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import "./MenuBar.css";
 
 const MenuBar = () => {
-  const handleClose = async () => {
-    console.log("windowControls:", window.windowControls);
-    if (window.windowControls) {
-      try {
-        await window.windowControls.closeWindow();
-      } catch (error) {
-        console.error("Error closing window:", error);
+  const [isMaximized, setIsMaximized] = useState(false);
+
+  useEffect(() => {
+    const checkMaximized = async () => {
+      if (window.WindowControls) {
+        const maximized = await window.WindowControls.isMaximized();
+        setIsMaximized(maximized);
       }
+    };
+    checkMaximized();
+  }, []);
+
+  const handleClose = async () => {
+    if (window.WindowControls) {
+      await window.WindowControls.closeWindow();
+    }
+  };
+
+  const handleMinimize = async () => {
+    if (window.WindowControls) {
+      await window.WindowControls.minimizeWindow();
+    }
+  };
+
+  const handleMaximize = async () => {
+    if (window.WindowControls) {
+      const maximized = await window.WindowControls.maximizeWindow();
+      setIsMaximized(maximized);
     }
   };
 
@@ -17,6 +37,12 @@ const MenuBar = () => {
     <div className="menu-bar">
       <div className="menu-title">Homeless Code</div>
       <div className="window-controls">
+        <button className="control-button minimize" onClick={handleMinimize}>
+          ─
+        </button>
+        <button className="control-button maximize" onClick={handleMaximize}>
+          {isMaximized ? "❐" : "□"}
+        </button>
         <button className="control-button close" onClick={handleClose}>
           ×
         </button>

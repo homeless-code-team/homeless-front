@@ -52,3 +52,16 @@
 .control-button.close {
   color: #dcddde;
 }
+
+.control-button.minimize:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.control-button.maximize:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.control-button.minimize,
+.control-button.maximize {
+  color: #dcddde;
+}

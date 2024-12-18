@@ -3,7 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+//const __dirname = path.dirname(__filename);
 
 let mainWindow;
 
@@ -23,9 +23,27 @@ function createWindow() {
   mainWindow.webContents.openDevTools();
 
   ipcMain.handle("window:close", () => {
-    console.log("Close window requested"); // 디버깅용
     mainWindow.close();
     return true;
+  });
+
+  ipcMain.handle("window:minimize", () => {
+    mainWindow.minimize();
+    return true;
+  });
+
+  ipcMain.handle("window:maximize", () => {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+      return false;
+    } else {
+      mainWindow.maximize();
+      return true;
+    }
+  });
+
+  ipcMain.handle("window:isMaximized", () => {
+    return mainWindow.isMaximized();
   });
 }
 

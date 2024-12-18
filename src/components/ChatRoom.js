@@ -57,59 +57,40 @@ const ChatRoom = ({ serverId, channelId, channelName }) => {
 
   return (
     <div className="chat-room-container">
-      <div className="chat-header">
-        {channelName ? <h3>{channelName}</h3> : <h3>채널을 선택하세요</h3>}
-      </div>
-
-      <div className="chat-messages-container" ref={messageListRef}>
-        <div className="message-list">
-          {!channelId ? (
-            <div className="no-messages">왼쪽에서 채널을 선택하세요</div>
-          ) : messages.length === 0 ? (
-            <div className="no-messages">
-              아직 메시지가 없습니다. 첫 메시지를 보내보세요!
-            </div>
-          ) : (
-            messages.map((message) => (
-              <div key={message.id} className="message-item">
-                <div className="message-header">
-                  <span className="message-sender">{message.sender}</span>
-                  <span className="message-time">{message.timestamp}</span>
+      {channelId ? (
+        <>
+          <div className="chat-messages-container">
+            <div className="message-list" ref={messageListRef}>
+              {messages.map((message) => (
+                <div key={message.id} className="message-item">
+                  <div className="message-header">
+                    <span className="message-sender">{message.sender}</span>
+                    <span className="message-time">{message.timestamp}</span>
+                  </div>
+                  <div className="message-content">{message.text}</div>
                 </div>
-                <div className="message-content">{message.text}</div>
-              </div>
-            ))
-          )}
-          <div ref={messageEndRef} />
-        </div>
-      </div>
-
-      <div className="chat-input-container">
-        <form onSubmit={handleSubmit} className="message-input-container">
-          <input
-            ref={inputRef}
-            type="text"
-            className="message-input"
-            value={newMessage}
-            onChange={(e) => setNewMessage(e.target.value)}
-            onKeyDown={handleKeyPress}
-            placeholder={
-              channelName
-                ? `#${channelName}에 메시지 보내기`
-                : "채널을 선택하세요"
-            }
-            maxLength={2000}
-            disabled={!channelId}
-          />
-          <button
-            type="submit"
-            className="send-button"
-            disabled={!newMessage.trim() || !channelId}
-          >
-            전송
-          </button>
-        </form>
-      </div>
+              ))}
+            </div>
+          </div>
+          <div className="chat-input-container">
+            <button className="add-content-button">
+              <span className="plus-icon">+</span>
+            </button>
+            <form onSubmit={handleSubmit} className="chat-form">
+              <textarea
+                ref={inputRef}
+                value={newMessage}
+                onChange={(e) => setNewMessage(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder={`#${channelName}에 메시지 보내기`}
+                className="chat-input"
+              />
+            </form>
+          </div>
+        </>
+      ) : (
+        <div className="no-messages">채널을 선택해주세요</div>
+      )}
     </div>
   );
 };
