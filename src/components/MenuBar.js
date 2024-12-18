@@ -3,8 +3,13 @@ import "./MenuBar.css";
 
 const MenuBar = () => {
   const handleClose = async () => {
+    console.log("windowControls:", window.windowControls);
     if (window.windowControls) {
-      window.windowControls.closeWindow();
+      try {
+        await window.windowControls.closeWindow();
+      } catch (error) {
+        console.error("Error closing window:", error);
+      }
     }
   };
 

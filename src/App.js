@@ -3,7 +3,7 @@ import ServerList from "./components/ServerList.js";
 import ChatRoomList from "./components/ChatRoomList.js";
 import ChatRoom from "./components/ChatRoom.js";
 import SignIn from "./components/SignIn.js";
-import MenuBar from "./MenuBar.js";
+import MenuBar from "./components/MenuBar.js";
 import "./App.css";
 
 function App() {

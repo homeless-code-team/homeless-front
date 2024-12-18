@@ -15,13 +15,15 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js"),
+      preload: path.join(process.cwd(), "src", "preload.cjs"),
     },
   });
 
   mainWindow.loadURL("http://localhost:3000");
+  mainWindow.webContents.openDevTools();
 
   ipcMain.handle("window:close", () => {
+    console.log("Close window requested"); // 디버깅용
     mainWindow.close();
     return true;
   });
@@ -32,5 +34,10 @@ app.whenReady().then(createWindow);
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
+  }
+});
+app.on("activate", () => {
+  if (BrowserWindow.getAllWindows().length === 0) {
+    createWindow();
   }
 });
