@@ -9,13 +9,15 @@ function App() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [selectedServer, setSelectedServer] = useState(null);
   const [selectedChannel, setSelectedChannel] = useState(null);
+  const [serverName, setServerName] = useState(null);
 
   const handleLogin = () => {
     setIsLoggedIn(true);
   };
 
-  const handleSelectServer = (serverId) => {
+  const handleSelectServer = (serverId, name) => {
     setSelectedServer(serverId);
+    setServerName(name);
     setSelectedChannel(null);
   };
 
@@ -38,6 +40,7 @@ function App() {
       />
       <ChatRoomList
         serverId={selectedServer}
+        serverName={serverName}
         onSelectChannel={handleSelectChannel}
         selectedChannel={selectedChannel?.id}
       />

@@ -1,7 +1,12 @@
 import React from "react";
 import "./ChatRoomList.css";
 
-const ChatRoomList = ({ serverId, onSelectChannel, selectedChannel }) => {
+const ChatRoomList = ({
+  serverId,
+  serverName,
+  onSelectChannel,
+  selectedChannel,
+}) => {
   // 임시 채널 목록
   const channels = [
     { id: 1, name: "일반" },
@@ -19,7 +24,7 @@ const ChatRoomList = ({ serverId, onSelectChannel, selectedChannel }) => {
 
   return (
     <div className="channel-list">
-      <div className="channel-header">채널 목록</div>
+      <div className="channel-header">{serverName || "채널 목록"}</div>
       {channels.map((channel) => (
         <div
           key={channel.id}

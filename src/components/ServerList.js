@@ -17,7 +17,7 @@ const ServerList = ({ onSelectServer, selectedServer }) => {
           className={`server-item ${
             selectedServer === server.id ? "selected" : ""
           }`}
-          onClick={() => onSelectServer(server.id)}
+          onClick={() => onSelectServer(server.id, server.name)}
         >
           {server.name}
         </div>
