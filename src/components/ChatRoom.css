@@ -3,7 +3,10 @@
   flex-direction: column;
   height: 100%;
   position: relative;
-  background-color: #313338;
+  background-color: #36393e;
+  margin: 8px;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .chat-header {
@@ -15,21 +18,41 @@
   padding: 0 16px;
   display: flex;
   align-items: center;
-  background-color: inherit;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.2);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  background-color: #2d3037;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  border-radius: 8px 8px 0 0;
 }
 
 .chat-header h3 {
-  color: #ffffff;
+  color: #f2f3f5;
   font-size: 16px;
-  font-weight: 500;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
 }
 
 .chat-header h3::before {
   content: "#";
   margin-right: 4px;
   color: #96989d;
+}
+
+.header-divider {
+  width: 1px;
+  height: 24px;
+  background-color: #42444a;
+  margin: 0 16px;
+}
+
+.channel-description {
+  color: #b5bac1;
+  font-size: 14px;
+  font-weight: 400;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .chat-messages-container {
@@ -40,6 +63,8 @@
   right: 0;
   overflow-y: auto;
   padding: 0 16px;
+  box-shadow: inset 0 2px 3px rgba(0, 0, 0, 0.2);
+  background-color: #313338;
 }
 
 .message-list {
@@ -88,11 +113,15 @@
   bottom: 0;
   left: 0;
   right: 0;
-  padding: 0 16px 24px;
+  padding: 16px;
+  margin: 0 8px 8px 8px;
   display: flex;
   align-items: flex-start;
   gap: 16px;
-  background-color: #313338;
+  background-color: #2b2d31;
+  box-shadow: 0 -1px 3px rgba(0, 0, 0, 0.2);
+  z-index: 5;
+  border-radius: 8px;
 }
 
 .add-content-button {
@@ -116,7 +145,7 @@
 
 .plus-icon {
   color: #b5bac1;
-  font-size: 24px;
+  font-size: 30px;
   font-weight: 300;
   line-height: 1;
 }

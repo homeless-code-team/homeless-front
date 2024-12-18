@@ -1,9 +1,9 @@
-import { app, BrowserWindow, ipcMain } from "electron";
+import { app, BrowserWindow, ipcMain, globalShortcut } from "electron";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
-//const __dirname = path.dirname(__filename);
+const __dirname = path.dirname(__filename);
 
 let mainWindow;
 
@@ -20,7 +20,16 @@ function createWindow() {
   });
 
   mainWindow.loadURL("http://localhost:3000");
-  mainWindow.webContents.openDevTools();
+
+  // F12 단축키 등록
+  globalShortcut.register("F12", () => {
+    mainWindow.webContents.toggleDevTools();
+  });
+
+  // 윈도우가 닫힐 때 단축키 해제
+  mainWindow.on("closed", () => {
+    globalShortcut.unregister("F12");
+  });
 
   ipcMain.handle("window:close", () => {
     mainWindow.close();
@@ -50,6 +59,7 @@ function createWindow() {
 app.whenReady().then(createWindow);
 
 app.on("window-all-closed", () => {
+  globalShortcut.unregisterAll(); // 모든 단축키 해제
   if (process.platform !== "darwin") {
     app.quit();
   }

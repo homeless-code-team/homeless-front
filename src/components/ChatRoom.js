@@ -59,6 +59,13 @@ const ChatRoom = ({ serverId, channelId, channelName }) => {
     <div className="chat-room-container">
       {channelId ? (
         <>
+          <div className="chat-header">
+            <h3>{channelName}</h3>
+            <div className="header-divider"></div>
+            <p className="channel-description">
+              {channelName} 채널에 오신 것을 환영합니다
+            </p>
+          </div>
           <div className="chat-messages-container">
             <div className="message-list" ref={messageListRef}>
               {messages.map((message) => (
