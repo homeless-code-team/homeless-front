@@ -12,6 +12,12 @@ function App() {
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [serverName, setServerName] = useState(null);
 
+  const channels = [
+    { id: 1, name: "일반" },
+    { id: 2, name: "게임" },
+    { id: 3, name: "음악" },
+  ];
+
   const handleLogin = () => {
     setIsLoggedIn(true);
   };
@@ -19,7 +25,10 @@ function App() {
   const handleSelectServer = (serverId, name) => {
     setSelectedServer(serverId);
     setServerName(name);
-    setSelectedChannel(null);
+    setSelectedChannel({
+      id: 1,
+      name: "일반"
+    });
   };
 
   const handleSelectChannel = (channelId, channelName) => {
@@ -52,6 +61,7 @@ function App() {
             serverName={serverName}
             onSelectChannel={handleSelectChannel}
             selectedChannel={selectedChannel?.id}
+            channels={channels}
           />
           <div className="main-content">
             <ChatRoom

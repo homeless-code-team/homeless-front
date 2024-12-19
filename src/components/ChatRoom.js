@@ -1,5 +1,4 @@
 import React, { useState, useRef, useEffect, useContext } from "react";
-import axios from "axios";
 import "./ChatRoom.css";
 import useWebSocket from '../hooks/useWebSocket.js';
 import AuthContext from '../context/AuthContext.js';
