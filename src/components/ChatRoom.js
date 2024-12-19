@@ -1,12 +1,16 @@
 import React, { useState, useRef, useEffect } from "react";
+import axios from "axios";
 import "./ChatRoom.css";
 
-const ChatRoom = ({ serverId, channelId, channelName }) => {
+const ChatRoom = ({ serverId, channelName }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const messageEndRef = useRef(null);
   const inputRef = useRef(null);
   const messageListRef = useRef(null);
+  const socketRef = useRef(null);
+
+  const channelId = 1; // 고정된 채널 ID (테스트용)
 
   // 메시지 자동 스크롤
   const scrollToBottom = () => {
@@ -26,24 +30,85 @@ const ChatRoom = ({ serverId, channelId, channelName }) => {
     inputRef.current?.focus();
   }, [channelId]);
 
-  // 메시지 전송 핸들러
-  const handleSubmit = (e) => {
+  // WebSocket 연결 및 메시지 수신
+  const connectWebSocket = () => {
+    const socketUrl = `ws://localhost:8181/chat/rooms/${channelId}/send`; // 서버와 동일한 경로로 수정
+
+    // WebSocket 연결
+    socketRef.current = new WebSocket(socketUrl);
+
+    // WebSocket 메시지 수신
+    socketRef.current.onmessage = (event) => {
+      const message = JSON.parse(event.data);
+      setMessages((prevMessages) => [...prevMessages, message]);
+    };
+
+    // WebSocket 연결 종료 시 처리
+    socketRef.current.onclose = () => {
+      console.log("WebSocket connection closed");
+    };
+
+    // WebSocket 에러 처리
+    socketRef.current.onerror = (error) => {
+      console.error("WebSocket error:", error);
+    };
+
+    // WebSocket 연결 상태가 열린 상태에서만 메시지 전송
+    socketRef.current.onopen = () => {
+      console.log("WebSocket connection established");
+    };
+  };
+
+  // WebSocket 재연결 로직 (WebSocket이 닫혔을 때)
+  const reconnectWebSocket = () => {
+    console.log("Reconnecting WebSocket...");
+    socketRef.current.close(); // 기존 연결 종료
+    connectWebSocket(); // 새로운 연결 시도
+  };
+
+  // WebSocket 연결
+  useEffect(() => {
+    connectWebSocket();
+
+    // WebSocket 연결 종료 시 처리
+    return () => {
+      socketRef.current.close();
+    };
+  }, [channelId]);
+
+  // 메시지 전송 핸들러 (백엔드 API를 통한 메시지 전송)
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (newMessage.trim()) {
       const message = {
-        id: Date.now(),
+        from: "나", // 실제 사용자 정보로 바꿔주세요
         text: newMessage.trim(),
-        sender: "나",
-        timestamp: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit",
-          hour12: false,
-        }),
+        roomId: channelId, // 고정된 채널 ID
       };
-      setMessages((prev) => [...prev, message]);
-      setNewMessage("");
-      // 메시지 전송 후 입력창 포커스 유지
-      inputRef.current?.focus();
+
+      try {
+        // 백엔드 API로 메시지 전송
+        await axios.post(
+          `http://localhost:8181/api/chat/rooms/${channelId}/send`, // 서버와 일치하도록 URL 수정
+          message
+        );
+
+        // WebSocket이 열려 있을 때만 메시지 전송
+        if (
+          socketRef.current &&
+          socketRef.current.readyState === WebSocket.OPEN
+        ) {
+          socketRef.current.send(JSON.stringify(message)); // WebSocket으로 메시지 전송
+        } else {
+          console.warn("WebSocket is not open. Retrying...");
+          reconnectWebSocket(); // WebSocket이 닫혔을 때 재연결 시도
+        }
+
+        setNewMessage(""); // 입력창 초기화
+        inputRef.current?.focus(); // 메시지 전송 후 입력창 포커스 유지
+      } catch (error) {
+        console.error("Error sending message:", error);
+      }
     }
   };
 
@@ -68,11 +133,13 @@ const ChatRoom = ({ serverId, channelId, channelName }) => {
           </div>
           <div className="chat-messages-container">
             <div className="message-list" ref={messageListRef}>
-              {messages.map((message) => (
-                <div key={message.id} className="message-item">
+              {messages.map((message, index) => (
+                <div key={index} className="message-item">
                   <div className="message-header">
-                    <span className="message-sender">{message.sender}</span>
-                    <span className="message-time">{message.timestamp}</span>
+                    <span className="message-sender">{message.from}</span>
+                    <span className="message-time">
+                      {new Date().toLocaleTimeString()}
+                    </span>
                   </div>
                   <div className="message-content">{message.text}</div>
                 </div>
