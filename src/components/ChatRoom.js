@@ -3,7 +3,7 @@ import "./ChatRoom.css";
 import useWebSocket from '../hooks/useWebSocket.js';
 import AuthContext from '../context/AuthContext.js';
 
-const ChatRoom = ({ serverId, channelName, channelId: selectedChannelId }) => {
+const ChatRoom = ({ serverId, channelName, channelId }) => {
   const { userName } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -11,17 +11,51 @@ const ChatRoom = ({ serverId, channelName, channelId: selectedChannelId }) => {
   const inputRef = useRef(null);
   const messageListRef = useRef(null);
 
+  // 채팅 기록 불러오기
+  const fetchChatHistory = async () => {
+    try {
+      console.log('채팅 기록 요청:', channelId);
+      const response = await fetch(`http://localhost:8181/api/chat/rooms/${channelId}/messages`);
+      
+      if (!response.ok) {
+        throw new Error('채팅 기록을 불러오는데 실패했습니다.');
+      }
+      
+      const data = await response.json();
+      console.log('받은 채팅 기록:', data);
+      
+      setMessages(data.map(msg => ({
+        id: msg.id,
+        text: msg.content,
+        from: msg.writer || 'Unknown',
+        timestamp: new Date().toLocaleTimeString()
+      })));
+    } catch (error) {
+      console.error('채팅 기록 로딩 에러:', error);
+    }
+  };
+
+  // 채널 입장시 채팅 기록 로드
+  useEffect(() => {
+    if (channelId) {
+      fetchChatHistory();
+    }
+    return () => {
+      setMessages([]); // 채널 변경시 메시지 초기화
+    };
+  }, [channelId]);
+
   const handleMessageReceived = (message) => {
     const messageWithTime = {
       id: message.id,
-      from: message.writer || "Unknown",
       text: message.content,
+      from: message.writer || "Unknown",
       timestamp: new Date().toLocaleTimeString()
     };
     setMessages(prev => [...prev, messageWithTime]);
   };
 
-  const { sendMessage } = useWebSocket(selectedChannelId, handleMessageReceived);
+  const { sendMessage } = useWebSocket(channelId, handleMessageReceived);
 
   // 메시지 자동 스크롤
   const scrollToBottom = () => {
@@ -41,17 +75,17 @@ const ChatRoom = ({ serverId, channelName, channelId: selectedChannelId }) => {
     }
   }, [messages]);
 
-  // 채널이 변경될 때도 스크롤
+  // 채이 변경될 때도 스크롤
   useEffect(() => {
-    if (selectedChannelId && messages.length > 0) {
+    if (channelId && messages.length > 0) {
       scrollToBottom();
     }
-  }, [selectedChannelId, messages]);
+  }, [channelId, messages]);
 
   // 채널이 변경될 때마다 입력창 포커스
   useEffect(() => {
     inputRef.current?.focus();
-  }, [selectedChannelId]);
+  }, [channelId]);
 
   // 메시지 전송 핸들러 (백엔드 API를 통한 메시지 전송)
   const handleSubmit = async (e) => {
@@ -82,7 +116,7 @@ const ChatRoom = ({ serverId, channelName, channelId: selectedChannelId }) => {
 
   return (
     <div className="chat-room-container">
-      {selectedChannelId ? (
+      {channelId ? (
         <>
           <div className="chat-header">
             <h3>{channelName}</h3>
