@@ -23,7 +23,7 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
       const data = await response.json();
       console.log('받은 채팅 기록:', data);
       
-      // 최근 50개의 메시지만 가져오기
+      // 최근 20개의 메시지만 가져오기
       const recentMessages = data.slice(-20);
       
       setMessages(recentMessages.map(msg => ({
@@ -38,12 +38,12 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
         })
       })));
 
-      // 메시지 로드 후 즉시 스크롤
-      setTimeout(() => {
+      // 메시지 로드 직후 스크롤 이동
+      requestAnimationFrame(() => {
         if (messageListRef.current) {
           messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
         }
-      }, 100);
+      });
     } catch (error) {
       console.error('채팅 기록 로딩 에러:', error);
     }
@@ -95,7 +95,7 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
     }
   }, [messages]);
 
-  // 채이 변경될 때도 스크롤
+  // 채널이 변경될 때도 스크롤
   useEffect(() => {
     if (channelId && messages.length > 0) {
       scrollToBottom();
