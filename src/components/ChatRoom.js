@@ -27,7 +27,12 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
         id: msg.id,
         text: msg.content,
         from: msg.writer || 'Unknown',
-        timestamp: new Date().toLocaleTimeString()
+        timestamp: new Date(Number(msg.timestamp)).toLocaleString('ko-KR', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        })
       })));
     } catch (error) {
       console.error('채팅 기록 로딩 에러:', error);
@@ -45,11 +50,17 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
   }, [channelId]);
 
   const handleMessageReceived = (message) => {
+    console.log('수신된 메시지:', message);
     const messageWithTime = {
       id: message.id,
       text: message.content,
-      from: message.writer || "Unknown",
-      timestamp: new Date().toLocaleTimeString()
+      from: message.writer,
+      timestamp: new Date(Number(message.timestamp)).toLocaleString('ko-KR', {
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit',
+        hour12: true
+      })
     };
     setMessages(prev => [...prev, messageWithTime]);
   };
@@ -92,7 +103,8 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
     if (newMessage.trim()) {
       const message = {
         text: newMessage.trim(),
-        from: userName
+        writer: userName,
+        timestamp: Date.now()
       };
 
       try {
