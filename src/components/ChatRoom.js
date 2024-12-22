@@ -14,8 +14,7 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
   // 채팅 기록 불러오기
   const fetchChatHistory = async () => {
     try {
-      console.log('채팅 기록 요청:', channelId);
-      const response = await fetch(`http://localhost:8181/api/chat/rooms/${channelId}/messages`);
+      const response = await fetch(`http://localhost:8181/api/chat/${serverId}/${channelId}/messages`);
       
       if (!response.ok) {
         throw new Error('채팅 기록을 불러오는데 실패했습니다.');
@@ -55,7 +54,7 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
     setMessages(prev => [...prev, messageWithTime]);
   };
 
-  const { sendMessage } = useWebSocket(channelId, handleMessageReceived);
+  const { sendMessage } = useWebSocket(serverId, channelId, handleMessageReceived);
 
   // 메시지 자동 스크롤
   const scrollToBottom = () => {
