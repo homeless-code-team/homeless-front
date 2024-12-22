@@ -7,6 +7,8 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
   const { userName } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const [page, setPage] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const messageEndRef = useRef(null);
   const inputRef = useRef(null);
   const messageListRef = useRef(null);
@@ -134,6 +136,66 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
       handleSubmit(e);
     }
   };
+
+  // 이전 메시지 불러오기
+  const fetchPreviousMessages = async () => {
+    if (isLoading) return;
+    
+    try {
+      setIsLoading(true);
+      const response = await fetch(
+        `http://localhost:8181/api/chat/${serverId}/${channelId}/messages?page=${page + 1}`
+      );
+      
+      if (!response.ok) {
+        throw new Error('이전 메시지를 불러오는데 실패했습니다.');
+      }
+      
+      const data = await response.json();
+      if (data.length > 0) {
+        const oldMessages = data.map(msg => ({
+          id: msg.id,
+          text: msg.content,
+          from: msg.writer || 'Unknown',
+          timestamp: new Date(Number(msg.timestamp)).toLocaleString('ko-KR', {
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit',
+            hour12: true
+          })
+        }));
+        
+        setMessages(prev => [...oldMessages, ...prev]);
+        setPage(prev => prev + 1);
+      }
+    } catch (error) {
+      console.error('이전 메시지 로딩 에러:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 스크롤 이벤트 핸들러
+  const handleScroll = (e) => {
+    const { scrollTop } = e.target;
+    if (scrollTop === 0 && !isLoading) {
+      const scrollHeight = e.target.scrollHeight;
+      fetchPreviousMessages().then(() => {
+        if (messageListRef.current) {
+          const newScrollHeight = messageListRef.current.scrollHeight;
+          messageListRef.current.scrollTop = newScrollHeight - scrollHeight;
+        }
+      });
+    }
+  };
+
+  useEffect(() => {
+    const messageList = messageListRef.current;
+    if (messageList) {
+      messageList.addEventListener('scroll', handleScroll);
+      return () => messageList.removeEventListener('scroll', handleScroll);
+    }
+  }, [page, isLoading]);
 
   return (
     <div className="chat-room-container">
