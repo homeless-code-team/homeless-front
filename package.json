@@ -12,9 +12,6 @@
     "@emotion/styled": "^11.13.5",
     "@mui/material": "^6.1.8",
     "@stomp/stompjs": "^7.0.0",
-    "@testing-library/jest-dom": "^5.17.0",
-    "@testing-library/react": "^13.4.0",
-    "@testing-library/user-event": "^13.5.0",
     "axios": "^1.7.7",
     "electron-squirrel-startup": "^1.0.1",
     "jwt-decode": "^4.0.0",
@@ -22,18 +19,40 @@
     "react-dom": "^18.3.1",
     "react-router-dom": "^6.28.0",
     "react-scripts": "^5.0.1",
-    "sockjs-client": "^1.6.1",
-    "web-vitals": "^2.1.4"
+    "sockjs-client": "^1.6.1"
   },
   "scripts": {
     "start": "react-scripts start",
     "electron": "cross-env NODE_ENV=development electron .",
     "dev": "concurrently \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000 && npm run electron\"",
-    "build": "react-scripts build",
+    "build": "cross-env GENERATE_SOURCEMAP=false NODE_ENV=production react-scripts build && npm run cleanup",
+    "cleanup": "node ./scripts/cleanup.js",
+    "clean-out": "node ./scripts/clean-out.js",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
-    "package": "electron-forge package",
-    "make": "electron-forge make"
+    "package": "npm run clean-out && electron-forge package",
+    "make": "npm run clean-out && electron-forge make"
+  },
+  "devDependencies": {
+    "@electron-forge/cli": "^7.6.0",
+    "@electron-forge/maker-deb": "^7.6.0",
+    "@electron-forge/maker-rpm": "^7.6.0",
+    "@electron-forge/maker-squirrel": "^7.6.0",
+    "@electron-forge/maker-zip": "^7.6.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.6.0",
+    "@electron-forge/plugin-fuses": "^7.6.0",
+    "@electron/fuses": "^1.8.0",
+    "@testing-library/jest-dom": "^5.17.0",
+    "@testing-library/react": "^13.4.0",
+    "@testing-library/user-event": "^13.5.0",
+    "concurrently": "^9.1.0",
+    "cross-env": "^7.0.3",
+    "electron": "^33.2.1",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react": "^7.37.2",
+    "rimraf": "^6.0.1",
+    "wait-on": "^8.0.1",
+    "web-vitals": "^2.1.4"
   },
   "eslintConfig": {
     "extends": [
@@ -52,21 +71,5 @@
       "last 1 firefox version",
       "last 1 safari version"
     ]
-  },
-  "devDependencies": {
-    "@electron-forge/cli": "^7.6.0",
-    "@electron-forge/maker-deb": "^7.6.0",
-    "@electron-forge/maker-rpm": "^7.6.0",
-    "@electron-forge/maker-squirrel": "^7.6.0",
-    "@electron-forge/maker-zip": "^7.6.0",
-    "@electron-forge/plugin-auto-unpack-natives": "^7.6.0",
-    "@electron-forge/plugin-fuses": "^7.6.0",
-    "@electron/fuses": "^1.8.0",
-    "concurrently": "^9.1.0",
-    "cross-env": "^7.0.3",
-    "electron": "^33.2.1",
-    "eslint": "^8.57.1",
-    "eslint-plugin-react": "^7.37.2",
-    "wait-on": "^8.0.1"
   }
 }

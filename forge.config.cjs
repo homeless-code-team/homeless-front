@@ -1,5 +1,29 @@
 const { FusesPlugin } = require("@electron-forge/plugin-fuses");
 const { FuseV1Options, FuseVersion } = require("@electron/fuses");
+const fs = require("fs");
+const path = require("path");
+
+function findBuildFiles(pattern) {
+  const buildDir = path.join(__dirname, "build");
+  const files = [];
+
+  function searchDir(dir, pattern) {
+    const items = fs.readdirSync(dir);
+    items.forEach((item) => {
+      const fullPath = path.join(dir, item);
+      const stat = fs.statSync(fullPath);
+
+      if (stat.isDirectory()) {
+        searchDir(fullPath, pattern);
+      } else if (pattern.test(item)) {
+        files.push(path.relative(__dirname, fullPath));
+      }
+    });
+  }
+
+  searchDir(path.join(buildDir, "static"), pattern);
+  return files;
+}
 
 module.exports = {
   packagerConfig: {
@@ -8,13 +32,24 @@ module.exports = {
       /node_modules\/(?!(@mui|react|react-dom))/,
       /\.map$/,
       /\.test\./,
+      /\.md$/,
+      /\.txt$/,
+      /\.log$/,
+      /\.git/,
+      /\.github/,
+      /\.vscode/,
       /^\/src\/(?!main\.mjs|preload\.cjs)/,
       /^\/(?!build|src|package\.json)/,
       /^\/build\/static\/js\/.*\.txt$/,
+      /^\/build\/static\/media/,
+      /^\/build\/static\/.*\.map$/,
     ],
     prune: true,
     overwrite: true,
-    extraResource: ["build"],
+    extraResource: [
+      "build/index.html",
+      ...findBuildFiles(/main\.[a-f0-9]+\.(js|css)$/),
+    ],
   },
   rebuildConfig: {},
   makers: [
@@ -25,14 +60,6 @@ module.exports = {
     {
       name: "@electron-forge/maker-zip",
       platforms: ["darwin"],
-    },
-    {
-      name: "@electron-forge/maker-deb",
-      config: {},
-    },
-    {
-      name: "@electron-forge/maker-rpm",
-      config: {},
     },
   ],
   plugins: [
