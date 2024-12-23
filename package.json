@@ -1,6 +1,8 @@
 {
   "name": "homeless-code",
   "version": "0.1.0",
+  "description": "homeless electron App",
+  "author": "Homeless Code",
   "private": true,
   "main": "src/main.js",
   "type": "module",
@@ -13,6 +15,7 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "axios": "^1.7.7",
+    "electron-squirrel-startup": "^1.0.1",
     "jwt-decode": "^4.0.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
@@ -22,12 +25,14 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
-    "start": "react-scripts start",
+    "start": "electron-forge start",
     "electron": "electron .",
     "dev": "concurrently \"npm start\" \"wait-on http://localhost:3000 && npm run electron\"",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "package": "electron-forge package",
+    "make": "electron-forge make"
   },
   "eslintConfig": {
     "extends": [
@@ -48,6 +53,14 @@
     ]
   },
   "devDependencies": {
+    "@electron-forge/cli": "^7.6.0",
+    "@electron-forge/maker-deb": "^7.6.0",
+    "@electron-forge/maker-rpm": "^7.6.0",
+    "@electron-forge/maker-squirrel": "^7.6.0",
+    "@electron-forge/maker-zip": "^7.6.0",
+    "@electron-forge/plugin-auto-unpack-natives": "^7.6.0",
+    "@electron-forge/plugin-fuses": "^7.6.0",
+    "@electron/fuses": "^1.8.0",
     "concurrently": "^9.1.0",
     "electron": "^33.2.1",
     "eslint": "^8.57.1",
