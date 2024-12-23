@@ -7,19 +7,46 @@ const __dirname = path.dirname(__filename);
 
 let mainWindow;
 
+// 개발 환경인지 확인
+const isDev = process.env.NODE_ENV === "development";
+
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
     frame: false,
     webPreferences: {
-      nodeIntegration: false,
+      nodeIntegration: true,
       contextIsolation: true,
-      preload: path.join(process.cwd(), "src", "preload.cjs"),
+      preload: path.join(__dirname, "preload.cjs"),
+      webSecurity: true,
+      additionalArguments: [`--js-flags=--max-old-space-size=4096`],
     },
   });
 
-  mainWindow.loadURL("http://localhost:3000");
+  mainWindow.webContents.session.webRequest.onHeadersReceived(
+    (details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          "Content-Security-Policy": [
+            "default-src 'self' http://localhost:* ws://localhost:*; " +
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+              "style-src 'self' 'unsafe-inline'; " +
+              "img-src 'self' data: https:; " +
+              "connect-src 'self' http://localhost:* ws://localhost:*;",
+          ],
+        },
+      });
+    }
+  );
+
+  if (isDev) {
+    mainWindow.loadURL("http://localhost:3000");
+    mainWindow.webContents.openDevTools();
+  } else {
+    mainWindow.loadFile(path.join(__dirname, "../build/index.html"));
+  }
 
   // F12 단축키 등록
   globalShortcut.register("F12", () => {
@@ -31,6 +58,7 @@ function createWindow() {
     globalShortcut.unregister("F12");
   });
 
+  // IPC 핸들러
   ipcMain.handle("window:close", () => {
     mainWindow.close();
     return true;
@@ -64,6 +92,7 @@ app.on("window-all-closed", () => {
     app.quit();
   }
 });
+
 app.on("activate", () => {
   if (BrowserWindow.getAllWindows().length === 0) {
     createWindow();
