@@ -1,79 +1,121 @@
-import React, { useState, useRef, useEffect } from "react";
-import axios from "axios";
+import React, { useState, useRef, useEffect, useContext } from "react";
 import "./ChatRoom.css";
+import useWebSocket from "../hooks/useWebSocket.js";
+import AuthContext from "../context/AuthContext.js";
 
-const ChatRoom = ({ serverId, channelName }) => {
+const ChatRoom = ({ serverId, channelName, channelId }) => {
+  const { userName } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
+  const [page, setPage] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const messageEndRef = useRef(null);
   const inputRef = useRef(null);
   const messageListRef = useRef(null);
-  const socketRef = useRef(null);
 
-  const channelId = 1; // 고정된 채널 ID (테스트용)
+  // 채팅 기록 불러오기
+  const fetchChatHistory = async () => {
+    try {
+      const response = await fetch(
+        `http://localhost:8181/api/chat/${serverId}/${channelId}/messages`
+      );
+
+      if (!response.ok) {
+        throw new Error("채팅 기록을 불러오는데 실패했습니다.");
+      }
+
+      const data = await response.json();
+      console.log("받은 채팅 기록:", data);
+
+      // 최근 20개의 메시지만 가져오기
+      const recentMessages = data.slice(-20);
+
+      setMessages(
+        recentMessages.map((msg) => ({
+          id: msg.id,
+          text: msg.content,
+          from: msg.writer || "Unknown",
+          timestamp: new Date(Number(msg.timestamp)).toLocaleString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+          }),
+        }))
+      );
+
+      // 메시지 로드 직후 스크롤 이동
+      requestAnimationFrame(() => {
+        if (messageListRef.current) {
+          messageListRef.current.scrollTop =
+            messageListRef.current.scrollHeight;
+        }
+      });
+    } catch (error) {
+      console.error("채팅 기록 로딩 에러:", error);
+    }
+  };
+
+  // 채널 입장시 채팅 기록 로드
+  useEffect(() => {
+    if (channelId) {
+      fetchChatHistory();
+    }
+    return () => {
+      setMessages([]); // 채널 변경시 메시지 초기화
+    };
+  }, [channelId]);
+
+  const handleMessageReceived = (message) => {
+    console.log("수신된 메시지:", message);
+    const messageWithTime = {
+      id: message.id,
+      text: message.content,
+      from: message.writer,
+      timestamp: new Date(Number(message.timestamp)).toLocaleString("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      }),
+    };
+    setMessages((prev) => [...prev, messageWithTime]);
+  };
+
+  const { sendMessage } = useWebSocket(
+    serverId,
+    channelId,
+    handleMessageReceived
+  );
 
   // 메시지 자동 스크롤
   const scrollToBottom = () => {
     if (messageListRef.current) {
-      const { scrollHeight, clientHeight } = messageListRef.current;
-      messageListRef.current.scrollTop = scrollHeight - clientHeight;
+      const element = messageListRef.current;
+      element.scrollTo({
+        top: element.scrollHeight,
+        behavior: "smooth",
+      });
     }
   };
 
   // 새 메시지가 추가될 때마다 스크롤
   useEffect(() => {
-    scrollToBottom();
+    if (messages.length > 0) {
+      scrollToBottom();
+    }
   }, [messages]);
+
+  // 채널이 변경될 때도 스크롤
+  useEffect(() => {
+    if (channelId && messages.length > 0) {
+      scrollToBottom();
+    }
+  }, [channelId, messages]);
 
   // 채널이 변경될 때마다 입력창 포커스
   useEffect(() => {
     inputRef.current?.focus();
-  }, [channelId]);
-
-  // WebSocket 연결 및 메시지 수신
-  const connectWebSocket = () => {
-    const socketUrl = `ws://localhost:8181/api/chat/rooms/1/send`; // 서버와 동일한 경로로 수정
-
-    // WebSocket 연결
-    socketRef.current = new WebSocket(socketUrl);
-
-    // WebSocket 메시지 수신
-    socketRef.current.onmessage = (event) => {
-      const message = JSON.parse(event.data);
-      setMessages((prevMessages) => [...prevMessages, message]);
-    };
-
-    // WebSocket 연결 종료 시 처리
-    socketRef.current.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
-
-    // WebSocket 에러 처리
-    socketRef.current.onerror = (error) => {
-      console.error("WebSocket error:", error);
-    };
-
-    // WebSocket 연결 상태가 열린 상태에서만 메시지 전송
-    socketRef.current.onopen = () => {
-      console.log("WebSocket connection established");
-    };
-  };
-
-  // WebSocket 재연결 로직 (WebSocket이 닫혔을 때)
-  const reconnectWebSocket = () => {
-    console.log("Reconnecting WebSocket...");
-    socketRef.current.close(); // 기존 연결 종료
-    connectWebSocket(); // 새로운 연결 시도
-  };
-
-  // WebSocket 연결
-  useEffect(() => {
-    connectWebSocket();
-
-    // WebSocket 연결 종료 시 처리
-    return () => {
-      socketRef.current.close();
-    };
   }, [channelId]);
 
   // 메시지 전송 핸들러 (백엔드 API를 통한 메시지 전송)
@@ -81,33 +123,17 @@ const ChatRoom = ({ serverId, channelName }) => {
     e.preventDefault();
     if (newMessage.trim()) {
       const message = {
-        from: "나", // 실제 사용자 정보로 바꿔주세요
         text: newMessage.trim(),
-        roomId: channelId, // 고정된 채널 ID
+        writer: userName,
+        timestamp: Date.now(),
       };
 
       try {
-        // 백엔드 API로 메시지 전송
-        await axios.post(
-          `http://localhost:8181/api/chat/rooms/1/send`, // 서버와 일치하도록 URL 수정
-          message
-        );
-
-        // WebSocket이 열려 있을 때만 메시지 전송
-        if (
-          socketRef.current &&
-          socketRef.current.readyState === WebSocket.OPEN
-        ) {
-          socketRef.current.send(JSON.stringify(message)); // WebSocket으로 메시지 전송
-        } else {
-          console.warn("WebSocket is not open. Retrying...");
-          reconnectWebSocket(); // WebSocket이 닫혔을 때 재연결 시도
-        }
-
-        setNewMessage(""); // 입력창 초기화
-        inputRef.current?.focus(); // 메시지 전송 후 입력창 포커스 유지
+        sendMessage(message);
+        setNewMessage("");
+        inputRef.current?.focus();
       } catch (error) {
-        console.error("Error sending message:", error);
+        console.error("메시지 전송 오류:", error);
       }
     }
   };
@@ -120,6 +146,68 @@ const ChatRoom = ({ serverId, channelName }) => {
     }
   };
 
+  // 이전 메시지 불러오기
+  const fetchPreviousMessages = async () => {
+    if (isLoading) return;
+
+    try {
+      setIsLoading(true);
+      const response = await fetch(
+        `http://localhost:8181/api/chat/${serverId}/${channelId}/messages?page=${
+          page + 1
+        }`
+      );
+
+      if (!response.ok) {
+        throw new Error("이전 메시지를 불러오는데 실패했습니다.");
+      }
+
+      const data = await response.json();
+      if (data.length > 0) {
+        const oldMessages = data.map((msg) => ({
+          id: msg.id,
+          text: msg.content,
+          from: msg.writer || "Unknown",
+          timestamp: new Date(Number(msg.timestamp)).toLocaleString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+          }),
+        }));
+
+        setMessages((prev) => [...oldMessages, ...prev]);
+        setPage((prev) => prev + 1);
+      }
+    } catch (error) {
+      console.error("이전 메시지 로딩 에러:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // 스크롤 이벤트 핸들러
+  const handleScroll = (e) => {
+    const { scrollTop } = e.target;
+    if (scrollTop === 0 && !isLoading) {
+      const scrollHeight = e.target.scrollHeight;
+      fetchPreviousMessages().then(() => {
+        if (messageListRef.current) {
+          const newScrollHeight = messageListRef.current.scrollHeight;
+          messageListRef.current.scrollTop = newScrollHeight - scrollHeight;
+        }
+      });
+    }
+  };
+
+  useEffect(() => {
+    const messageList = messageListRef.current;
+    if (messageList) {
+      messageList.addEventListener("scroll", handleScroll);
+      return () => messageList.removeEventListener("scroll", handleScroll);
+    }
+  }, [page, isLoading]);
+
   return (
     <div className="chat-room-container">
       {channelId ? (
@@ -131,20 +219,18 @@ const ChatRoom = ({ serverId, channelName }) => {
               {channelName} 채널에 오신 것을 환영합니다
             </p>
           </div>
-          <div className="chat-messages-container">
-            <div className="message-list" ref={messageListRef}>
-              {messages.map((message, index) => (
-                <div key={index} className="message-item">
-                  <div className="message-header">
-                    <span className="message-sender">{message.from}</span>
-                    <span className="message-time">
-                      {new Date().toLocaleTimeString()}
-                    </span>
-                  </div>
-                  <div className="message-content">{message.text}</div>
+          <div className="chat-messages-container" ref={messageListRef}>
+            {messages.map((message, index) => (
+              <div key={message.id || index} className="message-item">
+                <div className="message-header">
+                  <span className="message-sender">
+                    {message.from || "Unknown"}
+                  </span>
+                  <span className="message-time">{message.timestamp}</span>
                 </div>
-              ))}
-            </div>
+                <div className="message-content">{message.text}</div>
+              </div>
+            ))}
           </div>
           <div className="chat-input-container">
             <button className="add-content-button">

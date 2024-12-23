@@ -1,57 +1,73 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
-const useWebSocket = (channelId) => {
+const useWebSocket = (serverId, channelId, onMessageReceived) => {
   const client = useRef(null);
+  const currentSubscription = useRef(null);
+
+  const handleMessage = useCallback((message) => {
+    const receivedMessage = JSON.parse(message.body);
+    onMessageReceived(receivedMessage);
+  }, [onMessageReceived]);
 
   useEffect(() => {
-    // STOMP 클라이언트 설정
-    client.current = new Client({
-      webSocketFactory: () => new SockJS("http://localhost:8080/ws"), // 스프링 서버의 웹소켓 엔드포인트
-      debug: function (str) {
-        console.log(str);
-      },
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
-    });
+    if (!serverId || !channelId) return;
 
-    // 연결 성공시 콜백
-    client.current.onConnect = () => {
-      console.log("Connected to WebSocket");
+    const connect = () => {
+      if (!client.current) {
+        client.current = new Client({
+          webSocketFactory: () => new SockJS("http://localhost:8181/ws"),
+          onConnect: () => {
+            if (currentSubscription.current) {
+              currentSubscription.current.unsubscribe();
+            }
 
-      // 채널별 구독
-      client.current.subscribe(`/topic/chat/${channelId}`, (message) => {
-        const receivedMessage = JSON.parse(message.body);
-        // 메시지 처리 로직
-        console.log("Received message:", receivedMessage);
-      });
+            currentSubscription.current = client.current.subscribe(
+              `/topic/${serverId}/${channelId}`,
+              handleMessage
+            );
+          },
+          reconnectDelay: 5000,
+          heartbeatIncoming: 4000,
+          heartbeatOutgoing: 4000,
+        });
+
+        client.current.activate();
+      } else if (client.current.connected) {
+        if (currentSubscription.current) {
+          currentSubscription.current.unsubscribe();
+        }
+        currentSubscription.current = client.current.subscribe(
+          `/topic/${serverId}/${channelId}`,
+          handleMessage
+        );
+      }
     };
 
-    // 에러 처리
-    client.current.onStompError = (frame) => {
-      console.error("Broker reported error: " + frame.headers["message"]);
-      console.error("Additional details: " + frame.body);
+    connect();
+
+    return () => {
+      if (currentSubscription.current) {
+        currentSubscription.current.unsubscribe();
+      }
     };
+  }, [serverId, channelId, handleMessage]);
 
-    // 웹소켓 연결 시작
-    client.current.activate();
-
-    // 컴포넌트 언마운트시 연결 해제
+  useEffect(() => {
     return () => {
       if (client.current) {
         client.current.deactivate();
+        client.current = null;
       }
     };
-  }, [channelId]);
+  }, []);
 
-  // 메시지 전송 함수
   const sendMessage = (message) => {
-    if (client.current && client.current.connected) {
+    if (client.current?.connected) {
       client.current.publish({
-        destination: `/app/chat/${channelId}`,
-        body: JSON.stringify(message),
+        destination: `/app/${serverId}/${channelId}/send`,
+        body: JSON.stringify(message)
       });
     }
   };
