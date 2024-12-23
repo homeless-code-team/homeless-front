@@ -32,7 +32,7 @@ const ChatRoom = ({ serverId, channelName }) => {
 
   // WebSocket 연결 및 메시지 수신
   const connectWebSocket = () => {
-    const socketUrl = `ws://localhost:8181/chat/rooms/${channelId}/send`; // 서버와 동일한 경로로 수정
+    const socketUrl = `ws://localhost:8181/api/chat/rooms/1/send`; // 서버와 동일한 경로로 수정
 
     // WebSocket 연결
     socketRef.current = new WebSocket(socketUrl);
@@ -89,7 +89,7 @@ const ChatRoom = ({ serverId, channelName }) => {
       try {
         // 백엔드 API로 메시지 전송
         await axios.post(
-          `http://localhost:8181/api/chat/rooms/${channelId}/send`, // 서버와 일치하도록 URL 수정
+          `http://localhost:8181/api/chat/rooms/1/send`, // 서버와 일치하도록 URL 수정
           message
         );
 
