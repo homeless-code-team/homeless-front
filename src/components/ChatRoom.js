@@ -249,7 +249,7 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
           </div>
         </>
       ) : (
-        <div className="no-messages">채널을 선택해주세요</div>
+        <div className="no-messages">채널을 선택해주세요!</div>
       )}
     </div>
   );
