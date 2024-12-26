@@ -44,3 +44,37 @@
   border-radius: 0 4px 4px 0;
   background-color: white;
 }
+
+.dm-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #36393f;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 8px;
+  cursor: pointer;
+  color: #96989d;
+  transition: all 0.2s;
+}
+
+.dm-button:hover {
+  background-color: #5865f2;
+  color: #fff;
+  border-radius: 16px;
+}
+
+.dm-button.selected {
+  background-color: #5865f2;
+  color: #fff;
+  border-radius: 16px;
+}
+
+.server-separator {
+  width: 32px;
+  height: 2px;
+  background-color: #36393f;
+  margin: 8px auto;
+  border-radius: 1px;
+}

@@ -14,6 +14,7 @@ function App() {
   const [selectedServer, setSelectedServer] = useState(null);
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [serverName, setServerName] = useState(null);
+  const [isDMOpen, setIsDMOpen] = useState(false);
 
   // 서버별 채널 목록 정의
   const servers = [
@@ -57,6 +58,7 @@ function App() {
     const server = servers.find((s) => s.id === serverId);
     setSelectedServer(serverId);
     setServerName(name);
+    setIsDMOpen(false);
     if (server && server.channels.length > 0) {
       setSelectedChannel({
         id: server.channels[0].id,
@@ -70,6 +72,11 @@ function App() {
       id: channelId,
       name: channelName,
     });
+  };
+
+  const onOpenDM = () => {
+    console.log("Direct Message opened");
+    setIsDMOpen(true);
   };
 
   if (!isAuthenticated) {
@@ -95,16 +102,23 @@ function App() {
         servers={servers}
         onSelectServer={handleSelectServer}
         selectedServer={selectedServer}
+        onOpenDM={onOpenDM}
       />
       <div className="app-content">
         <div className="content-wrapper">
-          <ChatRoomList
-            serverId={selectedServer}
-            serverName={serverName}
-            onSelectChannel={handleSelectChannel}
-            selectedChannel={selectedChannel?.id}
-            channels={currentServerChannels}
-          />
+          {isDMOpen ? (
+            <div className="dm-container">
+              DM 컴포넌트가 여기에 렌더링됩니다.
+            </div>
+          ) : (
+            <ChatRoomList
+              serverId={selectedServer}
+              serverName={serverName}
+              onSelectChannel={handleSelectChannel}
+              selectedChannel={selectedChannel?.id}
+              channels={currentServerChannels}
+            />
+          )}
           <div className="main-content">
             <ChatRoom
               serverId={selectedServer}
