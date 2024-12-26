@@ -162,128 +162,142 @@ const SignUp = () => {
 
   return (
     <div className={styles.container}>
-      <h2 className={styles.title}>회원가입</h2>
-
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label htmlFor="email">이메일:</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={handleEmailChange}
-            placeholder="이메일 입력"
-          />
-          <div
-            className={
-              isEmailValid
-                ? styles["valid-feedback"]
-                : styles["invalid-feedback"]
-            }
-          >
-            {emailFeedback}
-          </div>
-          <br></br>
-          <button
-            type="button"
-            onClick={handleSendAuthCode}
-            disabled={!isEmailValid}
-          >
-            이메일 인증
-          </button>
-          {showAlert ? (
-            <div className={styles["valid-feedback"]}>
-              이메일 인증 번호를 전송 중입니다.
-            </div>
-          ) : (
-            <div className={styles["invalid-feedback"]}>{authCodeFeedback}</div>
-          )}
+      <div className={styles.signupBox}>
+        <div className={styles.signupHeader}>
+          <h2 className={styles.title}>회원가입</h2>
+          <p className={styles.subtitle}>
+            Homeless Code에 오신 것을 환영합니다!
+          </p>
         </div>
 
-        {authCodeSent && (
-          <div>
-            <label htmlFor="auth-code">인증 코��:</label>
+        <form onSubmit={handleSubmit}>
+          <div className={styles.formGroup}>
+            <label htmlFor="email">이메일</label>
             <input
-              type="text"
-              id="auth-code"
-              value={authCode}
-              onChange={handleAuthCodeChange}
-              placeholder="인증 코드 입력"
+              type="email"
+              id="email"
+              value={email}
+              onChange={handleEmailChange}
+              placeholder="이메일을 입력하세요"
             />
+            <div
+              className={
+                isEmailValid
+                  ? styles["valid-feedback"]
+                  : styles["invalid-feedback"]
+              }
+            >
+              {emailFeedback}
+            </div>
             <button
               type="button"
-              onClick={handleVerifyAuthCode}
-              disabled={!authCode || countdown === 0}
+              onClick={handleSendAuthCode}
+              disabled={!isEmailValid}
+              className={styles.verifyButton}
             >
-              인증 코드 확인
+              이메일 인증
             </button>
-            <span>
-              {isAuthCodeValid
-                ? ""
-                : countdown > 0
-                ? `남은 시간: ${Math.floor(countdown / 60)}분 ${
-                    countdown % 60
-                  }초`
-                : "시간 초과! 이메일 인증을 다시 시도하세요."}
-            </span>
-            <div className={authCodeSent ? styles["valid-feedback"] : ""}>
-              {authCodeFeedback}
-            </div>
-            <br></br>
+            {showAlert ? (
+              <div className={styles["valid-feedback"]}>
+                이메일 인증 번호를 전송 중입니다.
+              </div>
+            ) : (
+              <div className={styles["invalid-feedback"]}>
+                {authCodeFeedback}
+              </div>
+            )}
           </div>
-        )}
 
-        <div>
-          <label htmlFor="nickname">닉네임:</label>
-          <input
-            type="text"
-            id="nickname"
-            value={nickname}
-            onChange={handleNicknameChange}
-            placeholder="닉네임 입력"
-          />
-          <div>{nicknameFeedback}</div>
-          <br></br>
-        </div>
+          {authCodeSent && (
+            <div className={styles.formGroup}>
+              <label htmlFor="auth-code">인증 코드</label>
+              <input
+                type="text"
+                id="auth-code"
+                value={authCode}
+                onChange={handleAuthCodeChange}
+                placeholder="인증 코드를 입력하세요"
+              />
+              <button
+                type="button"
+                onClick={handleVerifyAuthCode}
+                disabled={!authCode || countdown === 0}
+                className={styles.verifyButton}
+              >
+                인증 코드 확인
+              </button>
+              <span className={styles.countdown}>
+                {isAuthCodeValid
+                  ? ""
+                  : countdown > 0
+                  ? `남은 시간: ${Math.floor(countdown / 60)}분 ${
+                      countdown % 60
+                    }초`
+                  : "시간 초과! 이메일 인증을 다시 시도하세요."}
+              </span>
+            </div>
+          )}
 
-        <div>
-          <label htmlFor="password">비밀번호:</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={handlePasswordChange}
-            placeholder="비밀번호 입력"
-          />
-          <div>{passwordFeedback}</div>
-          <br></br>
-        </div>
+          <div className={styles.formGroup}>
+            <label htmlFor="nickname">닉네임</label>
+            <input
+              type="text"
+              id="nickname"
+              value={nickname}
+              onChange={handleNicknameChange}
+              placeholder="닉네임을 입력하세요"
+            />
+            <div className={styles["invalid-feedback"]}>{nicknameFeedback}</div>
+          </div>
 
-        <div>
-          <label htmlFor="confirm-password">비밀번호 확인:</label>
-          <input
-            type="password"
-            id="confirm-password"
-            value={confirmPassword}
-            onChange={handleConfirmPasswordChange}
-            placeholder="비밀번호 확인 입력"
-          />
-        </div>
+          <div className={styles.formGroup}>
+            <label htmlFor="password">비밀번호</label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={handlePasswordChange}
+              placeholder="비밀번호를 입력하세요"
+            />
+            <div className={styles["invalid-feedback"]}>{passwordFeedback}</div>
+          </div>
 
-        <button type="submit" id="submit-button" disabled>
-          회원가입
-        </button>
-        <div className={styles["login-link-container"]}>
-          <span>이미 계정이 있으신가요?</span>
+          <div className={styles.formGroup}>
+            <label htmlFor="confirm-password">비밀번호 확인</label>
+            <input
+              type="password"
+              id="confirm-password"
+              value={confirmPassword}
+              onChange={handleConfirmPasswordChange}
+              placeholder="비밀번호를 다시 입력하세요"
+            />
+          </div>
+
           <button
-            type="button"
-            className={styles["login-link"]}
-            onClick={() => navigate("/")}
+            type="submit"
+            id="submit-button"
+            disabled={
+              !isEmailValid ||
+              !isNicknameValid ||
+              !isPasswordValid ||
+              !isAuthCodeValid
+            }
           >
-            로그인하기
+            회원가입
           </button>
-        </div>
-      </form>
+
+          <div className={styles["login-link-container"]}>
+            <span>이미 계정이 있으신가요?</span>
+            <button
+              type="button"
+              className={styles["login-link"]}
+              onClick={() => navigate("/")}
+            >
+              로그인하기
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 };
