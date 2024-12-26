@@ -122,7 +122,8 @@ const SignUp = () => {
           setCountdown(180);
         })
         .catch((error) => {
-          setAuthCodeFeedback("인증 코드 전송에 실패했습니다.");
+          setAuthCodeFeedback("이메일 전송에 실패했습니다. 다시 시도해주세요.");
+          setShowAlert(false);
         });
     }
   };
@@ -190,16 +191,18 @@ const SignUp = () => {
           >
             이메일 인증
           </button>
-          {showAlert && (
+          {showAlert ? (
             <div className={styles["valid-feedback"]}>
               이메일 인증 번호를 전송 중입니다.
             </div>
+          ) : (
+            <div className={styles["invalid-feedback"]}>{authCodeFeedback}</div>
           )}
         </div>
 
         {authCodeSent && (
           <div>
-            <label htmlFor="auth-code">인증 코드:</label>
+            <label htmlFor="auth-code">인증 코��:</label>
             <input
               type="text"
               id="auth-code"
@@ -270,6 +273,16 @@ const SignUp = () => {
         <button type="submit" id="submit-button" disabled>
           회원가입
         </button>
+        <div className={styles["login-link-container"]}>
+          <span>이미 계정이 있으신가요?</span>
+          <button
+            type="button"
+            className={styles["login-link"]}
+            onClick={() => navigate("/")}
+          >
+            로그인하기
+          </button>
+        </div>
       </form>
     </div>
   );

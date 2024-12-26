@@ -1,79 +1,70 @@
-import React, { createContext, useState, useEffect } from "react";
-import { jwtDecode } from "jwt-decode";
-import { useNavigate } from "react-router-dom";
+import React, { createContext, useState } from "react";
 
-const AuthContext = createContext();
+const AuthContext = createContext({
+  token: null,
+  userId: null,
+  userRole: null,
+  userName: null,
+  isAuthenticated: false,
+  onLogin: () => {},
+  onLogout: () => {},
+});
 
 export const AuthProvider = ({ children }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [token, setToken] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [userRole, setUserRole] = useState(null);
-  const [userName, setUserName] = useState(null);
-  const navigate = useNavigate();
+  const [auth, setAuth] = useState({
+    token: localStorage.getItem("token") || null,
+    userId: localStorage.getItem("userId") || null,
+    userRole: localStorage.getItem("userRole") || null,
+    userName: localStorage.getItem("userName") || null,
+    isAuthenticated: !!localStorage.getItem("token"),
+  });
 
-  const onLogin = (token, id, role, name) => {
-    try {
-      setIsLoggedIn(true);
-      setToken(token);
-      setUserId(id);
-      setUserRole(role);
-      setUserName(name);
+  const handleLogin = (token, id, role, name) => {
+    setAuth({
+      token,
+      userId: id,
+      userRole: role,
+      userName: name,
+      isAuthenticated: true,
+    });
 
-      localStorage.setItem("token", token);
-      localStorage.setItem("userId", id);
-      localStorage.setItem("userRole", role);
-      localStorage.setItem("userName", name);
-    } catch (error) {
-      console.error("로그인 처리 중 오류:", error);
-    }
+    localStorage.setItem("token", token);
+    localStorage.setItem("userId", id);
+    localStorage.setItem("userRole", role);
+    localStorage.setItem("userName", name);
   };
 
-  const onLogout = () => {
-    setIsLoggedIn(false);
-    setToken(null);
-    setUserId(null);
-    setUserRole(null);
-    setUserName(null);
+  const handleLogout = () => {
+    if (localStorage.getItem("token")) {
+      localStorage.removeItem("token");
+    }
+    if (localStorage.getItem("userId")) {
+      localStorage.removeItem("userId");
+    }
+    if (localStorage.getItem("userRole")) {
+      localStorage.removeItem("userRole");
+    }
+    if (localStorage.getItem("userName")) {
+      localStorage.removeItem("userName");
+    }
 
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userName");
-
-    navigate("/");
+    setAuth({
+      token: null,
+      userId: null,
+      userRole: null,
+      userName: null,
+      isAuthenticated: false,
+    });
   };
 
-  useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    const savedUserId = localStorage.getItem("userId");
-    const savedUserRole = localStorage.getItem("userRole");
-    const savedUserName = localStorage.getItem("userName");
-
-    if (savedToken && savedUserId && savedUserRole && savedUserName) {
-      setIsLoggedIn(true);
-      setToken(savedToken);
-      setUserId(savedUserId);
-      setUserRole(savedUserRole);
-      setUserName(savedUserName);
-    }
-  }, []);
+  const contextValue = {
+    ...auth,
+    onLogin: handleLogin,
+    onLogout: handleLogout,
+  };
 
   return (
-    <AuthContext.Provider
-      value={{
-        isLoggedIn,
-        token,
-        userId,
-        userRole,
-        userName,
-        setUserName,
-        onLogin,
-        onLogout,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
+    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
   );
 };
 

@@ -11,12 +11,14 @@ const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [loginError, setLoginError] = useState("");
   const navigate = useNavigate();
   const { onLogin } = useContext(AuthContext);
 
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
+    setLoginError("");
 
     try {
       const res = await axios.post(`${API_BASE_URL}/user/sign-in`, {
@@ -32,11 +34,26 @@ const SignIn = () => {
       onLogin(token, id, role, name);
     } catch (error) {
       const errorMessage =
-        error.response?.data?.statusMessage || "로그인 실패!";
-      alert(errorMessage);
+        error.response?.data?.statusMessage || "비밀번호를 찾을 수 없습니다.";
+      setLoginError(errorMessage);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleTempLogin = () => {
+    const tempToken = "temp-token";
+    const tempId = "testId@test.com";
+    const tempRole = "ROLE_USER";
+    const tempName = "테스트계정";
+
+    // localStorage에 임시 데이터 저장
+    localStorage.setItem("token", tempToken);
+    localStorage.setItem("userId", tempId);
+    localStorage.setItem("userRole", tempRole);
+    localStorage.setItem("userName", tempName);
+
+    onLogin(tempToken, tempId, tempRole, tempName);
   };
 
   return (
@@ -68,9 +85,17 @@ const SignIn = () => {
               className="signin-input"
               required
             />
+            {loginError && <div className="error-message">{loginError}</div>}
           </div>
           <button type="submit" className="signin-button" disabled={isLoading}>
             {isLoading ? "로그인 중..." : "로그인"}
+          </button>
+          <button
+            type="button"
+            className="temp-login-button"
+            onClick={handleTempLogin}
+          >
+            임시 로그인
           </button>
           <div className="signin-footer">
             <span>계정이 필요한가요?</span>
