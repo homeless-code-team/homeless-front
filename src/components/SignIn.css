@@ -2,10 +2,12 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 100%;
+  height: 100vh;
   width: 100%;
   background-color: #313338;
-  padding-top: 28px;
+  background-image: url("https://discord.com/assets/1531b79c2f2927945582023e1edaaa11.svg");
+  background-size: cover;
+  background-position: center;
 }
 
 .signin-box {
@@ -17,23 +19,58 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
 }
 
-.signin-box h2 {
-  color: #fff;
+.signin-header {
   text-align: center;
-  margin-bottom: 8px;
-  font-size: 24px;
-  font-weight: 600;
+  margin-bottom: 24px;
 }
 
-.signin-box p {
+.signin-header h2 {
+  color: #fff;
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.signin-header p {
   color: #b5bac1;
-  text-align: center;
-  margin-bottom: 20px;
   font-size: 16px;
 }
 
+.signin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  color: #b5bac1;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.signin-input {
+  padding: 10px;
+  background-color: #1e1f22;
+  border: none;
+  border-radius: 3px;
+  color: #fff;
+  font-size: 16px;
+  transition: border 0.2s;
+}
+
+.signin-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #5865f2;
+}
+
 .signin-button {
-  width: 100%;
   padding: 12px;
   background-color: #5865f2;
   color: white;
@@ -43,10 +80,38 @@
   font-weight: 500;
   cursor: pointer;
   transition: background-color 0.2s;
+  margin-top: 8px;
 }
 
 .signin-button:hover {
   background-color: #4752c4;
+}
+
+.signin-button:disabled {
+  background-color: #4752c4;
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.signin-footer {
+  margin-top: 16px;
+  text-align: center;
+  color: #b5bac1;
+  font-size: 14px;
+}
+
+.signup-link {
+  background: none;
+  border: none;
+  color: #00a8fc;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: 4px;
+  padding: 0;
+}
+
+.signup-link:hover {
+  text-decoration: underline;
 }
 
 /* 앱 컨테이너 */
