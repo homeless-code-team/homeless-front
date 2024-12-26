@@ -238,13 +238,18 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
           >
             {messages.map((message, index) => (
               <div key={message.id || index} className="message-item">
-                <div className="message-header">
-                  <span className="message-sender">
-                    {message.from || "Unknown"}
-                  </span>
-                  <span className="message-time">{message.timestamp}</span>
+                <div className="message-avatar">
+                  {message.from?.charAt(0).toUpperCase()}
                 </div>
-                <div className="message-content">{message.text}</div>
+                <div className="message-content-wrapper">
+                  <div className="message-header">
+                    <span className="message-sender">
+                      {message.from || "Unknown"}
+                    </span>
+                    <span className="message-time">{message.timestamp}</span>
+                  </div>
+                  <div className="message-content">{message.text}</div>
+                </div>
               </div>
             ))}
           </div>
@@ -267,7 +272,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
           </div>
         </>
       ) : (
-        <div className="no-messages">채구와 대화해보세요!</div>
+        <div className="no-messages">친구와 대화해보세요!</div>
       )}
     </div>
   );
