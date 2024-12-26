@@ -6,10 +6,13 @@ const useWebSocket = (serverId, channelId, onMessageReceived) => {
   const client = useRef(null);
   const currentSubscription = useRef(null);
 
-  const handleMessage = useCallback((message) => {
-    const receivedMessage = JSON.parse(message.body);
-    onMessageReceived(receivedMessage);
-  }, [onMessageReceived]);
+  const handleMessage = useCallback(
+    (message) => {
+      const receivedMessage = JSON.parse(message.body);
+      onMessageReceived(receivedMessage);
+    },
+    [onMessageReceived]
+  );
 
   useEffect(() => {
     if (!serverId || !channelId) return;
@@ -66,8 +69,8 @@ const useWebSocket = (serverId, channelId, onMessageReceived) => {
   const sendMessage = (message) => {
     if (client.current?.connected) {
       client.current.publish({
-        destination: `/app/${serverId}/${channelId}/send`,
-        body: JSON.stringify(message)
+        destination: `/app/${serverId}/${channelId}`,
+        body: JSON.stringify(message),
       });
     }
   };

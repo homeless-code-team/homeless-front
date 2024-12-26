@@ -1,4 +1,10 @@
-import React, { useState, useRef, useEffect, useContext } from "react";
+import React, {
+  useState,
+  useRef,
+  useEffect,
+  useContext,
+  useCallback,
+} from "react";
 import "./ChatRoom.css";
 import useWebSocket from "../hooks/useWebSocket.js";
 import AuthContext from "../context/AuthContext.js";
@@ -14,10 +20,10 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
   const messageListRef = useRef(null);
 
   // 채팅 기록 불러오기
-  const fetchChatHistory = async () => {
+  const fetchChatHistory = useCallback(async () => {
     try {
       const response = await fetch(
-        `http://localhost:8181/api/chat/${serverId}/${channelId}/messages`
+        `http://localhost:8181/api/chats/${serverId}/${channelId}/messages`
       );
 
       if (!response.ok) {
@@ -54,7 +60,7 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
     } catch (error) {
       console.error("채팅 기록 로딩 에러:", error);
     }
-  };
+  }, [serverId, channelId]);
 
   // 채널 입장시 채팅 기록 로드
   useEffect(() => {
@@ -64,7 +70,7 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
     return () => {
       setMessages([]); // 채널 변경시 메시지 초기화
     };
-  }, [channelId]);
+  }, [channelId, fetchChatHistory]);
 
   const handleMessageReceived = (message) => {
     console.log("수신된 메시지:", message);
@@ -147,13 +153,13 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
   };
 
   // 이전 메시지 불러오기
-  const fetchPreviousMessages = async () => {
+  const fetchPreviousMessages = useCallback(async () => {
     if (isLoading) return;
 
     try {
       setIsLoading(true);
       const response = await fetch(
-        `http://localhost:8181/api/chat/${serverId}/${channelId}/messages?page=${
+        `http://localhost:8181/api/chats/${serverId}/${channelId}/messages?page=${
           page + 1
         }`
       );
@@ -184,21 +190,24 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [isLoading, serverId, channelId, page]);
 
   // 스크롤 이벤트 핸들러
-  const handleScroll = (e) => {
-    const { scrollTop } = e.target;
-    if (scrollTop === 0 && !isLoading) {
-      const scrollHeight = e.target.scrollHeight;
-      fetchPreviousMessages().then(() => {
-        if (messageListRef.current) {
-          const newScrollHeight = messageListRef.current.scrollHeight;
-          messageListRef.current.scrollTop = newScrollHeight - scrollHeight;
-        }
-      });
-    }
-  };
+  const handleScroll = useCallback(
+    (e) => {
+      const { scrollTop } = e.target;
+      if (scrollTop === 0 && !isLoading) {
+        const scrollHeight = e.target.scrollHeight;
+        fetchPreviousMessages().then(() => {
+          if (messageListRef.current) {
+            const newScrollHeight = messageListRef.current.scrollHeight;
+            messageListRef.current.scrollTop = newScrollHeight - scrollHeight;
+          }
+        });
+      }
+    },
+    [isLoading, fetchPreviousMessages]
+  );
 
   useEffect(() => {
     const messageList = messageListRef.current;
@@ -206,7 +215,7 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
       messageList.addEventListener("scroll", handleScroll);
       return () => messageList.removeEventListener("scroll", handleScroll);
     }
-  }, [page, isLoading]);
+  }, [page, isLoading, handleScroll]);
 
   return (
     <div className="chat-room-container">

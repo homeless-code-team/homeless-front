@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import styles from "./SignUp.module.css";
 import { useNavigate } from "react-router-dom";
@@ -23,9 +23,24 @@ const SignUp = () => {
   const [passwordFeedback, setPasswordFeedback] = useState("");
   const navigate = useNavigate();
   const API_BASE_URL = "http://localhost:8181";
+  const toggleSubmitButton = useCallback(() => {
+    const submitButton = document.getElementById("submit-button");
+    if (isEmailValid && isNicknameValid && isPasswordValid && isAuthCodeValid) {
+      submitButton.disabled = false;
+    } else {
+      submitButton.disabled = true;
+    }
+  }, [isEmailValid, isNicknameValid, isPasswordValid, isAuthCodeValid]);
+
   useEffect(() => {
     toggleSubmitButton();
-  }, [isEmailValid, isNicknameValid, isPasswordValid, isAuthCodeValid]);
+  }, [
+    isEmailValid,
+    isNicknameValid,
+    isPasswordValid,
+    isAuthCodeValid,
+    toggleSubmitButton,
+  ]);
 
   useEffect(() => {
     let timer;
@@ -141,15 +156,6 @@ const SignUp = () => {
         .catch((error) => {
           alert("회원가입 실패!");
         });
-    }
-  };
-
-  const toggleSubmitButton = () => {
-    const submitButton = document.getElementById("submit-button");
-    if (isEmailValid && isNicknameValid && isPasswordValid && isAuthCodeValid) {
-      submitButton.disabled = false;
-    } else {
-      submitButton.disabled = true;
     }
   };
 
