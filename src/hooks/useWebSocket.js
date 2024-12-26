@@ -68,10 +68,20 @@ const useWebSocket = (serverId, channelId, onMessageReceived) => {
 
   const sendMessage = (message) => {
     if (client.current?.connected) {
+      console.log("WebSocket 클라이언트 상태:", {
+        connected: client.current.connected,
+        destination: `/app/${serverId}/${channelId}`,
+        message: message,
+      });
+
       client.current.publish({
         destination: `/app/${serverId}/${channelId}`,
         body: JSON.stringify(message),
       });
+
+      console.log("WebSocket 메시지 발행 완료");
+    } else {
+      console.error("WebSocket이 연결되어 있지 않음");
     }
   };
 

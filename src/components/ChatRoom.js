@@ -9,33 +9,6 @@ import "./ChatRoom.css";
 import useWebSocket from "../hooks/useWebSocket.js";
 import AuthContext from "../context/AuthContext.js";
 
-// 날짜 포맷팅 함수 추가 (컴포넌트 최상단에 추가)
-const formatMessageDate = (timestamp) => {
-  const messageDate = new Date(Number(timestamp));
-  const today = new Date();
-
-  // 날짜가 오늘인지 확인
-  const isToday = messageDate.toDateString() === today.toDateString();
-
-  // 기본 시간 포맷
-  const timeString = messageDate.toLocaleString("ko-KR", {
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-    hour12: true,
-  });
-
-  // 날짜가 오늘이면 "오늘", 아니면 yy-mm-dd 형식으로 표시
-  if (isToday) {
-    return `오늘 ${timeString}`;
-  } else {
-    const year = messageDate.getFullYear().toString().slice(2);
-    const month = String(messageDate.getMonth() + 1).padStart(2, "0");
-    const day = String(messageDate.getDate()).padStart(2, "0");
-    return `${year}-${month}-${day} ${timeString}`;
-  }
-};
-
 const ChatRoom = ({ serverId, channelName, channelId }) => {
   const { userName } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
@@ -66,9 +39,14 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
       setMessages(
         recentMessages.map((msg) => ({
           id: msg.id,
-          content: msg.content,
+          text: msg.content,
           from: msg.writer || "Unknown",
-          timestamp: formatMessageDate(msg.timestamp),
+          timestamp: new Date(Number(msg.timestamp)).toLocaleString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+          }),
         }))
       );
 
@@ -98,9 +76,14 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
     console.log("수신된 메시지:", message);
     const messageWithTime = {
       id: message.id,
-      content: message.content,
+      text: message.content,
       from: message.writer,
-      timestamp: formatMessageDate(message.timestamp),
+      timestamp: new Date(Number(message.timestamp)).toLocaleString("ko-KR", {
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+        hour12: true,
+      }),
     };
     setMessages((prev) => [...prev, messageWithTime]);
   };
@@ -144,47 +127,20 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
   // 메시지 전송 핸들러 (백엔드 API를 통한 메시지 전송)
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    const token = localStorage.getItem("token");
-    const userName = localStorage.getItem("userName");
-    if (!token || newMessage.trim() === "") return;
-
-    try {
-      // 임시 로그인일 경우 특별 처리
-      if (token === "temp-token") {
-        const tempMessage = {
-          id: Date.now(),
-          content: newMessage,
-          from: userName,
-          timestamp: formatMessageDate(Date.now()),
-        };
-        setMessages((prev) => [...prev, tempMessage]);
-        setNewMessage("");
-        return;
-      }
-
-      const currentTime = Date.now();
+    if (newMessage.trim()) {
       const message = {
-        content: newMessage.trim(),
+        text: newMessage.trim(),
         writer: userName,
-        timestamp: currentTime,
+        timestamp: Date.now(),
       };
 
-      // 메시지 전송
-      sendMessage(message);
-
-      // 로컬 메시지 추가
-      const localMessage = {
-        id: currentTime,
-        content: newMessage.trim(),
-        from: userName,
-        timestamp: formatMessageDate(currentTime),
-      };
-      setMessages((prev) => [...prev, localMessage]);
-      setNewMessage("");
-      inputRef.current?.focus();
-    } catch (error) {
-      console.error("메시지 전송 에러:", error);
+      try {
+        sendMessage(message);
+        setNewMessage("");
+        inputRef.current?.focus();
+      } catch (error) {
+        console.error("메시지 전송 오류:", error);
+      }
     }
   };
 
@@ -216,9 +172,14 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
       if (data.length > 0) {
         const oldMessages = data.map((msg) => ({
           id: msg.id,
-          content: msg.content,
+          text: msg.content,
           from: msg.writer || "Unknown",
-          timestamp: formatMessageDate(msg.timestamp),
+          timestamp: new Date(Number(msg.timestamp)).toLocaleString("ko-KR", {
+            hour: "2-digit",
+            minute: "2-digit",
+            second: "2-digit",
+            hour12: true,
+          }),
         }));
 
         setMessages((prev) => [...oldMessages, ...prev]);
@@ -268,18 +229,15 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
             </p>
           </div>
           <div className="chat-messages-container" ref={messageListRef}>
-            {messages.map((message) => (
-              <div
-                key={`${message.id}-${message.timestamp}`}
-                className="message-item"
-              >
+            {messages.map((message, index) => (
+              <div key={message.id || index} className="message-item">
                 <div className="message-header">
                   <span className="message-sender">
                     {message.from || "Unknown"}
                   </span>
                   <span className="message-time">{message.timestamp}</span>
                 </div>
-                <div className="message-content">{message.content}</div>
+                <div className="message-content">{message.text}</div>
               </div>
             ))}
           </div>
