@@ -226,7 +226,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
               <h3>{channelName}</h3>
               <div className="header-divider"></div>
               <p className="channel-description">
-                {channelName} 채널��� 오신 것을 환영합니다
+                {channelName} 채널에 오신 것을 환영합니다
               </p>
             </div>
           )}
