@@ -8,6 +8,7 @@ import ChatRoom from "./components/ChatRoom.js";
 import SignIn from "./components/SignIn.js";
 import SignUp from "./components/SignUp.js";
 import AuthContext from "./context/AuthContext.js";
+import DirectMessage from "./components/DirectMessage.js";
 
 function App() {
   const { isAuthenticated } = useContext(AuthContext);
@@ -107,9 +108,7 @@ function App() {
       <div className="app-content">
         <div className="content-wrapper">
           {isDMOpen ? (
-            <div className="dm-container">
-              DM 컴포넌트가 여기에 렌더링됩니다.
-            </div>
+            <DirectMessage onSelectChannel={handleSelectChannel} />
           ) : (
             <ChatRoomList
               serverId={selectedServer}
@@ -124,6 +123,7 @@ function App() {
               serverId={selectedServer}
               channelId={selectedChannel?.id}
               channelName={selectedChannel?.name}
+              isDirectMessage={isDMOpen}
             />
           </div>
         </div>

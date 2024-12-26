@@ -65,6 +65,10 @@
   background-color: #313338;
 }
 
+.chat-messages-container.no-header {
+  top: 0;
+}
+
 /* Webkit 브라우저용 스크롤바 스타일링 */
 .chat-messages-container::-webkit-scrollbar {
   width: 8px;
@@ -141,9 +145,11 @@
   display: flex;
   align-items: center;
   gap: 16px;
+  width: 100%;
 }
 
 .chat-form {
+  width: 100%;
   flex: 1;
   display: flex;
   align-items: center;

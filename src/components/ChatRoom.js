@@ -9,7 +9,7 @@ import "./ChatRoom.css";
 import useWebSocket from "../hooks/useWebSocket.js";
 import AuthContext from "../context/AuthContext.js";
 
-const ChatRoom = ({ serverId, channelName, channelId }) => {
+const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const { userName } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
@@ -221,14 +221,21 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
     <div className="chat-room-container">
       {channelId ? (
         <>
-          <div className="chat-header">
-            <h3>{channelName}</h3>
-            <div className="header-divider"></div>
-            <p className="channel-description">
-              {channelName} 채널에 오신 것을 환영합니다
-            </p>
-          </div>
-          <div className="chat-messages-container" ref={messageListRef}>
+          {!isDirectMessage && (
+            <div className="chat-header">
+              <h3>{channelName}</h3>
+              <div className="header-divider"></div>
+              <p className="channel-description">
+                {channelName} 채널��� 오신 것을 환영합니다
+              </p>
+            </div>
+          )}
+          <div
+            className={`chat-messages-container ${
+              isDirectMessage ? "no-header" : ""
+            }`}
+            ref={messageListRef}
+          >
             {messages.map((message, index) => (
               <div key={message.id || index} className="message-item">
                 <div className="message-header">
@@ -251,14 +258,16 @@ const ChatRoom = ({ serverId, channelName, channelId }) => {
                 value={newMessage}
                 onChange={(e) => setNewMessage(e.target.value)}
                 onKeyPress={handleKeyPress}
-                placeholder={`#${channelName}에 메시지 보내기`}
+                placeholder={`${
+                  isDirectMessage ? "" : "#"
+                }${channelName}에 메시지 보내기`}
                 className="chat-input"
               />
             </form>
           </div>
         </>
       ) : (
-        <div className="no-messages">채널을 선택해주세요!</div>
+        <div className="no-messages">채구와 대화해보세요!</div>
       )}
     </div>
   );
