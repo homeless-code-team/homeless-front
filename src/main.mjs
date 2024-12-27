@@ -82,6 +82,19 @@ function createWindow() {
   ipcMain.handle("window:isMaximized", () => {
     return mainWindow.isMaximized();
   });
+
+  // 윈도우 생성 후 네비게이션 제어
+  mainWindow.webContents.on("will-navigate", (event, url) => {
+    // 개발 환경에서는 localhost:3000 허용
+    if (isDev && url.startsWith("http://localhost:3000")) {
+      return;
+    }
+
+    // 프로덕션 환경에서는 로컬 파일만 허용
+    if (!url.startsWith("file://")) {
+      event.preventDefault();
+    }
+  });
 }
 
 app.whenReady().then(createWindow);
