@@ -1,5 +1,5 @@
 import React, { useState, useContext } from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 import MenuBar from "./components/MenuBar.js";
 import ServerList from "./components/ServerList.js";
@@ -9,6 +9,17 @@ import SignIn from "./components/SignIn.js";
 import SignUp from "./components/SignUp.js";
 import AuthContext from "./context/AuthContext.js";
 import DirectMessage from "./components/DirectMessage.js";
+
+// ProtectedRoute Component
+const ProtectedRoute = ({ element }) => {
+  const { isAuthenticated } = useContext(AuthContext);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  return element;
+};
 
 function App() {
   const { isAuthenticated } = useContext(AuthContext);
@@ -48,13 +59,6 @@ function App() {
     },
   ];
 
-  const handleLogin = (token, id, role, name) => {
-    // 첫 번째 서버 자동 선택
-    if (servers.length > 0) {
-      handleSelectServer(servers[0].id, servers[0].name);
-    }
-  };
-
   const handleSelectServer = (serverId, name) => {
     const server = servers.find((s) => s.id === serverId);
     setSelectedServer(serverId);
@@ -80,18 +84,6 @@ function App() {
     setIsDMOpen(true);
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="auth-container">
-        <MenuBar />
-        <Routes>
-          <Route path="/" element={<SignIn />} />
-          <Route path="/sign-up" element={<SignUp />} />
-        </Routes>
-      </div>
-    );
-  }
-
   // 현재 선택된 서버의 채널 목록 가져오기
   const currentServerChannels =
     servers.find((s) => s.id === selectedServer)?.channels || [];
@@ -99,35 +91,58 @@ function App() {
   return (
     <div className="app-container">
       <MenuBar />
-      <ServerList
-        servers={servers}
-        onSelectServer={handleSelectServer}
-        selectedServer={selectedServer}
-        onOpenDM={onOpenDM}
-      />
-      <div className="app-content">
-        <div className="content-wrapper">
-          {isDMOpen ? (
-            <DirectMessage onSelectChannel={handleSelectChannel} />
-          ) : (
-            <ChatRoomList
-              serverId={selectedServer}
-              serverName={serverName}
-              onSelectChannel={handleSelectChannel}
-              selectedChannel={selectedChannel?.id}
-              channels={currentServerChannels}
+      <Routes>
+        {/* 인증되지 않은 사용자 전용 */}
+        {!isAuthenticated ? (
+          <>
+            <Route path="/" element={<SignIn />} />
+            <Route path="/sign-up" element={<SignUp />} />
+          </>
+        ) : (
+          <>
+            {/* 인증된 사용자 전용 */}
+            <Route
+              path="/"
+              element={
+                <>
+                  <ServerList
+                    servers={servers}
+                    onSelectServer={handleSelectServer}
+                    selectedServer={selectedServer}
+                    onOpenDM={onOpenDM}
+                  />
+                  <div className="app-content">
+                    <div className="content-wrapper">
+                      {isDMOpen ? (
+                        <DirectMessage onSelectChannel={handleSelectChannel} />
+                      ) : (
+                        <ChatRoomList
+                          serverId={selectedServer}
+                          serverName={serverName}
+                          onSelectChannel={handleSelectChannel}
+                          selectedChannel={selectedChannel?.id}
+                          channels={currentServerChannels}
+                        />
+                      )}
+                      <div className="main-content">
+                        <ChatRoom
+                          serverId={selectedServer}
+                          channelId={selectedChannel?.id}
+                          channelName={selectedChannel?.name}
+                          isDirectMessage={isDMOpen}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              }
             />
-          )}
-          <div className="main-content">
-            <ChatRoom
-              serverId={selectedServer}
-              channelId={selectedChannel?.id}
-              channelName={selectedChannel?.name}
-              isDirectMessage={isDMOpen}
-            />
-          </div>
-        </div>
-      </div>
+          </>
+        )}
+
+        {/* 예외 처리 */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </div>
   );
 }
