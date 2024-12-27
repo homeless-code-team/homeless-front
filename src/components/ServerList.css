@@ -78,3 +78,24 @@
   margin: 8px auto;
   border-radius: 1px;
 }
+
+.logout-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #36393f;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #96989d;
+  transition: all 0.2s;
+  margin-top: auto;
+}
+
+.logout-button:hover {
+  background-color: #ed4245;
+  color: #fff;
+  border-radius: 16px;
+}
