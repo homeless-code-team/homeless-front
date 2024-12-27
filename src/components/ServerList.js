@@ -1,6 +1,6 @@
 import React, { useContext, useCallback } from "react";
 import "./ServerList.css";
-import { FaUserFriends, FaSignOutAlt } from "react-icons/fa";
+import { FaUserFriends, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import AuthContext from "../context/AuthContext.js";
 
@@ -49,10 +49,18 @@ const ServerList = React.memo(
             {server.name.charAt(0)}
           </div>
         ))}
-        <div className="server-separator"></div>
-        <button className="logout-button" onClick={handleLogout}>
-          <FaSignOutAlt size={20} />
-        </button>
+        <div style={{ marginTop: "auto" }}>
+          <div className="server-separator"></div>
+          <button
+            className="profile-button"
+            onClick={() => navigate("/profile")}
+          >
+            <FaUserCircle size={20} />
+          </button>
+          <button className="logout-button" onClick={handleLogout}>
+            <FaSignOutAlt size={20} />
+          </button>
+        </div>
       </div>
     );
   }

@@ -91,11 +91,31 @@
   cursor: pointer;
   color: #96989d;
   transition: all 0.2s;
-  margin-top: auto;
 }
 
 .logout-button:hover {
   background-color: #ed4245;
+  color: #fff;
+  border-radius: 16px;
+}
+
+.profile-button {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background-color: #36393f;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #96989d;
+  transition: all 0.2s;
+  margin-bottom: 8px;
+}
+
+.profile-button:hover {
+  background-color: #5865f2;
   color: #fff;
   border-radius: 16px;
 }

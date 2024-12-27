@@ -9,6 +9,7 @@ import SignIn from "./components/SignIn.js";
 import SignUp from "./components/SignUp.js";
 import AuthContext from "./context/AuthContext.js";
 import DirectMessage from "./components/DirectMessage.js";
+import Profile from "./components/Profile.js";
 
 // ProtectedRoute Component
 const ProtectedRoute = ({ element }) => {
@@ -92,7 +93,6 @@ function App() {
     <div className="app-container">
       <MenuBar />
       <Routes>
-        {/* 인증되지 않은 사용자 전용 */}
         {!isAuthenticated ? (
           <>
             <Route path="/" element={<SignIn />} />
@@ -100,41 +100,58 @@ function App() {
           </>
         ) : (
           <>
-            {/* 인증된 사용자 전용 */}
             <Route
               path="/"
               element={
-                <>
-                  <ServerList
-                    servers={servers}
-                    onSelectServer={handleSelectServer}
-                    selectedServer={selectedServer}
-                    onOpenDM={onOpenDM}
-                  />
-                  <div className="app-content">
-                    <div className="content-wrapper">
-                      {isDMOpen ? (
-                        <DirectMessage onSelectChannel={handleSelectChannel} />
-                      ) : (
-                        <ChatRoomList
-                          serverId={selectedServer}
-                          serverName={serverName}
-                          onSelectChannel={handleSelectChannel}
-                          selectedChannel={selectedChannel?.id}
-                          channels={currentServerChannels}
-                        />
-                      )}
-                      <div className="main-content">
-                        <ChatRoom
-                          serverId={selectedServer}
-                          channelId={selectedChannel?.id}
-                          channelName={selectedChannel?.name}
-                          isDirectMessage={isDMOpen}
-                        />
+                <ProtectedRoute
+                  element={
+                    <>
+                      <ServerList
+                        servers={servers}
+                        onSelectServer={handleSelectServer}
+                        selectedServer={selectedServer}
+                        onOpenDM={onOpenDM}
+                      />
+                      <div className="app-content">
+                        <div className="content-wrapper">
+                          {isDMOpen ? (
+                            <DirectMessage
+                              onSelectChannel={handleSelectChannel}
+                            />
+                          ) : (
+                            <ChatRoomList
+                              serverId={selectedServer}
+                              serverName={serverName}
+                              onSelectChannel={handleSelectChannel}
+                              selectedChannel={selectedChannel?.id}
+                              channels={currentServerChannels}
+                            />
+                          )}
+                          <div className="main-content">
+                            <ChatRoom
+                              serverId={selectedServer}
+                              channelId={selectedChannel?.id}
+                              channelName={selectedChannel?.name}
+                              isDirectMessage={isDMOpen}
+                            />
+                          </div>
+                        </div>
                       </div>
+                    </>
+                  }
+                />
+              }
+            />
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute
+                  element={
+                    <div className="full-page">
+                      <Profile />
                     </div>
-                  </div>
-                </>
+                  }
+                />
               }
             />
           </>
