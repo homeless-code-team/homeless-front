@@ -6,6 +6,13 @@
   margin: 8px;
   border-radius: 8px;
   position: relative;
+  width: calc(100% - 16px);
+}
+
+.main-content {
+  flex: 1;
+  width: 100%;
+  position: relative;
 }
 
 .chat-header {
@@ -165,16 +172,18 @@
   align-items: center;
   gap: 16px;
   width: 100%;
+  box-sizing: border-box;
 }
 
 .chat-form {
-  width: 100%;
   flex: 1;
   display: flex;
   align-items: center;
   background-color: #40444b;
   border-radius: 8px;
-  padding: 0 0 0 16px;
+  padding: 0 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .chat-input {
@@ -190,6 +199,7 @@
   line-height: 1.375rem;
   resize: none;
   outline: none;
+  box-sizing: border-box;
 }
 
 .add-content-button {
