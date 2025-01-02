@@ -6,7 +6,7 @@ const ChatRoomList = ({
   serverName,
   onSelectChannel,
   selectedChannel,
-  channels
+  channels,
 }) => {
   if (!serverId) {
     return (
