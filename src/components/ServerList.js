@@ -1,13 +1,16 @@
-import React, { useContext, useCallback } from "react";
+import React, { useContext, useCallback, useEffect, useState } from "react";
 import "./ServerList.css";
 import { FaUserFriends, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import AuthContext from "../context/AuthContext.js";
+import axios from "axios";
+import { use } from "react";
 
 const ServerList = React.memo(
-  ({ servers, onSelectServer, selectedServer, onOpenDM }) => {
+  ({ serverList, onSelectServer, selectedServer, onOpenDM }) => {
     const navigate = useNavigate();
     const { onLogout } = useContext(AuthContext);
+    // const [serverList, setServerList] = useState([]);
 
     const handleLogout = useCallback(async () => {
       try {
@@ -29,6 +32,19 @@ const ServerList = React.memo(
       }
     }, [onLogout, navigate]);
 
+    // useEffect(() => {
+    //   getServerList();
+    // }, []);
+
+    // const getServerList = async () => {
+    //   const res = await axios.get("http://localhost:8181/server/servers", {
+    //     headers: {
+    //       Authorization: `Bearer ${localStorage.getItem("token")}`,
+    //     },
+    //   });
+    //   console.log("res : ", res.data.result);
+    //   setServerList(res.data.result);
+    // };
     return (
       <div className="server-list">
         <div
@@ -38,15 +54,15 @@ const ServerList = React.memo(
           <FaUserFriends size={24} />
         </div>
         <div className="server-separator"></div>
-        {servers?.map((server) => (
+        {serverList?.map((server) => (
           <div
             key={server.id}
             className={`server-item ${
               selectedServer === server.id ? "selected" : ""
             }`}
-            onClick={() => onSelectServer(server.id, server.name)}
+            onClick={() => onSelectServer(server.id, server.title)}
           >
-            {server.name.charAt(0)}
+            {server.title}
           </div>
         ))}
         <div style={{ marginTop: "auto" }}>
