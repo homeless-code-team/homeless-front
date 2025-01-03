@@ -2,6 +2,7 @@ import React, { useState, useContext } from "react";
 import "./Profile.css";
 import AuthContext from "../context/AuthContext.js";
 import { useNavigate } from "react-router-dom";
+import { FaGithub } from "react-icons/fa";
 
 const Profile = () => {
   const { userName, userId } = useContext(AuthContext);
@@ -21,6 +22,11 @@ const Profile = () => {
 
   const handleDescriptionChange = (e) => {
     setDescription(e.target.value);
+  };
+
+  const handleGithubConnect = () => {
+    // GitHub 연동 로직 구현
+    console.log("GitHub 연동");
   };
 
   const menuItems = ["내 계정", "프로필"];
@@ -53,6 +59,20 @@ const Profile = () => {
               <div className="profile-field">
                 <label>이메일</label>
                 <div className="field-value">{userId}</div>
+              </div>
+              <div className="profile-field connection-section">
+                <label>연결된 계정</label>
+                <div className="connection-info">
+                  <div className="connection-item">
+                    <span className="connection-name">GitHub</span>
+                    <button
+                      className="connection-button"
+                      onClick={handleGithubConnect}
+                    >
+                      <FaGithub size={24} />
+                    </button>
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -96,13 +116,6 @@ const Profile = () => {
                 <div className="profile-subtitle">
                   프로필 정보를 설정할 수 있습니다.
                 </div>
-              </div>
-            </div>
-
-            <div className="profile-section">
-              <div className="section-title">연결</div>
-              <div className="connection-info">
-                <div className="connection-text">연결된 계정이 없습니다.</div>
               </div>
             </div>
 

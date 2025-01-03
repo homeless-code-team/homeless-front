@@ -271,3 +271,35 @@
   font-size: 14px;
   text-align: center;
 }
+
+.connection-section {
+  margin-top: 24px;
+}
+
+.connection-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background-color: #1f2023;
+  border-radius: 4px;
+}
+
+.connection-name {
+  color: #dcddde;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.connection-button {
+  background: none;
+  border: none;
+  color: #b5bac1;
+  cursor: pointer;
+  padding: 8px;
+  transition: color 0.2s;
+}
+
+.connection-button:hover {
+  color: #fff;
+}
