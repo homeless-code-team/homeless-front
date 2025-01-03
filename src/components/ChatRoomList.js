@@ -10,12 +10,15 @@ const ChatRoomList = ({
   channels,
   onCreateChannel,
   handleSelectServer,
+  serverOwner,
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [newChannelName, setNewChannelName] = useState("");
   const [editChannelName, setEditChannelName] = useState("");
   const [editChannelId, setEditChannelId] = useState(null);
+
+  const userId = localStorage.getItem("email");
 
   const handleCreateChannel = async () => {
     if (newChannelName.trim()) {
@@ -38,7 +41,7 @@ const ChatRoomList = ({
         if (res.status === 200) {
           setShowModal(false);
           setNewChannelName("");
-          await handleSelectServer(serverId, serverName);
+          await handleSelectServer(serverId, serverName, userId);
         }
       } catch (error) {
         console.error("채널 생성 중 오류 발생:", error);
@@ -68,7 +71,7 @@ const ChatRoomList = ({
           setShowEditModal(false);
           setEditChannelName("");
           setEditChannelId(null);
-          await handleSelectServer(serverId, serverName);
+          await handleSelectServer(serverId, serverName, userId);
         }
       } catch (error) {
         console.error("채널 수정 중 오류 발생:", error);
@@ -88,7 +91,7 @@ const ChatRoomList = ({
       );
 
       if (res.status === 200) {
-        await handleSelectServer(serverId, serverName);
+        await handleSelectServer(serverId, serverName, userId);
       }
     } catch (error) {
       console.error("채널 삭제 중 오류 발생:", error);
@@ -119,7 +122,7 @@ const ChatRoomList = ({
         >
           <div className="channel-content">
             <span className="channel-name">{channel.name}</span>
-            {selectedChannel === channel.id && (
+            {selectedChannel === channel.id && serverOwner === userId && (
               <>
                 <span
                   className="channel-settings"

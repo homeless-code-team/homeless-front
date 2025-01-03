@@ -27,6 +27,7 @@ const ServerList = React.memo(
       y: 0,
       serverId: null,
     });
+    const currentUserId = localStorage.getItem("email");
 
     const handleLogout = useCallback(async () => {
       try {
@@ -81,8 +82,6 @@ const ServerList = React.memo(
         formData.append("tag", serverTag);
 
         if (serverImage != null) {
-          console.log("asdasd");
-
           formData.append("serverImg", serverImage);
         }
 
@@ -173,8 +172,12 @@ const ServerList = React.memo(
             className={`server-item ${
               selectedServer === server.id ? "selected" : ""
             }`}
-            onClick={() => onSelectServer(server.id, server.title)}
-            onContextMenu={(e) => handleContextMenu(e, server.id)}
+            onClick={() =>
+              onSelectServer(server.id, server.title, server.userId)
+            }
+            onContextMenu={(e) =>
+              server.userId === currentUserId && handleContextMenu(e, server.id)
+            }
           >
             {server.serverImg ? (
               <img

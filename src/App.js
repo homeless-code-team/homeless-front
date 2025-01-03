@@ -31,6 +31,7 @@ function App() {
   const [isDMOpen, setIsDMOpen] = useState(false);
   const [serverList, setServerList] = useState([]);
   const [channelList, setChannelList] = useState([]);
+  const [serverOwner, setServerOwner] = useState(null);
   // 서버별 채널 목록 정의
 
   useEffect(() => {
@@ -50,11 +51,12 @@ function App() {
     setServerList(res.data.result);
   };
 
-  const handleSelectServer = async (serverId, title) => {
+  const handleSelectServer = async (serverId, title, userId) => {
     const server = serverList.find((s) => s.id === serverId);
     setSelectedServer(serverId);
     setServerName(title);
     setIsDMOpen(false);
+    setServerOwner(userId);
 
     const res = await axios.get(
       `http://localhost:8181/server/channels?id=${serverId}`,
@@ -121,6 +123,7 @@ function App() {
                               selectedChannel={selectedChannel?.id}
                               channels={channelList}
                               handleSelectServer={handleSelectServer}
+                              serverOwner={serverOwner}
                             />
                           )}
                           <div className="main-content">
