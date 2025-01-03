@@ -34,8 +34,11 @@ function App() {
   // 서버별 채널 목록 정의
 
   useEffect(() => {
-    getServerList();
-  }, []);
+    const token = localStorage.getItem("token");
+    if (isAuthenticated && token) {
+      getServerList();
+    }
+  }, [isAuthenticated]); // isAuthenticated가 변경될 때마다 실행
 
   const getServerList = async () => {
     const res = await axios.get("http://localhost:8181/server/servers", {
@@ -102,6 +105,7 @@ function App() {
                         onSelectServer={handleSelectServer}
                         selectedServer={selectedServer}
                         onOpenDM={onOpenDM}
+                        onRefreshServers={getServerList} // 서버 목록을 가져오는 함수
                       />
                       <div className="app-content">
                         <div className="content-wrapper">
@@ -116,6 +120,7 @@ function App() {
                               onSelectChannel={handleSelectChannel}
                               selectedChannel={selectedChannel?.id}
                               channels={channelList}
+                              handleSelectServer={handleSelectServer}
                             />
                           )}
                           <div className="main-content">
