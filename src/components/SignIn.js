@@ -14,9 +14,9 @@ const SignIn = () => {
   const { onLogin } = useContext(AuthContext);
 
   const handleLogin = async (e) => {
-    e.preventDefault();
-    setIsLoading(true);
-    setLoginError("");
+    e.preventDefault(); // 새로고침 방지
+    setIsLoading(true); // 로딩 상태 표시
+    setLoginError(""); // 오류 메시지 초기화
 
     try {
       const res = await axios.post(

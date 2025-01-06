@@ -1,23 +1,147 @@
 import React, { useState, useContext } from "react";
 import "./Profile.css";
+import axios from "axios";
 import AuthContext from "../context/AuthContext.js";
 import { useNavigate } from "react-router-dom";
 import { FaGithub } from "react-icons/fa";
 
 const Profile = () => {
-  const { userName, userId } = useContext(AuthContext);
+  const { userName, userId, onLogin } = useContext(AuthContext);
   const [description, setDescription] = useState("");
   const [activeSection, setActiveSection] = useState("내 계정");
+  const [changeNicknameError, setChangeNicknameError] = useState("");
+  const [showNicknameModal, setShowNicknameModal] = useState(false);
+  const [newNickname, setNewNickname] = useState("");
+  const [isDuplicateChecked, setIsDuplicateChecked] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
+  const [oldPassword, setOldPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
+  const [passwordError, setPasswordError] = useState("");
   const navigate = useNavigate();
 
-  const handleNicknameChange = () => {
-    // TODO: 닉네임 변경 로직 구현
-    console.log("닉네임 변경");
+  const handleOpenModal = () => {
+    setNewNickname(userName);
+    setChangeNicknameError("");
+    setShowNicknameModal(true);
   };
 
-  const handlePasswordChange = () => {
-    // TODO: 비밀번호 변경 로직 구현
-    console.log("비밀번호 변경");
+  const handleCloseModal = () => {
+    setNewNickname("");
+    setChangeNicknameError("");
+    setShowNicknameModal(false);
+  };
+
+  const handleDuplicateNickname = async () => {
+    try {
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/duplicate?nickname=${newNickname}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.data.status === "OK") {
+        setIsDuplicateChecked(true);
+        setChangeNicknameError("사용 가능한 닉네임입니다.");
+      } else {
+        setIsDuplicateChecked(false);
+        setChangeNicknameError("닉네임이 중복되었습니다.");
+      }
+    } catch (error) {
+      console.error("닉네임 중복 확인 오류:", error);
+      setIsDuplicateChecked(false);
+      setChangeNicknameError("닉네임 중복 확인에 실패했습니다.");
+    }
+  };
+
+  const handleNicknameChange = async () => {
+    if (!newNickname) return;
+
+    if (newNickname.length < 2 || newNickname.length > 8) {
+      setChangeNicknameError("닉네임은 2~8자 사이여야 합니다.");
+      return;
+    }
+
+    if (!isDuplicateChecked) {
+      setChangeNicknameError("닉네임 중복 확인이 필요합니다.");
+      return;
+    }
+
+    try {
+      const formData = new FormData();
+      formData.append("nickname", newNickname);
+      const res = await axios.patch(
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.data.status === "OK") {
+        const token = localStorage.getItem("token");
+        const userEmail = localStorage.getItem("userEmail");
+        const userRole = localStorage.getItem("userRole");
+
+        onLogin(token, userEmail, userRole, newNickname);
+
+        setNewNickname("");
+        setIsDuplicateChecked(false);
+        setChangeNicknameError("");
+        setShowNicknameModal(false);
+      } else {
+        setChangeNicknameError(
+          res.data.message || "닉네임 변경에 실패했습니다."
+        );
+      }
+    } catch (error) {
+      console.error("닉네임 변경 오류:", error);
+      setChangeNicknameError("닉네임 변경 중 오류가 발생했습니다.");
+    }
+  };
+
+  const handlePasswordChange = async () => {
+    if (newPassword !== confirmNewPassword) {
+      setPasswordError("새 비밀번호가 일치하지 않습니다.");
+      return;
+    }
+
+    if (newPassword.length < 4 || newPassword.length > 14) {
+      setPasswordError("비밀번호는 4~14자 사이여야 합니다.");
+      return;
+    }
+
+    try {
+      const res = await axios.patch(
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/password`,
+        {
+          oldPassword,
+          newPassword,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.data.status === 200) {
+        setShowPasswordModal(false);
+        setOldPassword("");
+        setNewPassword("");
+        setConfirmNewPassword("");
+        setPasswordError("");
+        alert("비밀번호가 변경되었습니다.");
+      }
+    } catch (error) {
+      setPasswordError("비밀번호 변경에 실패했습니다.");
+    }
   };
 
   const handleDescriptionChange = (e) => {
@@ -27,6 +151,11 @@ const Profile = () => {
   const handleGithubConnect = () => {
     // GitHub 연동 로직 구현
     console.log("GitHub 연동");
+  };
+
+  const handleOpenPasswordModal = () => {
+    setPasswordError("");
+    setShowPasswordModal(true);
   };
 
   const menuItems = ["내 계정", "프로필"];
@@ -84,10 +213,7 @@ const Profile = () => {
                     <div className="settings-label">닉네임</div>
                     <div className="settings-value">{userName}</div>
                   </div>
-                  <button
-                    className="profile-button"
-                    onClick={handleNicknameChange}
-                  >
+                  <button className="profile-button" onClick={handleOpenModal}>
                     ✎
                   </button>
                 </div>
@@ -98,7 +224,7 @@ const Profile = () => {
                   </div>
                   <button
                     className="profile-button"
-                    onClick={handlePasswordChange}
+                    onClick={handleOpenPasswordModal}
                   >
                     ✎
                   </button>
@@ -164,6 +290,91 @@ const Profile = () => {
       <div className="profile-container">
         <div className="profile-content">{renderContent()}</div>
       </div>
+
+      {showNicknameModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>닉네임 변경</h3>
+            <input
+              type="text"
+              value={newNickname}
+              onChange={(e) => {
+                setNewNickname(e.target.value);
+                setIsDuplicateChecked(false);
+              }}
+              placeholder="새로운 닉네임 입력"
+              maxLength={8}
+            />
+            <button
+              onClick={handleDuplicateNickname}
+              className="duplicate-check-button"
+            >
+              중복 확인
+            </button>
+            {changeNicknameError && (
+              <div
+                className={`error-message ${
+                  isDuplicateChecked ? "success" : ""
+                }`}
+              >
+                {changeNicknameError}
+              </div>
+            )}
+            <div className="modal-buttons">
+              <button
+                onClick={handleNicknameChange}
+                disabled={!isDuplicateChecked}
+              >
+                변경
+              </button>
+              <button onClick={handleCloseModal}>취소</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showPasswordModal && (
+        <div className="modal-overlay">
+          <div className="modal-content">
+            <h3>비밀번호 변경</h3>
+            <input
+              type="password"
+              value={oldPassword}
+              onChange={(e) => setOldPassword(e.target.value)}
+              placeholder="현재 비밀번호"
+            />
+            <input
+              type="password"
+              value={newPassword}
+              onChange={(e) => setNewPassword(e.target.value)}
+              placeholder="새 비밀번호"
+            />
+            <input
+              type="password"
+              value={confirmNewPassword}
+              onChange={(e) => setConfirmNewPassword(e.target.value)}
+              placeholder="새 비밀번호 확인"
+            />
+            {passwordError && (
+              <div className="error-message">{passwordError}</div>
+            )}
+            <div className="modal-buttons">
+              <button onClick={handlePasswordChange}>변경</button>
+              <button
+                onClick={() => {
+                  setShowPasswordModal(false);
+                  setOldPassword("");
+                  setNewPassword("");
+                  setConfirmNewPassword("");
+                  setPasswordError("");
+                }}
+              >
+                취소
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
