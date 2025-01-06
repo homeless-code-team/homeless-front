@@ -107,23 +107,47 @@ const Profile = () => {
   };
 
   const handlePasswordChange = async () => {
+    // 현재 비밀번호 입력 확인
+    if (!oldPassword) {
+      setPasswordError("현재 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    // 새 비밀번호 입력 확인
+    if (!newPassword) {
+      setPasswordError("새 비밀번호를 입력해주세요.");
+      return;
+    }
+
+    // 새 비밀번호 확인 입력 확인
+    if (!confirmNewPassword) {
+      setPasswordError("새 비밀번호 확인을 입력해주세요.");
+      return;
+    }
+
+    // 새 비밀번호 일치 확인
     if (newPassword !== confirmNewPassword) {
       setPasswordError("새 비밀번호가 일치하지 않습니다.");
       return;
     }
 
+    // 새 비밀번호 길이 확인
     if (newPassword.length < 4 || newPassword.length > 14) {
       setPasswordError("비밀번호는 4~14자 사이여야 합니다.");
       return;
     }
 
+    // 현재 비밀번호와 새 비밀번호가 같은지 확인
+    if (oldPassword === newPassword) {
+      setPasswordError("새 비밀번호가 현재 비밀번호와 같습니다.");
+      return;
+    }
+
     try {
-      const res = await axios.patch(
-        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/password`,
-        {
-          oldPassword,
-          newPassword,
-        },
+      // 현재 비밀번호 확인 요청
+      const checkRes = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/password/check`,
+        { password: oldPassword },
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -131,16 +155,42 @@ const Profile = () => {
         }
       );
 
-      if (res.data.status === 200) {
+      if (checkRes.data.status !== "OK") {
+        setPasswordError("현재 비밀번호가 일치하지 않습니다.");
+        return;
+      }
+
+      // 새 비밀번호로 변경 요청
+      const formData = new FormData();
+      formData.append("password", newPassword);
+
+      const res = await axios.patch(
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.data.status === "OK") {
+        // 모달 상태 초기화
         setShowPasswordModal(false);
         setOldPassword("");
         setNewPassword("");
         setConfirmNewPassword("");
         setPasswordError("");
         alert("비밀번호가 변경되었습니다.");
+      } else {
+        setPasswordError(res.data.message || "비밀번호 변경에 실패했습니다.");
       }
     } catch (error) {
-      setPasswordError("비밀번호 변경에 실패했습니다.");
+      console.error("비밀번호 변경 오류:", error);
+      setPasswordError(
+        error.response?.data?.message || "비밀번호 변경에 실패했습니다."
+      );
     }
   };
 
