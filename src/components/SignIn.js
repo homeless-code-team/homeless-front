@@ -35,16 +35,17 @@ const SignIn = () => {
 
         const decoded = jwtDecode(token);
         const email = decoded.sub;
-        const userId = decoded.user_id;
         const role = decoded.role;
         const nickname = decoded.nickname;
+        const profileImage = decoded.profile_image;
 
         localStorage.setItem("token", token);
         localStorage.setItem("userEmail", email);
         localStorage.setItem("userRole", role);
         localStorage.setItem("userName", nickname);
+        localStorage.setItem("profileImage", profileImage || "");
 
-        onLogin(token, email, role, nickname);
+        onLogin(token, email, role, nickname, profileImage);
         navigate("/");
       } else {
         setLoginError(res.data.message || "로그인에 실패했습니다.");

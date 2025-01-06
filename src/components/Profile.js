@@ -19,6 +19,10 @@ const Profile = () => {
   const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const navigate = useNavigate();
+  const [previewImage, setPreviewImage] = useState(
+    localStorage.getItem("profileImage") || null
+  );
+  const fileInputRef = React.useRef(null);
 
   const handleOpenModal = () => {
     setNewNickname(userName);
@@ -198,6 +202,35 @@ const Profile = () => {
     setDescription(e.target.value);
   };
 
+  const handleDescriptionSubmit = async () => {
+    try {
+      const formData = new FormData();
+      formData.append("content", description);
+
+      const res = await axios.patch(
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.data.status === "OK") {
+        alert("프로필 설명이 변경되었습니다.");
+      } else {
+        alert(res.data.message || "프로필 설명 변경에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("프로필 설명 변경 오류:", error);
+      alert(
+        error.response?.data?.message || "프로필 설명 변경에 실패했습니다."
+      );
+    }
+  };
+
   const handleGithubConnect = () => {
     // GitHub 연동 로직 구현
     console.log("GitHub 연동");
@@ -206,6 +239,72 @@ const Profile = () => {
   const handleOpenPasswordModal = () => {
     setPasswordError("");
     setShowPasswordModal(true);
+  };
+
+  const handleImageClick = () => {
+    fileInputRef.current.click();
+  };
+
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+      alert("이미지 파일만 업로드 가능합니다.");
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("파일 크기는 5MB 이하여야 합니다.");
+      return;
+    }
+
+    const tempPreviewUrl = URL.createObjectURL(file);
+    setPreviewImage(tempPreviewUrl);
+
+    try {
+      const formData = new FormData();
+      formData.append("profileImage", file);
+
+      const res = await axios.patch(
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.data.status === "OK") {
+        const token = localStorage.getItem("token");
+        const userEmail = localStorage.getItem("userEmail");
+        const userRole = localStorage.getItem("userRole");
+        const userName = localStorage.getItem("userName");
+
+        // 새로운 프로필 이미지 URL을 저장하고 AuthContext 업데이트
+        localStorage.setItem("profileImage", res.data.data.profileImage);
+        onLogin(
+          token,
+          userEmail,
+          userRole,
+          userName,
+          res.data.data.profileImage
+        );
+
+        alert("프로필 사진이 변경되었습니다.");
+      } else {
+        setPreviewImage(localStorage.getItem("profileImage"));
+        alert(res.data.message || "프로필 사진 변경에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("프로필 사진 변경 오류:", error);
+      setPreviewImage(localStorage.getItem("profileImage"));
+      alert(
+        error.response?.data?.message || "프로필 사진 변경에 실패했습니다."
+      );
+    }
   };
 
   const menuItems = ["내 계정", "프로필"];
@@ -223,8 +322,38 @@ const Profile = () => {
                 </div>
               </div>
               <div className="profile-avatar-section">
-                <div className="avatar-circle">
-                  {userName?.charAt(0).toUpperCase()}
+                <div
+                  className="avatar-circle profile-image-container"
+                  onClick={handleImageClick}
+                  style={{ cursor: "pointer" }}
+                >
+                  {previewImage ? (
+                    <img
+                      src={previewImage}
+                      alt="프로필"
+                      className="profile-image"
+                      style={{
+                        width: "80px",
+                        height: "80px",
+                        borderRadius: "50%",
+                        objectFit: "cover",
+                      }}
+                    />
+                  ) : (
+                    <div className="profile-image-placeholder">
+                      {userName?.charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="image-overlay">
+                    <span>변경</span>
+                  </div>
+                  <input
+                    type="file"
+                    ref={fileInputRef}
+                    onChange={handleImageChange}
+                    accept="image/*"
+                    style={{ display: "none" }}
+                  />
                 </div>
                 <div className="profile-info">
                   <div className="profile-name">{userName}</div>
@@ -304,7 +433,18 @@ const Profile = () => {
                 placeholder="자신을 소개해보세요"
                 maxLength={190}
               />
-              <div className="description-length">{description.length}/190</div>
+              <div className="description-info">
+                <div className="description-length">
+                  {description.length}/190
+                </div>
+                <button
+                  className="profile-button save-button"
+                  onClick={handleDescriptionSubmit}
+                  style={{ marginTop: "10px" }}
+                >
+                  저장
+                </button>
+              </div>
             </div>
           </>
         );
