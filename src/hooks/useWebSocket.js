@@ -27,7 +27,7 @@ const useWebSocket = (serverId, channelId, onMessageReceived) => {
             }
 
             currentSubscription.current = client.current.subscribe(
-              `/topic/${serverId}/${channelId}`,
+              `/topic/chats.ch.${channelId}`,
               handleMessage
             );
           },
@@ -42,7 +42,7 @@ const useWebSocket = (serverId, channelId, onMessageReceived) => {
           currentSubscription.current.unsubscribe();
         }
         currentSubscription.current = client.current.subscribe(
-          `/topic/${serverId}/${channelId}`,
+          `/topic/chats.ch.${channelId}`,
           handleMessage
         );
       }
@@ -70,12 +70,12 @@ const useWebSocket = (serverId, channelId, onMessageReceived) => {
     if (client.current?.connected) {
       console.log("WebSocket 클라이언트 상태:", {
         connected: client.current.connected,
-        destination: `/app/${serverId}/${channelId}`,
+        destination: `/pub/chats.ch.${channelId}`,
         message: message,
       });
 
       client.current.publish({
-        destination: `/app/${serverId}/${channelId}`,
+        destination: `/pub/chats.ch.${channelId}`,
         body: JSON.stringify(message),
       });
 
