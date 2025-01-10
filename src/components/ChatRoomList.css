@@ -11,6 +11,7 @@
   font-size: 16px;
   font-weight: bold;
   color: #b5bac1;
+  padding: 16px 8px;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -36,6 +37,7 @@
 .channel-item.selected {
   background-color: #404249;
   color: #ffffff;
+  border-radius: 3px;
 }
 
 .channel-item::before {
@@ -125,6 +127,7 @@
 }
 
 .create-channel {
+  padding: 8px 12px;
   margin-bottom: 10px;
 }
 
@@ -136,4 +139,71 @@
 
 .channel-delete:hover {
   color: #ff4444;
+}
+
+.server-tag {
+  margin-bottom: 10px;
+  margin-left: 10px;
+  font-size: 12px;
+}
+.create-channel {
+  margin-bottom: 15px;
+  margin-left: 10px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.divider small {
+  font-size: 0.8em;
+  color: #666;
+  margin-right: 8px;
+}
+
+.divider::after {
+  content: "";
+  flex-grow: 1;
+  height: 1px;
+  background-color: #ccc;
+  margin-left: 8px;
+}
+
+.board-list {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 5px;
+}
+
+.create-channel {
+  margin-top: 5px;
+}
+.create-channel:hover {
+  background-color: #36393f;
+  color: #dcddde;
+  border-radius: 5px;
+}
+
+.board-list.selected {
+  background-color: #404249;
+  color: #ffffff;
+  border-radius: 3px;
+}
+.board-list:hover {
+  background-color: #36393f;
+  color: #dcddde;
+  border-radius: 5px;
+}
+.board-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+.board-name {
+  align-content: left;
 }
