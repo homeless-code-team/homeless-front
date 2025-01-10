@@ -11,6 +11,7 @@ import AuthContext from "./context/AuthContext.js";
 import DirectMessage from "./components/DirectMessage.js";
 import Profile from "./components/Profile.js";
 import axios from "axios";
+import Board from "./components/Board.js";
 
 // ProtectedRoute Component
 const ProtectedRoute = ({ element }) => {
@@ -31,9 +32,13 @@ function App() {
   const [isDMOpen, setIsDMOpen] = useState(false);
   const [serverList, setServerList] = useState([]);
   const [channelList, setChannelList] = useState([]);
-  const [serverOwner, setServerOwner] = useState(null);
-  // 서버별 채널 목록 정의
+  const [serverRole, setServerRole] = useState(null);
+  const [serverTag, setServerTag] = useState(null);
+  const [boardList, setBoardList] = useState([]);
+  const [selectedBoard, setSelectedBoard] = useState(null);
+  const [userList, setUserList] = useState([]);
 
+  // 서버별 채널 목록 정의
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (isAuthenticated && token) {
@@ -47,29 +52,53 @@ function App() {
         Authorization: `Bearer ${localStorage.getItem("token")}`,
       },
     });
-    console.log("res : ", res.data.result);
+    console.log("res =====================: ", res);
     setServerList(res.data.result);
   };
 
-  const handleSelectServer = async (serverId, title, userId) => {
-    const server = serverList.find((s) => s.id === serverId);
-    setSelectedServer(serverId);
-    setServerName(title);
-    setIsDMOpen(false);
-    setServerOwner(userId);
+  const handleSelectServer = async (serverId, title, userRole, serverTag) => {
+    const token = localStorage.getItem("token");
+    if (serverId) {
+      setSelectedServer(serverId);
+      setServerName(title);
+      setIsDMOpen(false);
+      setServerRole(userRole);
+      setServerTag(serverTag);
 
-    const res = await axios.get(
-      `http://localhost:8181/server/channels?id=${serverId}`,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-        },
+      const res = await axios.get(
+        `http://localhost:8181/server/channels?id=${serverId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.data.result.length > 0) {
+        setChannelList(res.data.result);
+      } else {
+        setChannelList([]);
       }
-    );
-    if (res.data.result.length > 0) {
-      setChannelList(res.data.result);
     } else {
-      setChannelList([]);
+      setSelectedServer(null);
+      setServerName(null);
+      setIsDMOpen(null);
+      setServerRole(null);
+    }
+
+    // boardList 가져오기
+    if (token) {
+      const res = await axios.get(
+        `${process.env.REACT_APP_API_BASE_URL}/server/boardList?id=${serverId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      console.log(res.data.result);
+      setBoardList(res.data.result);
     }
   };
 
@@ -78,6 +107,16 @@ function App() {
       id: channelId,
       name: channelName,
     });
+    setSelectedBoard(null);
+  };
+
+  const onSelectBoard = (boardId, boardTitle) => {
+    setSelectedBoard({
+      id: boardId,
+      boardTitle: boardTitle,
+    });
+
+    setSelectedChannel(null);
   };
 
   const onOpenDM = () => {
@@ -108,6 +147,7 @@ function App() {
                         selectedServer={selectedServer}
                         onOpenDM={onOpenDM}
                         onRefreshServers={getServerList} // 서버 목록을 가져오는 함수
+                        userList={userList}
                       />
                       <div className="app-content">
                         <div className="content-wrapper">
@@ -123,16 +163,29 @@ function App() {
                               selectedChannel={selectedChannel?.id}
                               channels={channelList}
                               handleSelectServer={handleSelectServer}
-                              serverOwner={serverOwner}
+                              serverRole={serverRole}
+                              serverTag={serverTag}
+                              boardList={boardList}
+                              handleSelectBoard={onSelectBoard}
+                              selectedBoard={selectedBoard?.id}
                             />
                           )}
                           <div className="main-content">
-                            <ChatRoom
-                              serverId={selectedServer}
-                              channelId={selectedChannel?.id}
-                              channelName={selectedChannel?.name}
-                              isDirectMessage={isDMOpen}
-                            />
+                            {selectedBoard ? (
+                              <Board
+                                serverId={selectedServer}
+                                boardId={selectedBoard?.id}
+                                boardTitle={selectedBoard?.boardTitle}
+                              />
+                            ) : (
+                              <ChatRoom
+                                serverId={selectedServer}
+                                channelId={selectedChannel?.id}
+                                channelName={selectedChannel?.name}
+                                isDirectMessage={isDMOpen}
+                                serverRole={serverRole}
+                              />
+                            )}
                           </div>
                         </div>
                       </div>
