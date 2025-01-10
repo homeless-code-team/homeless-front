@@ -4,7 +4,7 @@ import AuthContext from "../context/AuthContext.js";
 import { useNavigate } from "react-router-dom";
 
 const Profile = () => {
-  const { userName, userEmail } = useContext(AuthContext);
+  const { userName, userId } = useContext(AuthContext);
   const [description, setDescription] = useState("");
   const [activeSection, setActiveSection] = useState("내 계정");
   const navigate = useNavigate();
@@ -52,7 +52,7 @@ const Profile = () => {
               <div className="section-title">계정 정보</div>
               <div className="profile-field">
                 <label>이메일</label>
-                <div className="field-value">{userEmail}</div>
+                <div className="field-value">{userId}</div>
               </div>
             </div>
 
