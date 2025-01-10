@@ -35,9 +35,40 @@ const SignIn = () => {
       const token = res.data.result.token;
       const decoded = jwtDecode(token);
       onLogin(token, decoded.sub, decoded.role, decoded.name);
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/sign-in`,
+        {
+          email,
+          password,
+        }
+      );
+
+      console.log("Login response:", res.data);
+
+      if (res.data.status === "OK") {
+        const token = res.data.data;
+        console.log("Token:", token);
+
+        const decoded = jwtDecode(token);
+        const email = decoded.sub;
+        const userId = decoded.user_id;
+        const role = decoded.role;
+        const nickname = decoded.nickname;
+
+        localStorage.setItem("token", token);
+        localStorage.setItem("userEmail", email);
+        localStorage.setItem("userRole", role);
+        localStorage.setItem("userName", nickname);
+
+        onLogin(token, email, role, nickname);
+        navigate("/");
+      } else {
+        setLoginError(res.data.message || "로그인에 실패했습니다.");
+      }
     } catch (error) {
+      console.error("Login error:", error);
       const errorMessage =
-        error.response?.data?.statusMessage || "비밀번호를 찾을 수 없습니다.";
+        error.response?.data?.message || "로그인에 실패했습니다.";
       setLoginError(errorMessage);
     } finally {
       setIsLoading(false);

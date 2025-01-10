@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./DirectMessage.css";
 import FriendList from "./FriendList.js";
 import { FaUserFriends } from "react-icons/fa";
@@ -10,6 +10,11 @@ const DirectMessage = ({ onSelectChannel }) => {
     { id: 2, name: "사용자2" },
     { id: 3, name: "사용자3" },
   ];
+
+  useEffect(() => {
+    // DM 채널에서는 serverId를 0으로 설정
+    onSelectChannel(999, "DM");
+  }, [onSelectChannel]);
 
   return (
     <div className="direct-message-container">
@@ -30,10 +35,7 @@ const DirectMessage = ({ onSelectChannel }) => {
           <h2 className="dm-title">다이렉트 메시지</h2>
           <ul className="user-list">
             {users.map((user) => (
-              <li
-                key={user.id}
-                onClick={() => onSelectChannel(user.id, user.name)}
-              >
+              <li key={user.id} onClick={() => onSelectChannel(0, user.name)}>
                 {user.name}
               </li>
             ))}

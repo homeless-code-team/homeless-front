@@ -1,4 +1,4 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import "./App.css";
 import MenuBar from "./components/MenuBar.js";
@@ -10,6 +10,7 @@ import SignUp from "./components/SignUp.js";
 import AuthContext from "./context/AuthContext.js";
 import DirectMessage from "./components/DirectMessage.js";
 import Profile from "./components/Profile.js";
+import axios from "axios";
 
 // ProtectedRoute Component
 const ProtectedRoute = ({ element }) => {
@@ -28,48 +29,45 @@ function App() {
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [serverName, setServerName] = useState(null);
   const [isDMOpen, setIsDMOpen] = useState(false);
-
+  const [serverList, setServerList] = useState([]);
+  const [channelList, setChannelList] = useState([]);
   // 서버별 채널 목록 정의
-  const servers = [
-    {
-      id: 1,
-      name: "일반 서버",
-      channels: [
-        { id: 1, name: "일반" },
-        { id: 2, name: "공지사항" },
-        { id: 3, name: "잡담" },
-      ],
-    },
-    {
-      id: 2,
-      name: "게임 서버",
-      channels: [
-        { id: 4, name: "게임공략" },
-        { id: 5, name: "팀찾기" },
-        { id: 6, name: "거래" },
-      ],
-    },
-    {
-      id: 3,
-      name: "음악 서버",
-      channels: [
-        { id: 7, name: "음악추천" },
-        { id: 8, name: "작곡" },
-        { id: 9, name: "콘서트" },
-      ],
-    },
-  ];
 
-  const handleSelectServer = (serverId, name) => {
-    const server = servers.find((s) => s.id === serverId);
+  useEffect(() => {
+    const token = localStorage.getItem("token");
+    if (isAuthenticated && token) {
+      getServerList();
+    }
+  }, [isAuthenticated]); // isAuthenticated가 변경될 때마다 실행
+
+  const getServerList = async () => {
+    const res = await axios.get("http://localhost:8181/server/servers", {
+      headers: {
+        Authorization: `Bearer ${localStorage.getItem("token")}`,
+      },
+    });
+    console.log("res : ", res.data.result);
+    setServerList(res.data.result);
+  };
+
+  const handleSelectServer = async (serverId, title) => {
+    const server = serverList.find((s) => s.id === serverId);
     setSelectedServer(serverId);
-    setServerName(name);
+    setServerName(title);
     setIsDMOpen(false);
-    if (server && server.channels.length > 0) {
-      setSelectedChannel({
-        id: server.channels[0].id,
-        name: server.channels[0].name,
-      });
+
+    const res = await axios.get(
+      `http://localhost:8181/server/channels?id=${serverId}`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+    if (res.data.result.length > 0) {
+      setChannelList(res.data.result);
+    } else {
+      setChannelList([]);
     }
   };
 
@@ -84,10 +82,6 @@ function App() {
     console.log("Direct Message opened");
     setIsDMOpen(true);
   };
-
-  // 현재 선택된 서버의 채널 목록 가져오기
-  const currentServerChannels =
-    servers.find((s) => s.id === selectedServer)?.channels || [];
 
   return (
     <div className="app-container">
@@ -107,10 +101,11 @@ function App() {
                   element={
                     <>
                       <ServerList
-                        servers={servers}
+                        serverList={serverList}
                         onSelectServer={handleSelectServer}
                         selectedServer={selectedServer}
                         onOpenDM={onOpenDM}
+                        onRefreshServers={getServerList} // 서버 목록을 가져오는 함수
                       />
                       <div className="app-content">
                         <div className="content-wrapper">
@@ -124,7 +119,8 @@ function App() {
                               serverName={serverName}
                               onSelectChannel={handleSelectChannel}
                               selectedChannel={selectedChannel?.id}
-                              channels={currentServerChannels}
+                              channels={channelList}
+                              handleSelectServer={handleSelectServer}
                             />
                           )}
                           <div className="main-content">
