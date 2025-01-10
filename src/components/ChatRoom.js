@@ -14,7 +14,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [isConnected, setIsConnected] = useState(false);
   const messageListRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -31,7 +30,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       const messageWithTime = {
         id: message.id,
         text: message.content,
-        from: message.writer,
+        from: message.writer || "Unknown",
         type: message.type,
         timestamp: new Date().toLocaleString("ko-KR", {
           hour: "2-digit",
@@ -115,8 +114,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
 
     sendMessage({
       channelId: channelId,
-      senderId: userId,
-      senderName: userName,
+      writer: userName,
       content: newMessage.trim(),
       type: "TALK",
     });
