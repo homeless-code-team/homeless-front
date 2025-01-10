@@ -107,17 +107,56 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   }, [channelId, fetchChatHistory]);
 
+  const saveChatMessage = async (messageData) => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("인증 토큰이 없습니다.");
+      }
+
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/${channelId}`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            channelId: channelId,
+            writer: messageData.writer,
+            content: messageData.content,
+            type: messageData.type,
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        const errorData = await response.text();
+        throw new Error(errorData || "메시지 저장에 실패했습니다.");
+      }
+    } catch (error) {
+      console.error("메시지 저장 에러:", error);
+    }
+  };
+
   // 메시지 전송
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
 
-    sendMessage({
+    const messageData = {
       channelId: channelId,
       writer: userName,
       content: newMessage.trim(),
       type: "TALK",
-    });
+    };
+
+    // WebSocket으로 메시지 전송
+    sendMessage(messageData);
+
+    // REST API로 메시지 저장
+    await saveChatMessage(messageData);
 
     setNewMessage("");
     inputRef.current?.focus();
