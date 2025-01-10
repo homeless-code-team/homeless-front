@@ -93,12 +93,22 @@ const Profile = () => {
         const userEmail = localStorage.getItem("userEmail");
         const userRole = localStorage.getItem("userRole");
 
+        // localStorage 업데이트
+        localStorage.setItem("userName", newNickname);
+
+        // AuthContext 업데이트
         onLogin(token, userEmail, userRole, newNickname);
+
+        // 모달 닫기 전에 상태 업데이트 완료 대기
+        await new Promise((resolve) => setTimeout(resolve, 100));
 
         setNewNickname("");
         setIsDuplicateChecked(false);
         setChangeNicknameError("");
         setShowNicknameModal(false);
+
+        // 페이지 새로고침
+        window.location.reload();
       } else {
         setChangeNicknameError(
           res.data.message || "닉네임 변경에 실패했습니다."

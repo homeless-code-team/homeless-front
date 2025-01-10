@@ -7,15 +7,13 @@ import React, {
 } from "react";
 import "./ChatRoom.css";
 import AuthContext from "../context/AuthContext.js";
-import SockJS from "sockjs-client";
-import { Client } from "@stomp/stompjs";
+import useWebSocket from "../hooks/useWebSocket.js";
 
 const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const { userName, userId } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [stompClient, setStompClient] = useState(null);
   const [isConnected, setIsConnected] = useState(false);
   const messageListRef = useRef(null);
   const inputRef = useRef(null);
@@ -33,7 +31,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       const messageWithTime = {
         id: message.id,
         text: message.content,
-        from: message.senderName,
+        from: message.writer,
         type: message.type,
         timestamp: new Date().toLocaleString("ko-KR", {
           hour: "2-digit",
@@ -48,28 +46,37 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     [scrollToBottom]
   );
 
+  const { sendMessage } = useWebSocket(channelId, handleMessageReceived);
+
   // 채팅 기록 불러오기
   const fetchChatHistory = useCallback(async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/${serverId}/${channelId}/messages`
-      );
-
-      if (!response.ok) {
-        throw new Error("채팅 기록을 불러오는데 실패했습니다.");
+      const token = localStorage.getItem("token");
+      if (!token) {
+        throw new Error("인증 토큰이 없습니다.");
       }
 
-      const data = await response.json();
-      console.log("받은 채팅 기록:", data);
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/${channelId}`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
 
-      if (data.status === "OK") {
-        const messages = data.data || [];
+      const data = await response.json();
+
+      if (data.statusCode === 200 && data.result) {
+        const messages = data.result.messages || [];
         setMessages(
           messages.map((msg) => ({
             id: msg.id,
             text: msg.content,
-            from: msg.senderName || "Unknown",
+            from: msg.writer || "Unknown",
             type: msg.type,
             timestamp: new Date(msg.timestamp).toLocaleString("ko-KR", {
               hour: "2-digit",
@@ -79,87 +86,19 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
             }),
           }))
         );
+        scrollToBottom();
+      } else {
+        throw new Error(
+          data.statusMessage || "채팅 기록을 불러오는데 실패했습니다."
+        );
       }
-      scrollToBottom();
     } catch (error) {
       console.error("채팅 기록 로딩 에러:", error);
+      setMessages([]);
     } finally {
       setIsLoading(false);
     }
-  }, [serverId, channelId, scrollToBottom]);
-
-  // WebSocket 연결 설정
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token || !channelId) return;
-
-    const socket = new SockJS(
-      `${process.env.REACT_APP_API_BASE_URL}/chat-service/ws`
-    );
-    const client = new Client({
-      webSocketFactory: () => socket,
-      connectHeaders: {
-        Authorization: `Bearer ${token}`,
-      },
-      brokerURL: `${process.env.REACT_APP_API_BASE_URL}/chat-service/ws`,
-      debug: function (str) {
-        console.log(str);
-      },
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
-    });
-
-    client.onConnect = () => {
-      setIsConnected(true);
-      console.log("WebSocket 연결 성공!");
-
-      // 채팅방 구독 (RabbitMQ의 topic exchange 사용)
-      client.subscribe(`/topic/chats.ch.${channelId}`, (message) => {
-        const receivedMessage = JSON.parse(message.body);
-        handleMessageReceived(receivedMessage);
-      });
-
-      // 입장 메시지 전송
-      client.publish({
-        destination: "/pub/chats.ch.enter",
-        body: JSON.stringify({
-          roomId: channelId,
-          senderId: userId,
-          senderName: userName,
-          type: "ENTER",
-        }),
-      });
-    };
-
-    client.onDisconnect = () => {
-      setIsConnected(false);
-      console.log("WebSocket 연결 해제!");
-    };
-
-    client.onStompError = (frame) => {
-      console.error("STOMP 에러:", frame);
-    };
-
-    client.activate();
-    setStompClient(client);
-
-    return () => {
-      if (client.connected) {
-        // 퇴장 메시지 전송
-        client.publish({
-          destination: "/pub/chats.ch.leave",
-          body: JSON.stringify({
-            roomId: channelId,
-            senderId: userId,
-            senderName: userName,
-            type: "LEAVE",
-          }),
-        });
-        client.deactivate();
-      }
-    };
-  }, [channelId, userId, userName, handleMessageReceived]);
+  }, [channelId, scrollToBottom]);
 
   // 채널 변경 시 채팅 기록 로드
   useEffect(() => {
@@ -172,17 +111,14 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   // 메시지 전송
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim() || !stompClient || !isConnected) return;
+    if (!newMessage.trim()) return;
 
-    stompClient.publish({
-      destination: "/pub/chats.ch.message",
-      body: JSON.stringify({
-        roomId: channelId,
-        senderId: userId,
-        senderName: userName,
-        content: newMessage.trim(),
-        type: "TALK",
-      }),
+    sendMessage({
+      channelId: channelId,
+      senderId: userId,
+      senderName: userName,
+      content: newMessage.trim(),
+      type: "TALK",
     });
 
     setNewMessage("");

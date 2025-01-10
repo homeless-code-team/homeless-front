@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
-const useWebSocket = (serverId, channelId, onMessageReceived) => {
+const useWebSocket = (channelId, onMessageReceived) => {
   const client = useRef(null);
   const currentSubscription = useRef(null);
 
@@ -15,20 +15,39 @@ const useWebSocket = (serverId, channelId, onMessageReceived) => {
   );
 
   useEffect(() => {
-    if (!serverId || !channelId) return;
+    if (!channelId) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
     const connect = () => {
       if (!client.current) {
+        const socket = new SockJS(
+          `${process.env.REACT_APP_API_BASE_URL}/chat-service/ws`,
+          {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }
+        );
+
         client.current = new Client({
-          webSocketFactory: () => new SockJS("http://localhost:8181/ws"),
+          webSocketFactory: () => socket,
+          connectHeaders: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
           onConnect: () => {
             if (currentSubscription.current) {
               currentSubscription.current.unsubscribe();
             }
 
             currentSubscription.current = client.current.subscribe(
-              `/topic/chats.ch.${channelId}`,
-              handleMessage
+              `/exchange/chat.exchange/chat.channel.${channelId}`,
+              handleMessage,
+              {
+                Authorization: `Bearer ${token}`,
+              }
             );
           },
           reconnectDelay: 5000,
@@ -37,14 +56,6 @@ const useWebSocket = (serverId, channelId, onMessageReceived) => {
         });
 
         client.current.activate();
-      } else if (client.current.connected) {
-        if (currentSubscription.current) {
-          currentSubscription.current.unsubscribe();
-        }
-        currentSubscription.current = client.current.subscribe(
-          `/topic/chats.ch.${channelId}`,
-          handleMessage
-        );
       }
     };
 
@@ -54,34 +65,23 @@ const useWebSocket = (serverId, channelId, onMessageReceived) => {
       if (currentSubscription.current) {
         currentSubscription.current.unsubscribe();
       }
-    };
-  }, [serverId, channelId, handleMessage]);
-
-  useEffect(() => {
-    return () => {
       if (client.current) {
         client.current.deactivate();
         client.current = null;
       }
     };
-  }, []);
+  }, [channelId, handleMessage]);
 
   const sendMessage = (message) => {
     if (client.current?.connected) {
-      console.log("WebSocket 클라이언트 상태:", {
-        connected: client.current.connected,
-        destination: `/pub/chats.ch.${channelId}`,
-        message: message,
-      });
-
+      const token = localStorage.getItem("token");
       client.current.publish({
-        destination: `/pub/chats.ch.${channelId}`,
+        destination: `/pub/chat.message.${channelId}`,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
         body: JSON.stringify(message),
       });
-
-      console.log("WebSocket 메시지 발행 완료");
-    } else {
-      console.error("WebSocket이 연결되어 있지 않음");
     }
   };
 

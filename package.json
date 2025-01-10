@@ -5,6 +5,7 @@
   "author": "Homeless Code",
   "private": true,
   "homepage": "./",
+  "proxy": "http://localhost:8181",
   "repository": {
     "type": "git",
     "url": "https://github.com/homeless-code-team/homeless-front.git"

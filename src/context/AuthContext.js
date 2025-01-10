@@ -1,52 +1,36 @@
-import React, { createContext, useState } from "react";
+import React, { createContext, useState, useCallback } from "react";
 
-const AuthContext = createContext({
-  token: null,
-  userId: null,
-  userRole: null,
-  userName: null,
-  isAuthenticated: false,
-  onLogin: () => {},
-  onLogout: () => {},
-});
+const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [auth, setAuth] = useState({
-    token: localStorage.getItem("token") || null,
-    userId: localStorage.getItem("userId") || null,
-    userRole: localStorage.getItem("userRole") || null,
-    userName: localStorage.getItem("userName") || null,
+    token: localStorage.getItem("token"),
+    userId: localStorage.getItem("userEmail"),
+    userRole: localStorage.getItem("userRole"),
+    userName: localStorage.getItem("userName"),
     isAuthenticated: !!localStorage.getItem("token"),
   });
 
-  const handleLogin = (token, id, role, name) => {
+  const onLogin = useCallback((token, email, role, name) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("userEmail", email);
+    localStorage.setItem("userRole", role);
+    localStorage.setItem("userName", name);
+
     setAuth({
       token,
-      userId: id,
+      userId: email,
       userRole: role,
       userName: name,
       isAuthenticated: true,
     });
+  }, []);
 
-    localStorage.setItem("token", token);
-    localStorage.setItem("userId", id);
-    localStorage.setItem("userRole", role);
-    localStorage.setItem("userName", name);
-  };
-
-  const handleLogout = () => {
-    if (localStorage.getItem("token")) {
-      localStorage.removeItem("token");
-    }
-    if (localStorage.getItem("userId")) {
-      localStorage.removeItem("userId");
-    }
-    if (localStorage.getItem("userRole")) {
-      localStorage.removeItem("userRole");
-    }
-    if (localStorage.getItem("userName")) {
-      localStorage.removeItem("userName");
-    }
+  const onLogout = useCallback(() => {
+    localStorage.removeItem("token");
+    localStorage.removeItem("userEmail");
+    localStorage.removeItem("userRole");
+    localStorage.removeItem("userName");
 
     setAuth({
       token: null,
@@ -55,16 +39,12 @@ export const AuthProvider = ({ children }) => {
       userName: null,
       isAuthenticated: false,
     });
-  };
-
-  const contextValue = {
-    ...auth,
-    onLogin: handleLogin,
-    onLogout: handleLogout,
-  };
+  }, []);
 
   return (
-    <AuthContext.Provider value={contextValue}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ ...auth, onLogin, onLogout }}>
+      {children}
+    </AuthContext.Provider>
   );
 };
 
