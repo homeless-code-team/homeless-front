@@ -5,21 +5,24 @@ const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [auth, setAuth] = useState({
     token: localStorage.getItem("token"),
-    userId: localStorage.getItem("userEmail"),
+    userId: localStorage.getItem("userId"),
+    userEmail: localStorage.getItem("userEmail"),
     userRole: localStorage.getItem("userRole"),
     userName: localStorage.getItem("userName"),
     isAuthenticated: !!localStorage.getItem("token"),
   });
 
-  const onLogin = useCallback((token, email, role, name) => {
+  const onLogin = useCallback((token, email, role, name, userId) => {
     localStorage.setItem("token", token);
     localStorage.setItem("userEmail", email);
     localStorage.setItem("userRole", role);
     localStorage.setItem("userName", name);
+    localStorage.setItem("userId", userId);
 
     setAuth({
       token,
-      userId: email,
+      userId,
+      userEmail: email,
       userRole: role,
       userName: name,
       isAuthenticated: true,
@@ -28,6 +31,7 @@ export const AuthProvider = ({ children }) => {
 
   const onLogout = useCallback(() => {
     localStorage.removeItem("token");
+    localStorage.removeItem("userId");
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userRole");
     localStorage.removeItem("userName");
@@ -35,6 +39,7 @@ export const AuthProvider = ({ children }) => {
     setAuth({
       token: null,
       userId: null,
+      userEmail: null,
       userRole: null,
       userName: null,
       isAuthenticated: false,

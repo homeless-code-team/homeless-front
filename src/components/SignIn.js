@@ -37,6 +37,7 @@ const SignIn = () => {
         const email = decoded.sub;
         const role = decoded.role;
         const nickname = decoded.nickname;
+        const userId = decoded.user_id;
         const profileImage = decoded.profile_image;
 
         localStorage.setItem("token", token);
@@ -45,7 +46,7 @@ const SignIn = () => {
         localStorage.setItem("userName", nickname);
         localStorage.setItem("profileImage", profileImage || "");
 
-        onLogin(token, email, role, nickname, profileImage);
+        onLogin(token, email, role, nickname, userId);
         navigate("/");
       } else {
         setLoginError(res.data.message || "로그인에 실패했습니다.");
