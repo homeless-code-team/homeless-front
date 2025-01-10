@@ -10,7 +10,7 @@ import AuthContext from "../context/AuthContext.js";
 import useWebSocket from "../hooks/useWebSocket.js";
 
 const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
-  const { userName, userId } = useContext(AuthContext);
+  const { userName, userEmail } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
@@ -29,8 +29,9 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     (message) => {
       const messageWithTime = {
         id: message.id,
-        text: message.content,
-        from: message.writer || "Unknown",
+        content: message.content,
+        from: message.writer,
+        email: message.email,
         type: message.type,
         timestamp: new Date().toLocaleString("ko-KR", {
           hour: "2-digit",
@@ -74,22 +75,30 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       );
 
       const data = await response.json();
+      console.log("채팅 기록 응답:", data); // 응답 데이터 구조 확인
 
       if (data.statusCode === 200 && data.result) {
         const messages = data.result.messages || [];
+        console.log("API 응답 메시지:", messages); // API 응답 구조 확인
+
         setMessages(
-          messages.map((msg) => ({
-            id: msg.id,
-            text: msg.content,
-            from: msg.writer || "Unknown",
-            type: msg.type,
-            timestamp: new Date(msg.timestamp).toLocaleString("ko-KR", {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: true,
-            }),
-          }))
+          messages.map((msg) => {
+            const mappedMessage = {
+              id: msg.id,
+              from: msg.writer,
+              email: msg.email,
+              content: msg.text || msg.content, // text나 content 필드 확인
+              type: msg.messageType || msg.type, // messageType이나 type 필드 확인
+              timestamp: new Date(msg.timestamp).toLocaleString("ko-KR", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true,
+              }),
+            };
+            console.log("매핑된 메시지:", mappedMessage);
+            return mappedMessage;
+          })
         );
         scrollToBottom();
       } else {
@@ -113,6 +122,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   }, [channelId, fetchChatHistory]);
 
+  // 메시지 DB 저장
   const saveChatMessage = async (messageData) => {
     try {
       const token = localStorage.getItem("token");
@@ -215,7 +225,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                       </span>
                       <span className="message-time">{message.timestamp}</span>
                     </div>
-                    <div className="message-content">{message.text}</div>
+                    <div className="message-content">{message.content}</div>
                   </div>
                 </div>
               ))
