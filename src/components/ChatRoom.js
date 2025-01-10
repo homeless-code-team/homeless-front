@@ -39,8 +39,14 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
           hour12: true,
         }),
       };
-      setMessages((prev) => [...prev, messageWithTime]);
-      scrollToBottom();
+      setMessages((prev) => {
+        const newMessages = [...prev, messageWithTime];
+        // 상태 업데이트 후 스크롤 실행을 위해 setTimeout 사용
+        setTimeout(() => {
+          scrollToBottom();
+        }, 0);
+        return newMessages;
+      });
     },
     [scrollToBottom]
   );
@@ -160,6 +166,11 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
 
     setNewMessage("");
     inputRef.current?.focus();
+
+    // 메시지 전송 후 스크롤
+    setTimeout(() => {
+      scrollToBottom();
+    }, 0);
   };
 
   // 엔터키 처리
