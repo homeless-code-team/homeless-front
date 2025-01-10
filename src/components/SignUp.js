@@ -11,12 +11,12 @@ const SignUp = () => {
   const [authCode, setAuthCode] = useState("");
   const [generatedAuthCode, setGeneratedAuthCode] = useState("");
   const [countdown, setCountdown] = useState(0);
-  const [showAlert, setShowAlert] = useState(false);
-  const [isEmailValid, setIsEmailValid] = useState(false);
-  const [isNicknameValid, setIsNicknameValid] = useState(false);
-  const [isPasswordValid, setIsPasswordValid] = useState(false);
-  const [isAuthCodeValid, setIsAuthCodeValid] = useState(false);
-  const [authCodeSent, setAuthCodeSent] = useState(false);
+  const [showAlert, setShowAlert] = useState(true);
+  const [isEmailValid, setIsEmailValid] = useState(true);
+  const [isNicknameValid, setIsNicknameValid] = useState(true);
+  const [isPasswordValid, setIsPasswordValid] = useState(true);
+  const [isAuthCodeValid, setIsAuthCodeValid] = useState(true);
+  const [authCodeSent, setAuthCodeSent] = useState(true);
   const [emailFeedback, setEmailFeedback] = useState("");
   const [authCodeFeedback, setAuthCodeFeedback] = useState("");
   const [nicknameFeedback, setNicknameFeedback] = useState("");
@@ -113,13 +113,14 @@ const SignUp = () => {
       setShowAlert(true);
       setTimeout(() => setShowAlert(false), 2000);
       axios
-        .post(`${API_BASE_URL}/send-auth-code`, { email })
+        .post(`${API_BASE_URL}/user-service/api/v1/users/confirm`, { email })
         .then((response) => {
-          setGeneratedAuthCode(response.data.result.authCode);
-          console.log(response.data.result.authCode);
-          setAuthCodeSent(true);
-          setAuthCodeFeedback("인증 코드가 이메일로 전송되었습니다.");
-          setCountdown(180);
+          if (response.status == 200) {
+            console.log(response.status);
+            setAuthCodeSent(true);
+            setAuthCodeFeedback("인증 코드가 이메일로 전송되었습니다.");
+            setCountdown(180);
+          }
         })
         .catch((error) => {
           setAuthCodeFeedback("이메일 전송에 실패했습니다. 다시 시도해주세요.");
@@ -127,15 +128,24 @@ const SignUp = () => {
         });
     }
   };
-
-  const handleVerifyAuthCode = () => {
-    if (authCode === generatedAuthCode) {
-      setAuthCodeFeedback("인증 코드가 확인되었습니다.");
-      setIsAuthCodeValid(true);
-      setCountdown(0);
-    } else {
-      setAuthCodeFeedback("인증 코드가 올바르지 않습니다.");
-      setIsAuthCodeValid(false);
+  const handleVerifyAuthCode = async (e) => {
+    e.preventDefault();
+    try {
+      const res = await axios.get(
+        `${API_BASE_URL}/user-service/api/v1/users/confirm`,
+        {
+          params: {
+            email,
+            token: authCode,
+          },
+        }
+      );
+      if (res.data.status === 200) {
+        setIsAuthCodeValid(true);
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.statusMessage || "비밀번호를 찾을 수 없습니다.";
     }
   };
 
@@ -144,7 +154,7 @@ const SignUp = () => {
 
     if (isEmailValid && isNicknameValid && isPasswordValid && isAuthCodeValid) {
       axios
-        .post(`${API_BASE_URL}/sign-up`, {
+        .post(`${API_BASE_URL}/user-service/api/v1/users/sign-up`, {
           email,
           nickname,
           password,

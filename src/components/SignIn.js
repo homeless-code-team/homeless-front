@@ -1,9 +1,11 @@
 import React, { useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import AuthContext from "../context/AuthContext.js";
-import { jwtDecode } from "jwt-decode";
+import { jwtDecode } from "jwt-decode"; // 올바른 jwtDecode 임포트
 import axios from "axios";
 import "./SignIn.css";
+import googleImage from "../asset/google.png"; // 이미지 경로
+import githubImage from "../asset/github.png"; // 이미지 경로
 
 const API_BASE_URL = "http://localhost:8181";
 
@@ -15,23 +17,24 @@ const SignIn = () => {
   const navigate = useNavigate();
   const { onLogin } = useContext(AuthContext);
 
+  // 일반 로그인 처리
   const handleLogin = async (e) => {
     e.preventDefault();
     setIsLoading(true);
     setLoginError("");
 
     try {
-      const res = await axios.post(`${API_BASE_URL}/user/sign-in`, {
-        email,
-        password,
-      });
+      const res = await axios.post(
+        `${API_BASE_URL}/user-service/api/v1/users/sign-in`,
+        {
+          email,
+          password,
+        }
+      );
 
       const token = res.data.result.token;
-      const id = jwtDecode(token).sub;
-      const role = jwtDecode(token).role;
-      const name = jwtDecode(token).name;
-
-      onLogin(token, id, role, name);
+      const decoded = jwtDecode(token);
+      onLogin(token, decoded.sub, decoded.role, decoded.name);
     } catch (error) {
       const errorMessage =
         error.response?.data?.statusMessage || "비밀번호를 찾을 수 없습니다.";
@@ -41,19 +44,35 @@ const SignIn = () => {
     }
   };
 
-  const handleTempLogin = () => {
-    const tempToken = "temp-token";
-    const tempId = "testId@test.com";
-    const tempRole = "ROLE_USER";
-    const tempName = "테스트계정";
+  // OAuth 로그인 처리
+  const oauthLogin = async (provider) => {
+    try {
+      setIsLoading(true);
+      setLoginError("");
 
-    // localStorage에 임시 데이터 저장
-    localStorage.setItem("token", tempToken);
-    localStorage.setItem("userId", tempId);
-    localStorage.setItem("userRole", tempRole);
-    localStorage.setItem("userName", tempName);
+      const res = await axios.get(
+        `${API_BASE_URL}/user-service/api/v1/users/o-auth`,
+        {
+          params: {
+            provider,
+          },
+        }
+      );
 
-    onLogin(tempToken, tempId, tempRole, tempName);
+      if (res.data && res.data.result) {
+        const token = res.data.result.token;
+        const decoded = jwtDecode(token);
+        onLogin(token, decoded.sub, decoded.role, decoded.nickname);
+      } else {
+        throw new Error("유효하지 않은 응답입니다.");
+      }
+    } catch (error) {
+      const errorMessage =
+        error.response?.data?.statusMessage || "서버 내부 오류가 발생했습니다.";
+      setLoginError(errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -90,24 +109,46 @@ const SignIn = () => {
           <button type="submit" className="signin-button" disabled={isLoading}>
             {isLoading ? "로그인 중..." : "로그인"}
           </button>
+        </form>
+
+        {/* OAuth 로그인 버튼 */}
+        <div className="oauth-buttons">
+          <button
+            onClick={() => oauthLogin("google")}
+            className="oauth-button"
+            style={{
+              backgroundImage: `url(${googleImage})`,
+              backgroundSize: "contain",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center",
+            }}
+          >
+            <span style={{ visibility: "hidden" }}>Google Login</span>
+          </button>
+          <button
+            onClick={() => oauthLogin("github")}
+            className="oauth-button"
+            style={{
+              backgroundImage: `url(${githubImage})`,
+              backgroundSize: "contain",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center",
+            }}
+          >
+            <span style={{ visibility: "hidden" }}>GitHub Login</span>
+          </button>
+        </div>
+
+        <div className="signin-footer">
+          <span>계정이 필요한가요?</span>
           <button
             type="button"
-            className="temp-login-button"
-            onClick={handleTempLogin}
+            className="signup-link"
+            onClick={() => navigate("/sign-up")}
           >
-            임시 로그인
+            가입하기
           </button>
-          <div className="signin-footer">
-            <span>계정이 필요한가요?</span>
-            <button
-              type="button"
-              className="signup-link"
-              onClick={() => navigate("/sign-up")}
-            >
-              가입하기
-            </button>
-          </div>
-        </form>
+        </div>
       </div>
     </div>
   );
