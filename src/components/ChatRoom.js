@@ -141,8 +141,8 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
           body: JSON.stringify({
             channelId: channelId,
             writer: messageData.writer,
+            email: userEmail,
             content: messageData.content,
-            type: messageData.type,
           }),
         }
       );
