@@ -75,7 +75,7 @@ const ServerList = React.memo(
                 className="server-image"
               />
             ) : (
-              server.serverImg
+              server.title
             )}
           </div>
         ))}
