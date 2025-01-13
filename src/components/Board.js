@@ -174,9 +174,9 @@ function Board({ serverId, boardId, boardTitle, serverRole }) {
               handleContextMenu(e, post); // 우클릭 시 호출할 함수
             }}
           >
-            <h3>{post.title}</h3>
-            <p>{post.content}</p>
-            <small>작성자: {post.writer}</small>
+            <h3 className="post-title">{post.title}</h3>
+            <p className="board-content">{post.content}</p>
+            <small className="post-writer">작성자: {post.writer}</small>
           </div>
         ))}
       </div>

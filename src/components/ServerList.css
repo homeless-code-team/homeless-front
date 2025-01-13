@@ -4,11 +4,13 @@
   flex-direction: column;
   align-items: center;
   gap: 12px;
+  overflow-y: auto;
+  max-height: 100%;
 }
 
 .server-item {
-  width: 48px;
-  height: 48px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background-color: #313338;
   color: #dcddde;
@@ -18,11 +20,12 @@
   cursor: pointer;
   transition: all 0.2s ease;
   position: relative;
-  padding: 0 8px;
   overflow: hidden;
   white-space: nowrap;
   text-overflow: ellipsis;
   font-size: 13px;
+  margin-top: 5px;
+  margin-bottom: 15px;
 }
 
 .server-item:hover {
@@ -46,8 +49,8 @@
 }
 
 .dm-button {
-  width: 48px;
-  height: 48px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background-color: #36393f;
   display: flex;
@@ -57,6 +60,7 @@
   cursor: pointer;
   color: #96989d;
   transition: all 0.2s;
+  flex-shrink: 0; /* 추가된 부분 */
 }
 
 .dm-button:hover {
@@ -80,8 +84,8 @@
 }
 
 .logout-button {
-  width: 48px;
-  height: 48px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background-color: #36393f;
   border: none;
@@ -100,8 +104,8 @@
 }
 
 .profile-button {
-  width: 48px;
-  height: 48px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background-color: #36393f;
   border: none;
@@ -189,7 +193,6 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 50%;
 }
 
 .context-menu {
@@ -215,4 +218,12 @@
 
 .context-menu button:hover {
   background-color: red;
+}
+.servers {
+  z-index: 0;
+}
+.server-list-footer {
+  position: sticky;
+  bottom: 0;
+  background-color: #1e1f22;
 }

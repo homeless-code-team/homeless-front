@@ -42,16 +42,19 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (isAuthenticated && token) {
-      getServerList();
+      getServerList(0, 11);
     }
   }, [isAuthenticated]); // isAuthenticated가 변경될 때마다 실행
 
-  const getServerList = async () => {
-    const res = await axios.get("http://localhost:8181/server/servers", {
-      headers: {
-        Authorization: `Bearer ${localStorage.getItem("token")}`,
-      },
-    });
+  const getServerList = async (page, size) => {
+    const res = await axios.get(
+      `${process.env.REACT_APP_API_BASE_URL}/server/servers?page=${page}&size=${size}`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
     console.log("res =====================: ", res);
     setServerList(res.data.result);
   };
@@ -64,9 +67,11 @@ function App() {
       setIsDMOpen(false);
       setServerRole(userRole);
       setServerTag(serverTag);
+      setSelectedBoard(null);
+      setSelectedChannel(null);
 
       const res = await axios.get(
-        `http://localhost:8181/server/channels?id=${serverId}`,
+        `${process.env.REACT_APP_API_BASE_URL}/server/channels?id=${serverId}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -143,11 +148,11 @@ function App() {
                     <>
                       <ServerList
                         serverList={serverList}
+                        setServerList={setServerList}
                         onSelectServer={handleSelectServer}
                         selectedServer={selectedServer}
                         onOpenDM={onOpenDM}
                         onRefreshServers={getServerList} // 서버 목록을 가져오는 함수
-                        userList={userList}
                       />
                       <div className="app-content">
                         <div className="content-wrapper">
