@@ -29,6 +29,8 @@ const ChatRoomList = ({
   const [newBoardTag, setNewBoardTag] = useState("");
   const [editBaordId, setEditBoardId] = useState("");
   const [editBoardTitle, setEditBoardTitle] = useState("");
+  const [showBoardEditModal, setShowBoardEditModal] = useState(false);
+  const [editBoardTag, setEditBoardTag] = useState("");
 
   const userEmail = localStorage.getItem("userEmail");
 
@@ -176,8 +178,6 @@ const ChatRoomList = ({
 
   // 게시판 삭제
   const handleBoardDelete = async (boardId) => {
-    console.log("d2d2d2d22d2d", boardId);
-
     try {
       const result = await Swal.fire({
         title: "게시판 삭제",
@@ -203,6 +203,48 @@ const ChatRoomList = ({
           await handleSelectServer(serverId, serverName, serverRole, serverTag);
           setEditBoardId("");
           setEditBoardTitle("");
+        }
+      }
+    } catch (error) {
+      console.error("게시판 생성 중 오류 발생:", error);
+      Swal.fire("오류 발생", "게시판 삭제 중 문제가 발생했습니다.", "error");
+    }
+  };
+
+  const handleBoardEdit = async () => {
+    try {
+      const result = await Swal.fire({
+        title: "게시판 수정",
+        text: "정말로 이 게시판을 수정하시겠습니까?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "수정",
+        cancelButtonText: "취소",
+      });
+
+      const data = new FormData();
+      data.append("boardTitle", editBoardTitle);
+      data.append("id", editBaordId);
+      data.append("tag", editBoardTag);
+      data.append("serverId", serverId);
+      if (result.isConfirmed) {
+        const res = await axios.put(
+          `${process.env.REACT_APP_API_BASE_URL}/server/boardList`,
+          data,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+        if (res.status === 200) {
+          await handleSelectServer(serverId, serverName, serverRole, serverTag);
+          setShowBoardEditModal(false);
+          setEditBoardId("");
+          setEditBoardTitle("");
+          setEditBoardTag("");
         }
       }
     } catch (error) {
@@ -255,14 +297,14 @@ const ChatRoomList = ({
 
                 {selectedBoard === board.id &&
                   (serverRole === "OWNER" || serverRole === "MANAGER") && (
-                    <>
+                    <div className="board-actions">
                       <span
                         className="channel-settings"
                         onClick={(e) => {
                           e.stopPropagation();
-                          setShowEditModal(true);
+                          setShowBoardEditModal(true);
                           setEditBoardId(board.id);
-                          setEditBoardTitle(board.name);
+                          setEditBoardTitle(board.boardTitle);
                         }}
                       >
                         ⚙️
@@ -276,7 +318,7 @@ const ChatRoomList = ({
                       >
                         🗑️
                       </span>
-                    </>
+                    </div>
                   )}
               </div>
             </div>
@@ -400,6 +442,37 @@ const ChatRoomList = ({
             <div className="modal-buttons">
               <button onClick={handleCreateBoard}>생성</button>
               <button onClick={() => setShowBoardModal(false)}>취소</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showBoardEditModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>게시판 이름 수정</h3>
+            <input
+              type="text"
+              value={editBoardTitle}
+              onChange={(e) => setEditBoardTitle(e.target.value)}
+              placeholder="게시판 이름을 입력하세요"
+            />
+            <input
+              type="text"
+              value={editBoardTag}
+              onChange={(e) => setEditBoardTag(e.target.value)}
+              placeholder="게시판 태그을 입력하세요"
+            />
+            <div className="modal-buttons">
+              <button onClick={handleBoardEdit}>수정</button>
+              <button
+                onClick={() => {
+                  setShowBoardEditModal(false);
+                  setEditBoardId("");
+                  setEditBoardTitle(null);
+                }}
+              >
+                취소
+              </button>
             </div>
           </div>
         </div>
