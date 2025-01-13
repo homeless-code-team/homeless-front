@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from "react";
 import axios from "axios";
 import styles from "./SignUp.module.css";
 import { useNavigate } from "react-router-dom";
+import { FcOk } from "react-icons/fc";
 
 const SignUp = () => {
   const [email, setEmail] = useState("");
@@ -11,7 +12,7 @@ const SignUp = () => {
   const [authCode, setAuthCode] = useState("");
   const [generatedAuthCode, setGeneratedAuthCode] = useState("");
   const [countdown, setCountdown] = useState(0);
-  const [showAlert, setShowAlert] = useState(true);
+  const [showAlert, setShowAlert] = useState(false);
   const [isEmailValid, setIsEmailValid] = useState(true);
   const [isNicknameValid, setIsNicknameValid] = useState(true);
   const [isPasswordValid, setIsPasswordValid] = useState(true);
@@ -108,6 +109,7 @@ const SignUp = () => {
     setAuthCode(authCodeValue);
   };
 
+  // 인증이메일 전송 요청
   const handleSendAuthCode = () => {
     if (isEmailValid) {
       setShowAlert(true);
@@ -128,6 +130,7 @@ const SignUp = () => {
         });
     }
   };
+  // 이메일 인증번호 확인요청
   const handleVerifyAuthCode = async (e) => {
     e.preventDefault();
     try {
@@ -149,24 +152,48 @@ const SignUp = () => {
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // 유효성 검사
     if (isEmailValid && isNicknameValid && isPasswordValid && isAuthCodeValid) {
-      axios
-        .post(`${API_BASE_URL}/user-service/api/v1/users/sign-up`, {
-          email,
-          nickname,
-          password,
-          authCode,
-        })
-        .then((response) => {
-          alert("회원가입 성공!");
-          navigate("/");
-        })
-        .catch((error) => {
-          alert("회원가입 실패!");
-        });
+      try {
+        const formData = new FormData();
+        formData.append("email", email);
+        formData.append("nickname", nickname);
+        formData.append("password", password);
+
+        // 비동기 요청
+        const res = await axios.post(
+          `${API_BASE_URL}/user-service/api/v1/users/sign-up`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        // 상태 코드 확인 및 처리
+        if (res.status === 200) {
+          alert("회원가입이 성공적으로 완료되었습니다!");
+          navigate("/"); // 메인 페이지로 이동
+        } else {
+          console.error("회원가입 실패:", res.data.message);
+          alert(`회원가입 실패: ${res.data.message}`);
+        }
+      } catch (error) {
+        // 에러 처리
+        if (error.response) {
+          console.error("서버 에러:", error.response.data.message);
+          alert(`서버 에러: ${error.response.data.message}`);
+        } else {
+          console.error("요청 실패:", error.message);
+          alert("요청 처리에 실패했습니다. 네트워크 상태를 확인하세요.");
+        }
+      }
+    } else {
+      alert("입력값을 확인해주세요. 모든 필드가 유효해야 합니다.");
     }
   };
 

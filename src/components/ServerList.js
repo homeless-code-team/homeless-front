@@ -28,7 +28,29 @@ const ServerList = React.memo(
       serverId: null,
     });
 
-    const handleLogout = useCallback(async () => {
+    const handleLogout = () => {
+      handleLogoutelctron();
+      handleLogoutBack();
+    };
+    const handleLogoutBack = async () => {
+      const token = localStorage.getItem(token);
+      try {
+        const res = await axios.delete(
+          `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            withCredentials: true, // 쿠키 포함
+          }
+        );
+      } catch (error) {
+        console.error("Data fetch error:", error);
+      }
+    };
+
+    const handleLogoutelctron = useCallback(async () => {
       try {
         if (!onLogout) {
           console.error("Logout function not available");

@@ -22,24 +22,15 @@ const SignIn = () => {
     e.preventDefault();
     setIsLoading(true);
     setLoginError("");
-
     try {
       const res = await axios.post(
         `${API_BASE_URL}/user-service/api/v1/users/sign-in`,
+        { email, password },
         {
-          email,
-          password,
-        }
-      );
-
-      const token = res.data.result.token;
-      const decoded = jwtDecode(token);
-      onLogin(token, decoded.sub, decoded.role, decoded.name);
-      const res = await axios.post(
-        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/sign-in`,
-        {
-          email,
-          password,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          withCredentials: true, // 쿠키 포함
         }
       );
 

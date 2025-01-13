@@ -113,16 +113,40 @@
 
 .avatar-circle {
   width: 80px;
+  /* 원의 너비 */
   height: 80px;
+  /* 원의 높이 */
   border-radius: 50%;
+  /* 원형 */
   background-color: #7289da;
+  /* 배경색 */
   color: white;
+  /* 텍스트 색상 */
   display: flex;
+  /* 내용 중앙 정렬 */
   align-items: center;
+  /* 세로 중앙 정렬 */
   justify-content: center;
+  /* 가로 중앙 정렬 */
   font-size: 32px;
+  /* 텍스트 크기 */
   font-weight: 600;
+  /* 텍스트 굵기 */
+  overflow: hidden;
+  /* 원 밖으로 삐져나온 이미지 숨기기 */
 }
+
+.avatar-circle img {
+  width: 100%;
+  /* 원 크기에 맞게 조정 */
+  height: 100%;
+  /* 원 크기에 맞게 조정 */
+  object-fit: cover;
+  /* 이미지 비율 유지하며 원에 꽉 채우기 */
+  border-radius: 50%;
+  /* 이미지도 원형으로 만들기 */
+}
+
 
 .profile-info {
   display: flex;
