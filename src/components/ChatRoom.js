@@ -8,12 +8,15 @@ import React, {
 import "./ChatRoom.css";
 import AuthContext from "../context/AuthContext.js";
 import useWebSocket from "../hooks/useWebSocket.js";
+import UserProfilePopup from "./UserProfilePopup.js";
 
 const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const { userName, userEmail } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
   const messageListRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -215,7 +218,17 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
             ) : (
               messages.map((message, index) => (
                 <div key={message.id || index} className="message-item">
-                  <div className="message-avatar">
+                  <div
+                    className="message-avatar"
+                    onClick={() => {
+                      setSelectedUser({
+                        name: message.from,
+                        email: message.email,
+                      });
+                      setShowProfilePopup(true);
+                    }}
+                    style={{ cursor: "pointer" }}
+                  >
                     {message.from?.charAt(0).toUpperCase()}
                   </div>
                   <div className="message-content-wrapper">
@@ -248,6 +261,13 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
               />
             </form>
           </div>
+
+          {showProfilePopup && selectedUser && (
+            <UserProfilePopup
+              user={selectedUser}
+              onClose={() => setShowProfilePopup(false)}
+            />
+          )}
         </>
       ) : (
         <div className="no-messages">친구와 대화해보세요!</div>
