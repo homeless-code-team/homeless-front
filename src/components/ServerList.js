@@ -56,35 +56,40 @@ const ServerList = React.memo(
         >
           <FaUserFriends size={24} />
         </div>
+
         <div className="server-separator"></div>
-        {serverList?.map((server) => (
-          <div
-            key={server.id}
-            className={`server-item ${
-              selectedServer === server.id ? "selected" : ""
-            }`}
-            onClick={() =>
-              onSelectServer(server.id, server.title, server.role, server.tag)
-            }
-            onContextMenu={(e) => handleContextMenu(e, server)}
-          >
-            {server.serverImg ? (
-              <img
-                src={server.serverImg}
-                alt={"업따"}
-                className="server-image"
-              />
-            ) : (
-              server.title
-            )}
-          </div>
-        ))}
-        <div>
-          <div
-            className="server-item create-server"
-            onClick={handleCreateServer}
-          >
-            +
+        <div className="servers">
+          {serverList?.map((server) => (
+            <div
+              key={server.id}
+              className={`server-item ${
+                selectedServer === server.id ? "selected" : ""
+              }`}
+              onClick={() =>
+                onSelectServer(server.id, server.title, server.role, server.tag)
+              }
+              onContextMenu={(e) => handleContextMenu(e, server)}
+            >
+              {server.serverImg ? (
+                <img
+                  src={server.serverImg}
+                  alt={"업따"}
+                  className="server-image"
+                  style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                />
+              ) : (
+                server.title
+              )}
+            </div>
+          ))}
+
+          <div>
+            <div
+              className="server-item create-server"
+              onClick={handleCreateServer}
+            >
+              +
+            </div>
           </div>
         </div>
         {isModalOpen && (
@@ -159,7 +164,7 @@ const ServerList = React.memo(
             )}
           </div>
         )}
-        <div style={{ marginTop: "auto" }}>
+        <div className="server-list-footer" style={{ marginTop: "auto" }}>
           <div className="server-separator"></div>
           <button
             className="profile-button"
