@@ -67,7 +67,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       }
 
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/${channelId}`,
+        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/ch/${channelId}`,
         {
           method: "GET",
           headers: {
@@ -78,12 +78,11 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       );
 
       const data = await response.json();
-      console.log("채팅 기록 응답:", data); // 응답 데이터 구조 확인
+      console.log("채팅 기록 응답 데이터 구조:", data);
+      console.log("채팅 기록 messages:", data.result?.messages);
 
       if (data.statusCode === 200 && data.result) {
         const messages = data.result.messages || [];
-        console.log("API 응답 메시지:", messages); // API 응답 구조 확인
-
         setMessages(
           messages.map((msg) => {
             const mappedMessage = {
@@ -104,14 +103,9 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
           })
         );
         scrollToBottom();
-      } else {
-        throw new Error(
-          data.statusMessage || "채팅 기록을 불러오는데 실패했습니다."
-        );
       }
     } catch (error) {
       console.error("채팅 기록 로딩 에러:", error);
-      setMessages([]);
     } finally {
       setIsLoading(false);
     }
@@ -126,6 +120,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   }, [channelId, fetchChatHistory]);
 
   // 메시지 DB 저장
+  // 현재 백엔드에서 토큰검증 안함.
   const saveChatMessage = async (messageData) => {
     try {
       const token = localStorage.getItem("token");
@@ -134,7 +129,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       }
 
       const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/${channelId}`,
+        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/ch/${channelId}`,
         {
           method: "POST",
           headers: {

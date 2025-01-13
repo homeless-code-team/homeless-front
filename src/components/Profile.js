@@ -38,8 +38,14 @@ const Profile = () => {
 
   const handleDuplicateNickname = async () => {
     try {
+      const email = localStorage.getItem("userEmail");
+      const params = new URLSearchParams({
+        email: email,
+        nickname: newNickname,
+      });
+
       const res = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/duplicate?nickname=${newNickname}`,
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/duplicate?${params}`,
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
