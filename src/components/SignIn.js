@@ -62,12 +62,14 @@ const SignIn = () => {
   };
 
   const handleTempLogin = () => {
+    // const id = "3cc4dc0d-ca72-492f-9971-45e66a08f236";
     const tempToken = "temp-token";
     const tempId = "testId@test.com";
     const tempRole = "ROLE_USER";
     const tempName = "테스트계정";
 
     // localStorage에 임시 데이터 저장
+    // localStorage.setItem("id", id);
     localStorage.setItem("token", tempToken);
     localStorage.setItem("userId", tempId);
     localStorage.setItem("userRole", tempRole);
