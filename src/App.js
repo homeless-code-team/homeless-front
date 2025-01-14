@@ -42,13 +42,13 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (isAuthenticated && token) {
-      getServerList(0, 11);
+      getServerList();
     }
   }, [isAuthenticated]); // isAuthenticated가 변경될 때마다 실행
 
-  const getServerList = async (page, size) => {
+  const getServerList = async () => {
     const res = await axios.get(
-      `${process.env.REACT_APP_API_BASE_URL}/server/servers?page=${page}&size=${size}`,
+      `${process.env.REACT_APP_API_BASE_URL}/server/servers`,
       {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("token")}`,
