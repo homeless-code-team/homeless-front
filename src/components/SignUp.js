@@ -13,10 +13,10 @@ const SignUp = () => {
   const [generatedAuthCode, setGeneratedAuthCode] = useState("");
   const [countdown, setCountdown] = useState(0);
   const [showAlert, setShowAlert] = useState(false);
-  const [isEmailValid, setIsEmailValid] = useState(true);
-  const [isNicknameValid, setIsNicknameValid] = useState(true);
-  const [isPasswordValid, setIsPasswordValid] = useState(true);
-  const [isAuthCodeValid, setIsAuthCodeValid] = useState(true);
+  const [isEmailValid, setIsEmailValid] = useState(false);
+  const [isNicknameValid, setIsNicknameValid] = useState(false);
+  const [isPasswordValid, setIsPasswordValid] = useState(false);
+  const [isAuthCodeValid, setIsAuthCodeValid] = useState(false);
   const [authCodeSent, setAuthCodeSent] = useState(true);
   const [emailFeedback, setEmailFeedback] = useState("");
   const [authCodeFeedback, setAuthCodeFeedback] = useState("");
@@ -117,11 +117,11 @@ const SignUp = () => {
       axios
         .post(`${API_BASE_URL}/user-service/api/v1/users/confirm`, { email })
         .then((response) => {
-          if (response.status == 200) {
+          if (response.status === 200) {
             console.log(response.status);
             setAuthCodeSent(true);
             setAuthCodeFeedback("인증 코드가 이메일로 전송되었습니다.");
-            setCountdown(180);
+            setCountdown(600); // 시간을 10분으로 조정
           }
         })
         .catch((error) => {
@@ -143,8 +143,9 @@ const SignUp = () => {
           },
         }
       );
-      if (res.data.status === 200) {
+      if (res.status === 200) {
         setIsAuthCodeValid(true);
+        setAuthCodeSent(false);
       }
     } catch (error) {
       const errorMessage =
@@ -206,7 +207,7 @@ const SignUp = () => {
             Homeless Code에 오신 것을 환영합니다!
           </p>
         </div>
-
+        {/* //이메일을 인증하는 곳 */}
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
             <label htmlFor="email">이메일</label>
@@ -234,47 +235,62 @@ const SignUp = () => {
             >
               이메일 인증
             </button>
-            {showAlert ? (
+
+            {/* 이메일 인증 피드백 표시 */}
+            {showAlert && !isAuthCodeValid && (
               <div className={styles["valid-feedback"]}>
                 이메일 인증 번호를 전송 중입니다.
               </div>
-            ) : (
+            )}
+            {!showAlert && !isAuthCodeValid && (
               <div className={styles["invalid-feedback"]}>
                 {authCodeFeedback}
               </div>
             )}
           </div>
 
+          {/* // 인증 코드 입력창 및 버튼 UI 렌더링 */}
           {authCodeSent && (
             <div className={styles.formGroup}>
               <label htmlFor="auth-code">인증 코드</label>
-              <input
-                type="text"
-                id="auth-code"
-                value={authCode}
-                onChange={handleAuthCodeChange}
-                placeholder="인증 코드를 입력하세요"
-              />
-              <button
-                type="button"
-                onClick={handleVerifyAuthCode}
-                disabled={!authCode || countdown === 0}
-                className={styles.verifyButton}
-              >
-                인증 코드 확인
-              </button>
-              <span className={styles.countdown}>
-                {isAuthCodeValid
-                  ? ""
-                  : countdown > 0
-                  ? `남은 시간: ${Math.floor(countdown / 60)}분 ${
-                      countdown % 60
-                    }초`
-                  : "시간 초과! 이메일 인증을 다시 시도하세요."}
-              </span>
+              {!isAuthCodeValid ? (
+                <>
+                  <input
+                    type="text"
+                    id="auth-code"
+                    value={authCode}
+                    onChange={handleAuthCodeChange}
+                    placeholder="인증 코드를 입력하세요"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleVerifyAuthCode}
+                    disabled={!authCode || countdown === 0}
+                    className={styles.verifyButton}
+                  >
+                    인증 코드 확인
+                  </button>
+                  <span className={styles.countdown}>
+                    {countdown > 0
+                      ? `남은 시간: ${Math.floor(countdown / 60)}분 ${
+                          countdown % 60
+                        }초`
+                      : "시간 초과! 이메일 인증을 다시 시도하세요."}
+                  </span>
+                </>
+              ) : (
+                <div className={styles.authConfirmed}>
+                  <button
+                    type="button"
+                    disabled
+                    className={`${styles.verifyButton} ${styles.disabledButton}`}
+                  >
+                    인증코드 확인되었습니다.
+                  </button>
+                </div>
+              )}
             </div>
           )}
-
           <div className={styles.formGroup}>
             <label htmlFor="nickname">닉네임</label>
             <input
@@ -286,7 +302,6 @@ const SignUp = () => {
             />
             <div className={styles["invalid-feedback"]}>{nicknameFeedback}</div>
           </div>
-
           <div className={styles.formGroup}>
             <label htmlFor="password">비밀번호</label>
             <input
@@ -298,7 +313,6 @@ const SignUp = () => {
             />
             <div className={styles["invalid-feedback"]}>{passwordFeedback}</div>
           </div>
-
           <div className={styles.formGroup}>
             <label htmlFor="confirm-password">비밀번호 확인</label>
             <input
@@ -309,7 +323,6 @@ const SignUp = () => {
               placeholder="비밀번호를 다시 입력하세요"
             />
           </div>
-
           <button
             type="submit"
             id="submit-button"
@@ -322,7 +335,6 @@ const SignUp = () => {
           >
             회원가입
           </button>
-
           <div className={styles["login-link-container"]}>
             <span>이미 계정이 있으신가요?</span>
             <button

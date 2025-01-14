@@ -42,6 +42,10 @@ const Profile = () => {
   const handleProfileImageChange = async (event) => {
     const file = event.target.files[0]; // 사용자가 업로드한 파일
 
+    // 미리보기 URL 생성
+    const previewUrl = URL.createObjectURL(file);
+    setProfileImage(previewUrl); // 미리보기 이미지로 설정
+
     const formData = new FormData();
     formData.append("profileImage", file); // 파일 데이터를 FormData로 추가
 
