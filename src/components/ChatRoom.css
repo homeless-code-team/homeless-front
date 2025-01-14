@@ -325,3 +325,54 @@
   text-align: center;
   margin: 0;
 }
+
+.message-actions {
+  display: none;
+  margin-left: 10px;
+}
+
+.message-item:hover .message-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.message-actions button {
+  background: none;
+  border: none;
+  color: #96989d;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.message-actions button:hover {
+  color: #dcddde;
+}
+
+.edit-message-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.edit-message-form input {
+  flex: 1;
+  background: #40444b;
+  border: none;
+  border-radius: 4px;
+  padding: 8px;
+  color: #dcddde;
+}
+
+.edit-message-form button {
+  background: #4f545c;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.edit-message-form button:hover {
+  background: #5d6269;
+}
