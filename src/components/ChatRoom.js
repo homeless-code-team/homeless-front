@@ -35,6 +35,12 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     (message) => {
       console.log("수신된 메시지:", message); // 디버깅을 위한 로그
 
+      // 상태 메시지나 유효하지 않은 메시지는 무시
+      if (message.statusCode || !message.content || !message.writer) {
+        console.log("무시된 메시지:", message);
+        return;
+      }
+
       const messageWithTime = {
         id: message.chatId,
         content: message.content,
@@ -49,7 +55,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         }),
       };
 
-      console.log("가공된 메시지:", messageWithTime);
+      console.log("처리된 메시지:", messageWithTime);
 
       setMessages((prev) => {
         // 중복 메시지 체크
