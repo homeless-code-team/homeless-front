@@ -29,14 +29,14 @@ const ServerList = React.memo(
     });
 
     const handleLogout = () => {
-      handleLogoutelctron();
       handleLogoutBack();
+      handleLogoutelctron();
     };
     const handleLogoutBack = async () => {
-      const token = localStorage.getItem(token);
+      const token = localStorage.getItem("token");
       try {
         const res = await axios.delete(
-          `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users`,
+          `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/sign-out`,
           {
             headers: {
               "Content-Type": "application/json",

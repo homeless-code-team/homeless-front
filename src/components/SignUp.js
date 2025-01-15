@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import styles from "./SignUp.module.css";
 import { useNavigate } from "react-router-dom";
@@ -10,12 +10,13 @@ const SignUp = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [authCode, setAuthCode] = useState("");
   const [countdown, setCountdown] = useState(0);
-  const [showAlert, setShowAlert] = useState(false);
   const [isEmailValid, setIsEmailValid] = useState(false);
   const [isNicknameValid, setIsNicknameValid] = useState(false);
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [isAuthCodeValid, setIsAuthCodeValid] = useState(false);
   const [authCodeSent, setAuthCodeSent] = useState(false);
+  const [isEmailAvailable, setIsEmailAvailable] = useState(false);
+  const [isNicknameAvailable, setIsNicknameAvailable] = useState(false);
   const [emailFeedback, setEmailFeedback] = useState("");
   const [authCodeFeedback, setAuthCodeFeedback] = useState("");
   const [nicknameFeedback, setNicknameFeedback] = useState("");
@@ -23,25 +24,7 @@ const SignUp = () => {
   const navigate = useNavigate();
   const API_BASE_URL = "http://localhost:8181";
 
-  const toggleSubmitButton = useCallback(() => {
-    const submitButton = document.getElementById("submit-button");
-    if (isEmailValid && isNicknameValid && isPasswordValid && isAuthCodeValid) {
-      submitButton.disabled = false;
-    } else {
-      submitButton.disabled = true;
-    }
-  }, [isEmailValid, isNicknameValid, isPasswordValid, isAuthCodeValid]);
-
-  useEffect(() => {
-    toggleSubmitButton();
-  }, [
-    isEmailValid,
-    isNicknameValid,
-    isPasswordValid,
-    isAuthCodeValid,
-    toggleSubmitButton,
-  ]);
-
+  // 카운트다운 관리
   useEffect(() => {
     let timer;
     if (countdown > 0) {
@@ -50,6 +33,7 @@ const SignUp = () => {
     return () => clearTimeout(timer);
   }, [countdown]);
 
+  // 이메일 입력 및 유효성 검사
   const handleEmailChange = (e) => {
     const emailValue = e.target.value;
     setEmail(emailValue);
@@ -61,9 +45,11 @@ const SignUp = () => {
     } else {
       setEmailFeedback("올바른 이메일 형식이 아닙니다.");
       setIsEmailValid(false);
+      setIsEmailAvailable(false);
     }
   };
 
+  // 닉네임 입력 및 유효성 검사
   const handleNicknameChange = (e) => {
     const nicknameValue = e.target.value;
     setNickname(nicknameValue);
@@ -74,242 +60,257 @@ const SignUp = () => {
     } else {
       setNicknameFeedback("닉네임은 2~8자 사이여야 합니다.");
       setIsNicknameValid(false);
+      setIsNicknameAvailable(false);
     }
   };
 
-  const handlePasswordChange = (e) => {
-    const passwordValue = e.target.value;
-    setPassword(passwordValue);
-
-    if (passwordValue.length >= 4 && passwordValue.length <= 14) {
-      setPasswordFeedback("");
-      setIsPasswordValid(true);
-    } else {
-      setPasswordFeedback("비밀번호는 4~14자 사이여야 합니다.");
-      setIsPasswordValid(false);
-    }
-  };
-
-  const handleConfirmPasswordChange = (e) => {
-    const confirmPasswordValue = e.target.value;
-    setConfirmPassword(confirmPasswordValue);
-
-    if (confirmPasswordValue === password) {
-      setPasswordFeedback("");
-      setIsPasswordValid(true);
-    } else {
-      setPasswordFeedback("비밀번호가 일치하지 않습니다.");
-      setIsPasswordValid(false);
-    }
-  };
-
-  const handleAuthCodeChange = (e) => {
-    const authCodeValue = e.target.value;
-    setAuthCode(authCodeValue);
-  };
-
-  const handleSendAuthCode = () => {
-    if (isEmailValid) {
-      setShowAlert(true);
-      setTimeout(() => setShowAlert(false), 2000);
-      axios
-        .post(`${API_BASE_URL}/user-service/api/v1/users/confirm`, { email })
-        .then((response) => {
-          if (response.status === 200) {
-            setAuthCodeSent(true);
-            setAuthCodeFeedback("인증 코드가 이메일로 전송되었습니다.");
-            setCountdown(600);
-          }
-        })
-        .catch(() => {
-          setAuthCodeFeedback("이메일 전송에 실패했습니다. 다시 시도해주세요.");
-          setShowAlert(false);
-        });
-    }
-  };
-
-  const handleVerifyAuthCode = async (e) => {
-    e.preventDefault();
+  // 닉네임과 이메일 중복 검사
+  // 공통 중복 검사 함수
+  const handleCheckDuplicate = async (type, value) => {
     try {
-      const res = await axios.get(
+      const response = await axios.get(
+        `${API_BASE_URL}/user-service/api/v1/users/duplicate`,
+        {
+          params: { [type]: value },
+        }
+      );
+
+      // 상태 코드와 응답 데이터 기반 처리
+      if (response.status === 200 && response.data.code === 200) {
+        if (type === "email") {
+          setEmailFeedback("사용 가능한 이메일입니다.");
+          setIsEmailAvailable(true);
+        } else if (type === "nickname") {
+          setNicknameFeedback("사용 가능한 닉네임입니다.");
+          setIsNicknameAvailable(true);
+        }
+      } else if (response.data.code === 401) {
+        if (type === "email") {
+          setEmailFeedback("이미 사용 중인 이메일입니다.");
+          setIsEmailAvailable(false);
+        } else if (type === "nickname") {
+          setNicknameFeedback("이미 사용 중인 닉네임입니다.");
+          setIsNicknameAvailable(false);
+        }
+      }
+    } catch (error) {
+      // 예외 처리
+      if (error.response && error.response.data) {
+        const { code, message } = error.response.data;
+
+        if (type === "email") {
+          setEmailFeedback(`이메일 오류: ${message}`);
+          setIsEmailAvailable(false);
+        } else if (type === "nickname") {
+          setNicknameFeedback(`닉네임 오류: ${message}`);
+          setIsNicknameAvailable(false);
+        }
+      } else {
+        const genericError = "중복 확인 중 알 수 없는 오류가 발생했습니다.";
+        if (type === "email") setEmailFeedback(genericError);
+        if (type === "nickname") setNicknameFeedback(genericError);
+      }
+    }
+  };
+
+  // 이메일 중복 검사 호출
+  const handleCheckEmailDuplicate = () => {
+    handleCheckDuplicate("email", email);
+  };
+
+  // 닉네임 중복 검사 호출
+  const handleCheckNicknameDuplicate = () => {
+    handleCheckDuplicate("nickname", nickname);
+  };
+
+  // 인증 코드 발송
+  const handleSendAuthCode = async () => {
+    if (isEmailAvailable) {
+      try {
+        const response = await axios.post(
+          `${API_BASE_URL}/user-service/api/v1/users/confirm`,
+          { email }
+        );
+        if (response.data.code === 200) {
+          setAuthCodeSent(true);
+          setAuthCodeFeedback("인증 코드가 이메일로 전송되었습니다.");
+          setCountdown(600); // 10분
+        }
+      } catch {
+        setAuthCodeFeedback("이메일 전송에 실패했습니다. 다시 시도해주세요.");
+      }
+    }
+  };
+
+  // 인증 코드 확인
+  const handleVerifyAuthCode = async () => {
+    try {
+      const response = await axios.get(
         `${API_BASE_URL}/user-service/api/v1/users/confirm`,
         {
           params: { email, token: authCode },
         }
       );
-      if (res.status === 200) {
+      if (response.status === 200) {
         setIsAuthCodeValid(true);
-        setAuthCodeSent(false);
+        setAuthCodeFeedback("인증 성공!");
       }
     } catch {
       setAuthCodeFeedback("인증 코드 확인에 실패했습니다.");
     }
   };
 
+  // 회원가입 제출
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (isEmailValid && isNicknameValid && isPasswordValid && isAuthCodeValid) {
+    if (
+      isEmailValid &&
+      isNicknameValid &&
+      isPasswordValid &&
+      isAuthCodeValid &&
+      isEmailAvailable &&
+      isNicknameAvailable
+    ) {
       try {
         const formData = new FormData();
         formData.append("email", email);
         formData.append("nickname", nickname);
         formData.append("password", password);
 
-        const res = await axios.post(
+        const response = await axios.post(
           `${API_BASE_URL}/user-service/api/v1/users/sign-up`,
           formData,
-          {
-            headers: { "Content-Type": "multipart/form-data" },
-          }
+          { headers: { "Content-Type": "multipart/form-data" } }
         );
-
-        if (res.status === 200) {
+        if (response.status === 200) {
           alert("회원가입이 성공적으로 완료되었습니다!");
           navigate("/");
-        } else {
-          alert(`회원가입 실패: ${res.data.message}`);
         }
-      } catch (error) {
-        alert("서버 에러가 발생했습니다. 다시 시도해주세요.");
+      } catch {
+        alert("회원가입 중 오류가 발생했습니다. 다시 시도해주세요.");
       }
     } else {
-      alert("입력값을 확인해주세요. 모든 필드가 유효해야 합니다.");
+      alert("모든 필드를 올바르게 입력했는지 확인하세요.");
     }
   };
 
+  // 로그인 페이지로 이동
+  const handleGoToLogin = () => {
+    navigate("/");
+  };
+
+  // 렌더링
   return (
     <div className={styles.container}>
       <div className={styles.signupBox}>
-        <div className={styles.signupHeader}>
-          <h2 className={styles.title}>회원가입</h2>
-          <p className={styles.subtitle}>
-            Homeless Code에 오신 것을 환영합니다!
-          </p>
-        </div>
+        <h2 className={styles.title}>회원가입</h2>
+        <p className={styles.subtitle}>Homeless Code에 오신 것을 환영합니다!</p>
         <form onSubmit={handleSubmit}>
+          {/* 이메일 입력 */}
           <div className={styles.formGroup}>
             <label htmlFor="email">이메일</label>
-            <input
-              type="email"
-              id="email"
-              value={email}
-              onChange={handleEmailChange}
-              placeholder="이메일을 입력하세요"
-              disabled={isAuthCodeValid}
-            />
-            <div
-              className={
-                isEmailValid
-                  ? styles["valid-feedback"]
-                  : styles["invalid-feedback"]
-              }
-            >
-              {emailFeedback}
+            <div className={styles.inputGroup}>
+              <input
+                type="email"
+                id="email"
+                value={email}
+                onChange={handleEmailChange}
+                placeholder="이메일을 입력하세요"
+              />
+              <button
+                type="button"
+                onClick={handleCheckEmailDuplicate}
+                className={styles.squareButton}
+              >
+                ✔
+              </button>
             </div>
+            <div>{emailFeedback}</div>
             <button
               type="button"
               onClick={handleSendAuthCode}
-              disabled={isAuthCodeValid || !isEmailValid}
-              className={`${styles.verifyButton} ${
-                isAuthCodeValid ? styles.successButton : ""
-              }`}
+              disabled={!isEmailAvailable}
+              className={styles.mainButton}
             >
-              {isAuthCodeValid ? "이메일 인증 성공!!" : "이메일 인증"}
+              인증코드 발송
             </button>
-            {showAlert && !isAuthCodeValid && (
-              <div className={styles["valid-feedback"]}>
-                이메일 인증 번호를 전송 중입니다.
-              </div>
-            )}
-            {!showAlert && !isAuthCodeValid && (
-              <div className={styles["invalid-feedback"]}>
-                {authCodeFeedback}
-              </div>
-            )}
           </div>
+          {/* 인증 코드 입력 및 확인 */}
           {authCodeSent && (
             <div className={styles.formGroup}>
-              <label htmlFor="auth-code">인증 코드</label>
-              {!isAuthCodeValid ? (
-                <>
-                  <input
-                    type="text"
-                    id="auth-code"
-                    value={authCode}
-                    onChange={handleAuthCodeChange}
-                    placeholder="인증 코드를 입력하세요"
-                  />
-                  <button
-                    type="button"
-                    onClick={handleVerifyAuthCode}
-                    disabled={!authCode || countdown === 0}
-                    className={styles.verifyButton}
-                  >
-                    인증 코드 확인
-                  </button>
-                  {countdown > 0 && (
-                    <span className={styles.countdown}>
-                      남은 시간: {Math.floor(countdown / 60)}분 {countdown % 60}
-                      초
-                    </span>
-                  )}
-                  {countdown === 0 && (
-                    <span className={styles.timeoutMessage}>
-                      시간 초과! 이메일 인증을 다시 시도하세요.
-                    </span>
-                  )}
-                </>
+              <label htmlFor="authCode">인증 코드</label>
+              <input
+                type="text"
+                id="authCode"
+                value={authCode}
+                onChange={(e) => setAuthCode(e.target.value)}
+                placeholder="인증 코드를 입력하세요"
+              />
+              <button
+                type="button"
+                onClick={handleVerifyAuthCode}
+                disabled={!authCode}
+                className={styles.mainButton}
+              >
+                인증코드 확인
+              </button>
+              {countdown > 0 ? (
+                <span>
+                  남은 시간: {Math.floor(countdown / 60)}분 {countdown % 60}초
+                </span>
               ) : (
-                <div className={styles.authConfirmed}>
-                  <button
-                    type="button"
-                    disabled
-                    className={`${styles.verifyButton} ${styles.disabledButton}`}
-                  >
-                    인증코드 확인되었습니다.
-                  </button>
-                </div>
+                <span>시간 초과! 인증 코드를 다시 요청하세요.</span>
               )}
+              <div>{authCodeFeedback}</div>
             </div>
           )}
+          {/* 닉네임 입력 */}
           <div className={styles.formGroup}>
             <label htmlFor="nickname">닉네임</label>
-            <input
-              type="text"
-              id="nickname"
-              value={nickname}
-              onChange={handleNicknameChange}
-              placeholder="닉네임을 입력하세요"
-            />{" "}
-            <div className={styles["invalid-feedback"]}>{nicknameFeedback}</div>{" "}
-          </div>{" "}
+            <div className={styles.inputGroup}>
+              <input
+                type="text"
+                id="nickname"
+                value={nickname}
+                onChange={handleNicknameChange}
+                placeholder="닉네임을 입력하세요"
+              />
+              <button
+                type="button"
+                onClick={handleCheckNicknameDuplicate}
+                className={styles.squareButton}
+              >
+                ✔
+              </button>
+            </div>
+            <div>{nicknameFeedback}</div>
+          </div>
+          {/* 비밀번호 입력 */}
           <div className={styles.formGroup}>
-            {" "}
-            <label htmlFor="password">비밀번호</label>{" "}
+            <label htmlFor="password">비밀번호</label>
             <input
               type="password"
               id="password"
               value={password}
-              onChange={handlePasswordChange}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="비밀번호를 입력하세요"
-            />{" "}
-            <div className={styles["invalid-feedback"]}>{passwordFeedback}</div>{" "}
-          </div>{" "}
+            />
+            <div>{passwordFeedback}</div>
+          </div>
+          {/* 비밀번호 확인 */}
           <div className={styles.formGroup}>
-            {" "}
-            <label htmlFor="confirm-password">비밀번호 확인</label>{" "}
+            <label htmlFor="confirmPassword">비밀번호 확인</label>
             <input
               type="password"
-              id="confirm-password"
+              id="confirmPassword"
               value={confirmPassword}
-              onChange={handleConfirmPasswordChange}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="비밀번호를 다시 입력하세요"
-            />{" "}
-          </div>{" "}
+            />
+          </div>
+          {/* 회원가입 버튼 */}
           <button
             type="submit"
-            id="submit-button"
             disabled={
               !isEmailValid ||
               !isNicknameValid ||
@@ -317,22 +318,21 @@ const SignUp = () => {
               !isAuthCodeValid
             }
           >
+            회원가입
+          </button>
+        </form>
+        {/* 로그인 페이지로 이동 */}
+        <div className={styles.loginLink}>
+          <span>이미 계정이 있으신가요?</span>
+          <button
+            type="button"
+            onClick={handleGoToLogin}
+            className={styles.loginButton}
+          >
             {" "}
-            회원가입{" "}
+            로그인하기{" "}
           </button>{" "}
-          <div className={styles["login-link-container"]}>
-            {" "}
-            <span>이미 계정이 있으신가요?</span>{" "}
-            <button
-              type="button"
-              className={styles["login-link"]}
-              onClick={() => navigate("/")}
-            >
-              {" "}
-              로그인하기{" "}
-            </button>{" "}
-          </div>{" "}
-        </form>{" "}
+        </div>{" "}
       </div>{" "}
     </div>
   );

@@ -30,70 +30,56 @@ const SignIn = () => {
           headers: {
             "Content-Type": "application/json",
           },
-          withCredentials: true, // 쿠키 포함
+          withCredentials: true,
         }
       );
 
-      console.log("Login response:", res.data);
-
       if (res.data.status === "OK") {
         const token = res.data.data;
-        console.log("Token:", token);
-
         const decoded = jwtDecode(token);
-        const email = decoded.sub;
-        const userId = decoded.user_id;
-        const role = decoded.role;
-        const nickname = decoded.nickname;
 
-        localStorage.setItem("token", token);
-        localStorage.setItem("userEmail", email);
-        localStorage.setItem("userRole", role);
-        localStorage.setItem("userName", nickname);
+        const userInfo = {
+          token,
+          email: decoded.sub,
+          userId: decoded.user_id,
+          role: decoded.role,
+          nickname: decoded.nickname,
+        };
 
-        onLogin(token, email, role, nickname);
+        // 사용자 정보 로컬 스토리지에 저장
+        localStorage.setItem("userInfo", JSON.stringify(userInfo));
+        onLogin(token, userInfo.email, userInfo.role, userInfo.nickname);
         navigate("/");
       } else {
         setLoginError(res.data.message || "로그인에 실패했습니다.");
       }
     } catch (error) {
-      console.error("Login error:", error);
-      const errorMessage =
-        error.response?.data?.message || "로그인에 실패했습니다.";
-      setLoginError(errorMessage);
+      setLoginError(error.response?.data?.message || "로그인에 실패했습니다.");
     } finally {
       setIsLoading(false);
     }
   };
 
-  // OAuth 로그인 처리
   const oauthLogin = async (provider) => {
     try {
-      setIsLoading(true);
-      setLoginError("");
-
-      const res = await axios.get(
+      const response = await axios.get(
         `${API_BASE_URL}/user-service/api/v1/users/o-auth`,
-        {
-          params: {
-            provider,
-          },
-        }
+        { params: { provider } }
       );
+      console.log("응답 데이터:", response.data);
+      console.log("전체 응답 객체:", response);
 
-      if (res.data && res.data.result) {
-        const token = res.data.result.token;
-        const decoded = jwtDecode(token);
-        onLogin(token, decoded.sub, decoded.role, decoded.nickname);
+      if (response.data) {
+        console.log("리다이렉션 URL:", response.data);
+        // window.location.href = response.data;
+        window.open(response.data, "_blank");
+        navigate("/");
       } else {
-        throw new Error("유효하지 않은 응답입니다.");
+        alert("OAuth URL을 가져올 수 없습니다.");
       }
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.statusMessage || "서버 내부 오류가 발생했습니다.";
-      setLoginError(errorMessage);
-    } finally {
-      setIsLoading(false);
+      console.error("OAuth 로그인 요청 실패:", error);
+      alert("OAuth 요청 중 오류가 발생했습니다.");
     }
   };
 
@@ -146,18 +132,6 @@ const SignIn = () => {
             }}
           >
             <span style={{ visibility: "hidden" }}>Google Login</span>
-          </button>
-          <button
-            onClick={() => oauthLogin("github")}
-            className="oauth-button"
-            style={{
-              backgroundImage: `url(${githubImage})`,
-              backgroundSize: "contain",
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "center",
-            }}
-          >
-            <span style={{ visibility: "hidden" }}>GitHub Login</span>
           </button>
         </div>
 

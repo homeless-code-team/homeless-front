@@ -11,6 +11,8 @@ import AuthContext from "./context/AuthContext.js";
 import DirectMessage from "./components/DirectMessage.js";
 import Profile from "./components/Profile.js";
 import axios from "axios";
+import OAuthRedirectHandler from "./components/OAuthRedirectHandler.js";
+import PasswordModal from "./components/PasswordModal.js";
 
 // ProtectedRoute Component
 const ProtectedRoute = ({ element }) => {
@@ -89,7 +91,9 @@ function App() {
       <Routes>
         {!isAuthenticated ? (
           <>
+            <Route path="/oauth2/redirect" element={<OAuthRedirectHandler />} />
             <Route path="/" element={<SignIn />} />
+            <Route path="/sign-up" element={<SignUp />} />
             <Route path="/sign-up" element={<SignUp />} />
           </>
         ) : (
