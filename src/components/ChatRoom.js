@@ -33,8 +33,10 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   // 메시지 수신 처리
   const handleMessageReceived = useCallback(
     (message) => {
+      console.log("수신된 메시지:", message); // 디버깅을 위한 로그
+
       const messageWithTime = {
-        id: message.id,
+        id: message.chatId,
         content: message.content,
         from: message.writer,
         email: message.email,
@@ -46,9 +48,18 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
           hour12: true,
         }),
       };
+
+      console.log("가공된 메시지:", messageWithTime);
+
       setMessages((prev) => {
+        // 중복 메시지 체크
+        const messageExists = prev.some((msg) => msg.id === messageWithTime.id);
+        if (messageExists) {
+          console.log("중복 메시지 발견:", messageWithTime.id);
+          return prev;
+        }
+
         const newMessages = [...prev, messageWithTime];
-        // 상태 업데이트 후 스크롤 실행을 위해 setTimeout 사용
         setTimeout(() => {
           scrollToBottom();
         }, 0);
@@ -122,41 +133,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   }, [channelId, fetchChatHistory]);
 
-  // 메시지 DB 저장
-  // 현재 백엔드에서 토큰검증 안함.
-  const saveChatMessage = async (messageData) => {
-    try {
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("인증 토큰이 없습니다.");
-      }
-
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/ch/${channelId}`,
-        {
-          method: "POST",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            channelId: channelId,
-            writer: messageData.writer,
-            email: userEmail,
-            content: messageData.content,
-          }),
-        }
-      );
-
-      if (!response.ok) {
-        const errorData = await response.text();
-        throw new Error(errorData || "메시지 저장에 실패했습니다.");
-      }
-    } catch (error) {
-      console.error("메시지 저장 에러:", error);
-    }
-  };
-
   // 메시지 전송
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -165,23 +141,25 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     const messageData = {
       channelId: channelId,
       writer: userName,
+      email: userEmail, // email 추가
       content: newMessage.trim(),
       type: "TALK",
     };
 
-    // WebSocket으로 메시지 전송
-    sendMessage(messageData);
+    try {
+      // WebSocket으로 메시지 전송
+      sendMessage(messageData);
+      setNewMessage("");
+      inputRef.current?.focus();
 
-    // REST API로 메시지 저장
-    await saveChatMessage(messageData);
-
-    setNewMessage("");
-    inputRef.current?.focus();
-
-    // 메시지 전송 후 스크롤
-    setTimeout(() => {
-      scrollToBottom();
-    }, 0);
+      // 메시지 전송 후 스크롤
+      setTimeout(() => {
+        scrollToBottom();
+      }, 0);
+    } catch (error) {
+      console.error("메시지 전송 중 오류 발생:", error);
+      Swal.fire("오류 발생", "메시지 전송에 실패했습니다.", "error");
+    }
   };
 
   // 엔터키 처리
@@ -321,6 +299,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                           </button>
                           <button
                             onClick={() => handleDeleteMessage(message.id)}
+                            className="delete-button"
                           >
                             삭제
                           </button>

@@ -376,3 +376,7 @@
 .edit-message-form button:hover {
   background: #5d6269;
 }
+
+.message-actions .delete-button {
+  color: #ff0000;
+}
