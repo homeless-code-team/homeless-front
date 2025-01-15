@@ -85,7 +85,22 @@ const useWebSocket = (channelId, onMessageReceived) => {
     }
   };
 
-  return { sendMessage };
+  const deleteMessage = (chatId) => {
+    if (client.current?.connected) {
+      const token = localStorage.getItem("token");
+      client.current.publish({
+        destination: `/pub/chat.message.delete.${channelId}`,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: chatId,
+      });
+    } else {
+      console.error("WebSocket이 연결되어 있지 않습니다.");
+    }
+  };
+
+  return { sendMessage, deleteMessage };
 };
 
 export default useWebSocket;

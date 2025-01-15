@@ -33,20 +33,23 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   // 메시지 수신 처리
   const handleMessageReceived = useCallback(
     (message) => {
-      console.log("수신된 메시지:", message); // 디버깅을 위한 로그
+      console.log("수신된 메시지:", message);
 
-      // 상태 메시지나 유효하지 않은 메시지는 무시
-      if (message.statusCode || !message.content || !message.writer) {
-        console.log("무시된 메시지:", message);
+      // 삭제된 메시지 처리
+      if (message.deletedChatId) {
+        setMessages((prevMessages) =>
+          prevMessages.filter((msg) => msg.id !== message.deletedChatId)
+        );
         return;
       }
 
-      const messageWithTime = {
-        id: message.chatId,
+      // 일반 메시지 처리
+      const messageWithMeta = {
+        id: message.chatId, // chatId를 ID로 사용
         content: message.content,
-        from: message.writer,
+        writer: message.writer || "Unknown", // writer를 그대로 사용
         email: message.email,
-        type: message.type,
+        type: message.type || "TALK", // 기본 메시지 타입 설정
         timestamp: new Date().toLocaleString("ko-KR", {
           hour: "2-digit",
           minute: "2-digit",
@@ -55,27 +58,22 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         }),
       };
 
-      console.log("처리된 메시지:", messageWithTime);
-
       setMessages((prev) => {
         // 중복 메시지 체크
-        const messageExists = prev.some((msg) => msg.id === messageWithTime.id);
-        if (messageExists) {
-          console.log("중복 메시지 발견:", messageWithTime.id);
-          return prev;
+        if (prev.some((msg) => msg.id === messageWithMeta.id)) {
+          return prev; // 중복된 메시지가 있으면 상태를 변경하지 않음
         }
-
-        const newMessages = [...prev, messageWithTime];
-        setTimeout(() => {
-          scrollToBottom();
-        }, 0);
-        return newMessages;
+        // 새로운 메시지를 추가
+        return [...prev, messageWithMeta];
       });
     },
-    [scrollToBottom]
+    [serverId] // serverId를 의존성으로 추가
   );
 
-  const { sendMessage } = useWebSocket(channelId, handleMessageReceived);
+  const { sendMessage, deleteMessage } = useWebSocket(
+    channelId,
+    handleMessageReceived
+  );
 
   // 채팅 기록 불러오기
   const fetchChatHistory = useCallback(async () => {
@@ -99,7 +97,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
 
       const data = await response.json();
       console.log("채팅 기록 응답 데이터 구조:", data);
-      console.log("채팅 기록 messages:", data.result?.messages);
 
       if (data.statusCode === 200 && data.result) {
         const messages = data.result.messages || [];
@@ -107,10 +104,10 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
           messages.map((msg) => {
             const mappedMessage = {
               id: msg.id,
-              from: msg.writer,
+              writer: msg.writer,
               email: msg.email,
               content: msg.text || msg.content, // text나 content 필드 확인
-              type: msg.messageType || msg.type, // messageType이나 type 필드 확인
+              messageType: msg.messageType || msg.type, // messageType이나 type 필드 확인
               timestamp: new Date(msg.timestamp).toLocaleString("ko-KR", {
                 hour: "2-digit",
                 minute: "2-digit",
@@ -118,7 +115,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                 hour12: true,
               }),
             };
-            console.log("매핑된 메시지:", mappedMessage);
             return mappedMessage;
           })
         );
@@ -145,23 +141,37 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     if (!newMessage.trim()) return;
 
     const messageData = {
+      serverId: serverId,
       channelId: channelId,
       writer: userName,
-      email: userEmail, // email 추가
+      email: userEmail,
       content: newMessage.trim(),
-      type: "TALK",
+      messageType: "TALK",
     };
 
     try {
-      // WebSocket으로 메시지 전송
-      sendMessage(messageData);
+      console.log("전송할 메시지 데이터:", messageData);
+      const response = await sendMessage(messageData);
       setNewMessage("");
       inputRef.current?.focus();
 
+      // 서버에서 반환된 메시지 ID를 사용하여 상태 업데이트
+      if (response && response.result) {
+        const { chatId, content, writer, email } = response.result;
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: chatId,
+            content,
+            writer,
+            email,
+            timestamp: new Date().toLocaleString("ko-KR"),
+          },
+        ]);
+      }
+
       // 메시지 전송 후 스크롤
-      setTimeout(() => {
-        scrollToBottom();
-      }, 0);
+      scrollToBottom();
     } catch (error) {
       console.error("메시지 전송 중 오류 발생:", error);
       Swal.fire("오류 발생", "메시지 전송에 실패했습니다.", "error");
@@ -177,7 +187,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   };
 
   // 메시지 삭제 핸들러
-  const handleDeleteMessage = async (messageId) => {
+  const handleDeleteMessage = async (chatId) => {
     try {
       const result = await Swal.fire({
         title: "메시지 삭제",
@@ -191,25 +201,8 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       });
 
       if (result.isConfirmed) {
-        const token = localStorage.getItem("token");
-        const response = await fetch(
-          `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/message/${messageId}`,
-          {
-            method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
-
-        if (response.ok) {
-          setMessages(messages.filter((msg) => msg.id !== messageId));
-          Swal.fire("삭제 완료!", "메시지가 삭제되었습니다.", "success");
-        } else {
-          const errorData = await response.json();
-          console.error("메시지 삭제 실패:", errorData);
-          Swal.fire("삭제 실패", "메시지 삭제에 실패했습니다.", "error");
-        }
+        // WebSocket으로 삭제 요청 전송
+        deleteMessage(chatId);
       }
     } catch (error) {
       console.error("메시지 삭제 중 오류 발생:", error);
@@ -278,19 +271,19 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                     className="message-avatar"
                     onClick={() => {
                       setSelectedUser({
-                        name: message.from,
+                        name: message.writer,
                         email: message.email,
                       });
                       setShowProfilePopup(true);
                     }}
                     style={{ cursor: "pointer" }}
                   >
-                    {message.from?.charAt(0).toUpperCase()}
+                    {message.writer?.charAt(0).toUpperCase()}
                   </div>
                   <div className="message-content-wrapper">
                     <div className="message-header">
                       <span className="message-sender">
-                        {message.from || "Unknown"}
+                        {message.writer || "Unknown"}
                       </span>
                       <span className="message-time">{message.timestamp}</span>
                       {message.email === userEmail && (
