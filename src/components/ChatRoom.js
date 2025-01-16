@@ -22,7 +22,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const [editMessageContent, setEditMessageContent] = useState("");
   const messageListRef = useRef(null);
   const inputRef = useRef(null);
-  const [totalPages, setTotalPages] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(30);
@@ -109,7 +108,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
 
         if (data.statusCode === 200 && data.result) {
           const messages = data.result.messages || [];
-          setTotalPages(data.result.totalPages);
           setHasMore(data.result.currentPage < data.result.totalPages - 1);
 
           setMessages((prev) => {
@@ -212,16 +210,29 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
 
       if (response && response.result) {
         const { chatId, content, writer, email } = response.result;
-        setMessages((prev) => [
-          ...prev,
-          {
+
+        // 중복 메시지 체크 후 추가
+        setMessages((prev) => {
+          // 이미 같은 ID의 메시지가 있다면 상태 업데이트하지 않음
+          if (prev.some((msg) => msg.id === chatId)) {
+            return prev;
+          }
+
+          const newMessage = {
             id: chatId,
             content,
             writer,
             email,
-            timestamp: new Date().toLocaleString("ko-KR"),
-          },
-        ]);
+            timestamp: new Date().toLocaleString("ko-KR", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: true,
+            }),
+          };
+
+          return [...prev, newMessage];
+        });
 
         // 메시지 전송 후 스크롤을 아래로 이동
         setTimeout(() => scrollToBottom(), 100);
