@@ -29,6 +29,10 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const [showLoadMoreButton, setShowLoadMoreButton] = useState(false);
   const [showNewMessageAlert, setShowNewMessageAlert] = useState(false);
   const [latestMessage, setLatestMessage] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
 
   // 스크롤 처리
   const scrollToBottom = useCallback(() => {
@@ -329,17 +333,111 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     setShowNewMessageAlert(false);
   };
 
+  // 검색 핸들러 수정
+  const handleSearch = async (keyword) => {
+    if (!keyword.trim()) return;
+
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/search?channelId=${channelId}&keyword=${keyword}&page=0&size=20`,
+        {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+      const data = await response.json();
+      if (data.statusCode === 200 && data.result) {
+        setSearchResults(data.result.content || []);
+        setShowSearchResults(true);
+        console.log("검색 결과:", data.result.content);
+      }
+    } catch (error) {
+      console.error("검색 중 오류 발생:", error);
+      Swal.fire("오류 발생", "검색 중 문제가 발생했습니다.", "error");
+    }
+  };
+
+  // 검색 입력창 키 입력 핸들러 수정
+  const handleSearchKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleSearch(searchQuery);
+      e.preventDefault();
+    }
+  };
+
+  // 검색 결과 UI 추가 (chat-header 바로 아래에 추가)
+  {
+    showSearchResults && searchResults.length > 0 && (
+      <div className="search-results">
+        {searchResults.map((result) => (
+          <div key={result.id} className="search-result-item">
+            <div className="search-result-header">
+              <span className="search-result-writer">{result.writer}</span>
+              <span className="search-result-time">
+                {new Date(result.timestamp).toLocaleString("ko-KR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  hour12: true,
+                })}
+              </span>
+            </div>
+            <div className="search-result-content">{result.content}</div>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
+  // 검색 입력창 키 입력 핸들러 추가
+  const handleSearchInput = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // 검색 버튼 클릭 핸들러 추가
+  const handleSearchButtonClick = () => {
+    handleSearch(searchQuery);
+  };
+
   return (
     <div className="chat-room-container">
       {channelId ? (
         <>
           {!isDirectMessage && (
             <div className="chat-header">
-              <h3>{channelName}</h3>
-              <div className="header-divider"></div>
-              <p className="channel-description">
-                {channelName} 채널에 오신 것을 환영합니다
-              </p>
+              <div className="header-left">
+                <h3>{channelName}</h3>
+                <div className="header-divider"></div>
+                <p className="channel-description">
+                  {channelName} 채널에 오신 것을 환영합니다
+                </p>
+              </div>
+              <div
+                className={`search-container ${
+                  isSearchFocused ? "focused" : ""
+                }`}
+              >
+                <span
+                  className="search-icon"
+                  onClick={handleSearchButtonClick}
+                  style={{ cursor: "pointer" }}
+                >
+                  🔍
+                </span>
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder="메시지 검색"
+                  value={searchQuery}
+                  onChange={handleSearchInput}
+                  onKeyPress={handleSearchKeyPress}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => setIsSearchFocused(false)}
+                />
+              </div>
             </div>
           )}
           <div
