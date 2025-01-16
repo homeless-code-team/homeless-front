@@ -27,6 +27,8 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const [pageSize, setPageSize] = useState(30);
   const [lastMessageId, setLastMessageId] = useState(null);
   const [showLoadMoreButton, setShowLoadMoreButton] = useState(false);
+  const [showNewMessageAlert, setShowNewMessageAlert] = useState(false);
+  const [latestMessage, setLatestMessage] = useState(null);
 
   // 스크롤 처리
   const scrollToBottom = useCallback(() => {
@@ -35,17 +37,26 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   }, []);
 
+  // 스크롤이 맨 아래에 있는지 확인하는 함수 추가
+  const isScrolledToBottom = useCallback(() => {
+    if (messageListRef.current) {
+      const { scrollHeight, scrollTop, clientHeight } = messageListRef.current;
+      return Math.abs(scrollHeight - scrollTop - clientHeight) < 10;
+    }
+    return false;
+  }, []);
+
   // 메시지 수신 처리
   const handleMessageReceived = useCallback(
     (message) => {
       console.log("수신된 메시지:", message);
 
-      // 서버 응답 메시지인 경우 무시 (statusCode가 있는 경우)
       if (message.statusCode !== undefined) {
         return;
       }
 
-      // 삭제된 메시지 처리
+      const shouldScrollToBottom = isScrolledToBottom();
+
       if (message.deletedChatId) {
         setMessages((prevMessages) =>
           prevMessages.filter((msg) => msg.id !== message.deletedChatId)
@@ -53,7 +64,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         return;
       }
 
-      // 일반 메시지 처리
       const messageWithMeta = {
         id: message.chatId,
         content: message.content,
@@ -72,10 +82,21 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         if (prev.some((msg) => msg.id === messageWithMeta.id)) {
           return prev;
         }
+
+        // 스크롤이 맨 아래가 아닐 때 알림 표시
+        if (!shouldScrollToBottom) {
+          setLatestMessage(messageWithMeta);
+          setShowNewMessageAlert(true);
+          // 5초 후 알림 자동 숨김
+          setTimeout(() => setShowNewMessageAlert(false), 10000);
+        } else {
+          setTimeout(() => scrollToBottom(), 100);
+        }
+
         return [...prev, messageWithMeta];
       });
     },
-    [serverId]
+    [serverId, isScrolledToBottom, scrollToBottom]
   );
 
   const { sendMessage, deleteMessage } = useWebSocket(
@@ -310,6 +331,12 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   };
 
+  // 알림 클릭 핸들러 추가
+  const handleAlertClick = () => {
+    scrollToBottom();
+    setShowNewMessageAlert(false);
+  };
+
   return (
     <div className="chat-room-container">
       {channelId ? (
@@ -435,6 +462,17 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         </>
       ) : (
         <div className="no-messages">친구와 대화해보세요!</div>
+      )}
+      {showNewMessageAlert && latestMessage && (
+        <div className="new-message-alert" onClick={handleAlertClick}>
+          <div className="alert-avatar">
+            {latestMessage.writer?.charAt(0).toUpperCase()}
+          </div>
+          <div className="alert-content">
+            <span className="new-message-writer">{latestMessage.writer}</span>
+            <span className="new-message-preview">{latestMessage.content}</span>
+          </div>
+        </div>
       )}
     </div>
   );
