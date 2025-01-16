@@ -4,7 +4,13 @@ import axios from "axios";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
 
-export const useServerList = (onLogout, onSelectServer, onRefreshServers) => {
+export const useServerList = (
+  onLogout,
+  onSelectServer,
+  onRefreshServers,
+  setPosts,
+  setPage
+) => {
   const navigate = useNavigate();
   //   const { onLogout } = useContext(AuthContext);
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -34,6 +40,8 @@ export const useServerList = (onLogout, onSelectServer, onRefreshServers) => {
       localStorage.removeItem("userId");
       localStorage.removeItem("userRole");
       onSelectServer(null, null, null, null);
+      setPosts([]);
+      setPage(0);
 
       await onLogout();
       navigate("/");

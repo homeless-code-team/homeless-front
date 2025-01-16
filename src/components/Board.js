@@ -1,12 +1,23 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import axios from "axios";
 import "./Board.css";
 import Swal from "sweetalert2";
+import { IoSearch } from "react-icons/io5";
+import { ImEllo } from "react-icons/im";
 
-function Board({ serverId, boardId, boardTitle, serverRole }) {
-  const [showModal, setShowModal] = useState(false);
-  const [posts, setPosts] = useState([]);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+function Board({
+  serverId,
+  boardId,
+  boardTitle,
+  posts,
+  setPosts,
+  page,
+  setPage,
+  setSearchValue,
+  searchValue,
+}) {
+  // const [posts, setPosts] = useState([]);
+  // const [isModalOpen, setIsModalOpen] = useState(false);
   const [newBoardTitle, setNewBoardTitle] = useState(null);
   const [contextMenu, setContextMenu] = useState({
     visible: false,
@@ -18,32 +29,74 @@ function Board({ serverId, boardId, boardTitle, serverRole }) {
   const [editModal, setEditModal] = useState(false);
   const [editBoardId, setEditBoardId] = useState(null);
 
-  useEffect(() => {
-    if (boardId) {
-      fetchPosts();
-    }
+  // const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const observer = useRef();
+  const [showModal, setShowModal] = useState(false);
 
+  const lastPostElementRef = useCallback(
+    (node) => {
+      if (observer.current) observer.current.disconnect();
+      observer.current = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && hasMore) {
+          setPage((prevPage) => prevPage + 1);
+        }
+      });
+      if (node) observer.current.observe(node);
+    },
+    [hasMore]
+  );
+
+  useEffect(() => {
+    fetchPosts();
+  }, [boardId, page]);
+
+  useEffect(() => {
     const handleClick = () =>
       setContextMenu({ visible: false, x: 0, y: 0, serverId: null });
     document.addEventListener("click", handleClick);
     return () => document.removeEventListener("click", handleClick);
-  }, [boardId]);
+  }, []);
 
   const email = localStorage.getItem("userEmail");
 
   const fetchPosts = async () => {
+    console.log("페이지는 ? ", page);
+
+    // ?id=${boardId}&page=${page}&size=8
+    // const data = new FormData();
+    // data.append("id", boardId);
+    // data.append("page", page);
+    // data.append("size", 8);
+    // data.append("search", searchValue);
+
+    const params = {
+      id: boardId, // BoardSearchDto의 id 필드
+      page: page, // Pageable의 page
+      size: 8, // Pageable의 size
+    };
+
+    if (searchValue) {
+      params.searchName = searchValue;
+    }
+
     try {
       const response = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/server/boards?id=${boardId}`,
+        `${process.env.REACT_APP_API_BASE_URL}/server/boards`,
+
         {
+          params,
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
         }
       );
-      console.log(response);
+      console.log("asd");
 
-      setPosts(response.data.result);
+      console.log(response.data);
+
+      setPosts((prevPosts) => [...prevPosts, ...response.data.result.content]);
+      setHasMore(!response.data.result.content.last);
     } catch (error) {
       console.error("게시글을 불러오는데 실패했습니다:", error);
     }
@@ -65,8 +118,10 @@ function Board({ serverId, boardId, boardTitle, serverRole }) {
       }
     );
     if (res.status === 200) {
-      fetchPosts();
       setShowModal(false);
+      setPosts([]); // 기존 게시글 목록 초기화
+      setPage(0);
+      fetchPosts(0);
     } else {
       alert("게시글 작성중 문제가 발생했습니다.");
     }
@@ -107,8 +162,10 @@ function Board({ serverId, boardId, boardTitle, serverRole }) {
         }
       );
       if (res.status === 200) {
-        fetchPosts();
         setShowModal(false);
+        setPosts([]); // 기존 게시글 목록 초기화
+        setPage(0);
+        fetchPosts(0);
         setContextMenu({ visible: false, x: 0, y: 0, serverId: null });
       } else {
         alert("게시글 삭제중 문제가 발생했습니다.");
@@ -138,6 +195,9 @@ function Board({ serverId, boardId, boardTitle, serverRole }) {
       setEditModal(false);
       setEditModal(null);
       setNewBoardTitle(null);
+      setPosts([]); // 기존 게시글 목록 초기화
+      setPage(0);
+      fetchPosts(0);
       setContextMenu({ visible: false, x: 0, y: 0, serverId: null });
     } else {
       alert("게시글 삭제중 문제가 발생했습니다.");
@@ -148,11 +208,32 @@ function Board({ serverId, boardId, boardTitle, serverRole }) {
     }
   };
 
+  const handleSearch = () => {
+    setPosts([]);
+    setPage(0);
+    fetchPosts(0);
+  };
+
+  const handleKeyDown = (event) => {
+    if (event.key === "Enter") {
+      handleSearch();
+    }
+  };
+
   return (
     <div className="board-container">
       <div className="chat-header">
         <h3>{boardTitle}</h3>
         <div className="header-divider"></div>
+        <IoSearch />
+        <input
+          type="text"
+          className="search-input"
+          placeholder="검색"
+          value={searchValue}
+          onChange={(e) => setSearchValue(e.target.value)}
+          onKeyDown={handleKeyDown}
+        />
         <div className="header-buttons">
           <button
             className="add-post-button"
@@ -165,14 +246,15 @@ function Board({ serverId, boardId, boardTitle, serverRole }) {
 
       <div className="board-header"></div>
       <div className="posts-list">
-        {posts.map((post) => (
+        {posts.map((post, index) => (
           <div
-            key={post.id}
+            key={post.index}
             className="post-item"
             onContextMenu={(e) => {
-              e.preventDefault(); // 기본 우클릭 메뉴 방지
-              handleContextMenu(e, post); // 우클릭 시 호출할 함수
+              e.preventDefault();
+              handleContextMenu(e, post);
             }}
+            ref={posts.length === index + 1 ? lastPostElementRef : null}
           >
             <h3 className="post-title">{post.title}</h3>
             <p className="board-content">{post.content}</p>

@@ -3,6 +3,9 @@
   color: #96989d;
   width: 230px;
   background-color: #292a2d;
+  height: 100vh;
+  overflow-y: auto;
+  padding-bottom: 20px;
 }
 
 .channel-header {
@@ -206,4 +209,31 @@
 }
 .board-name {
   align-content: left;
+}
+.member-btn-div {
+  margin-top: 10px;
+}
+.member-item {
+  border: 1px solid #36393f;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+}
+.member-list-btn {
+  background-color: transparent;
+  border: none;
+  font-size: 15px; /* 버튼 크기 조정 */
+  cursor: pointer;
+  color: white;
+  padding: 8px 12px;
+}
+
+.member-list-btn:hover {
+  background-color: #36393f;
+  color: #dcddde;
+  border-radius: 5px;
 }
