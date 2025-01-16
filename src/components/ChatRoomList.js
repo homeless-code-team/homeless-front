@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import "./ChatRoomList.css";
 import axios from "axios";
 import Swal from "sweetalert2";
+import { ImEllo } from "react-icons/im";
 
 const ChatRoomList = ({
   serverId,
@@ -16,6 +17,9 @@ const ChatRoomList = ({
   boardList,
   handleSelectBoard,
   selectedBoard,
+  serverType,
+  setShowMemberModal,
+  showMemberModal,
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -31,6 +35,8 @@ const ChatRoomList = ({
   const [editBoardTitle, setEditBoardTitle] = useState("");
   const [showBoardEditModal, setShowBoardEditModal] = useState(false);
   const [editBoardTag, setEditBoardTag] = useState("");
+  const [showMembersModal, setShowMembersModal] = useState(false);
+  const [members, setMembers] = useState([]);
 
   const userEmail = localStorage.getItem("userEmail");
 
@@ -61,7 +67,13 @@ const ChatRoomList = ({
         if (res.status === 200) {
           setShowModal(false);
           setNewChannelName("");
-          await handleSelectServer(serverId, serverName, serverRole, serverTag);
+          await handleSelectServer(
+            serverId,
+            serverName,
+            serverRole,
+            serverTag,
+            serverType
+          );
         }
       } catch (error) {
         console.error("채널 생성 중 오류 발생:", error);
@@ -92,7 +104,13 @@ const ChatRoomList = ({
           setShowEditModal(false);
           setEditChannelName("");
           setEditChannelId(null);
-          await handleSelectServer(serverId, serverName, serverRole, serverTag);
+          await handleSelectServer(
+            serverId,
+            serverName,
+            serverRole,
+            serverTag,
+            serverType
+          );
         }
       } catch (error) {
         console.error("채널 수정 중 오류 발생:", error);
@@ -125,7 +143,13 @@ const ChatRoomList = ({
         );
 
         if (res.status === 200) {
-          await handleSelectServer(serverId, serverName, serverRole, serverTag);
+          await handleSelectServer(
+            serverId,
+            serverName,
+            serverRole,
+            serverTag,
+            serverType
+          );
           Swal.fire(
             "삭제 완료!",
             "채널이 성공적으로 삭제되었습니다.",
@@ -167,7 +191,13 @@ const ChatRoomList = ({
         if (res.status === 200) {
           setShowBoardModal(false);
           setNewBoardTitle("");
-          await handleSelectServer(serverId, serverName, serverRole, serverTag);
+          await handleSelectServer(
+            serverId,
+            serverName,
+            serverRole,
+            serverTag,
+            serverType
+          );
         }
       } catch (error) {
         console.error("게시판 생성 중 오류 발생:", error);
@@ -200,7 +230,13 @@ const ChatRoomList = ({
           }
         );
         if (res.status) {
-          await handleSelectServer(serverId, serverName, serverRole, serverTag);
+          await handleSelectServer(
+            serverId,
+            serverName,
+            serverRole,
+            serverTag,
+            serverType
+          );
           setEditBoardId("");
           setEditBoardTitle("");
         }
@@ -240,7 +276,13 @@ const ChatRoomList = ({
           }
         );
         if (res.status === 200) {
-          await handleSelectServer(serverId, serverName, serverRole, serverTag);
+          await handleSelectServer(
+            serverId,
+            serverName,
+            serverRole,
+            serverTag,
+            serverType
+          );
           setShowBoardEditModal(false);
           setEditBoardId("");
           setEditBoardTitle("");
@@ -261,10 +303,41 @@ const ChatRoomList = ({
     );
   }
 
+  const handleShowMembers = () => {
+    fetchMembers();
+    setShowMemberModal(true);
+  };
+
+  const fetchMembers = async () => {
+    try {
+      const response = await axios.get(
+        `${process.env.REACT_APP_API_BASE_URL}/server/userList?id=${serverId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+      console.log(response);
+
+      setMembers(response.data.result);
+    } catch (error) {
+      console.error("서버 멤버를 불러오는데 실패했습니다:", error);
+    }
+  };
+
   return (
     <div className="channel-list">
       <div className="channel-header">{serverName || "채널 목록"}</div>
       <span className="server-tag">{serverTag}</span>
+
+      {serverType !== 0 && (
+        <div className="member-btn-div">
+          <button className="member-list-btn" onClick={handleShowMembers}>
+            멤버 리스트
+          </button>
+        </div>
+      )}
       <div
         className="divider"
         onClick={() => setIsBoardListCollapsed(!isBoardListCollapsed)}
@@ -473,6 +546,30 @@ const ChatRoomList = ({
               >
                 취소
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {showMemberModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <h3>서버 멤버 목록</h3>
+
+            <ul style={{ listStyleType: "none", padding: 0 }}>
+              {members.map((member) => (
+                <li key={member.id} className="member-item">
+                  {member.profileimage ? (
+                    <img src={member.profileimage} alt="업따" />
+                  ) : (
+                    <ImEllo />
+                  )}
+                  {member.nickname}
+                </li>
+              ))}
+            </ul>
+
+            <div className="modal-buttons">
+              <button onClick={() => setShowMemberModal(false)}>닫기</button>
             </div>
           </div>
         </div>

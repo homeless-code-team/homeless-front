@@ -16,6 +16,8 @@ const ServerList = React.memo(
     onOpenDM,
     onRefreshServers,
     userList,
+    setPosts,
+    setPage,
   }) => {
     const navigate = useNavigate();
     const { onLogout } = useContext(AuthContext);
@@ -39,7 +41,13 @@ const ServerList = React.memo(
       handleCloseModal,
       setServerName,
       setServerTag,
-    } = useServerList(onLogout, onSelectServer, onRefreshServers);
+    } = useServerList(
+      onLogout,
+      onSelectServer,
+      onRefreshServers,
+      setPosts,
+      setPage
+    );
 
     useEffect(() => {
       const handleClick = () =>
@@ -66,7 +74,13 @@ const ServerList = React.memo(
                 selectedServer === server.id ? "selected" : ""
               }`}
               onClick={() =>
-                onSelectServer(server.id, server.title, server.role, server.tag)
+                onSelectServer(
+                  server.id,
+                  server.title,
+                  server.role,
+                  server.tag,
+                  server.serverType
+                )
               }
               onContextMenu={(e) => handleContextMenu(e, server)}
             >

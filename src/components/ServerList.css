@@ -61,6 +61,8 @@
   color: #96989d;
   transition: all 0.2s;
   flex-shrink: 0; /* 추가된 부분 */
+  position: sticky;
+  bottom: 0;
 }
 
 .dm-button:hover {
