@@ -25,7 +25,7 @@ const ProtectedRoute = ({ element }) => {
 };
 
 function App() {
-  const { isAuthenticated } = useContext(AuthContext);
+  const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
   const [selectedServer, setSelectedServer] = useState(null);
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [serverName, setServerName] = useState(null);
@@ -36,7 +36,27 @@ function App() {
   const [serverTag, setServerTag] = useState(null);
   const [boardList, setBoardList] = useState([]);
   const [selectedBoard, setSelectedBoard] = useState(null);
-  const [userList, setUserList] = useState([]);
+  const [posts, setPosts] = useState([]);
+  const [page, setPage] = useState(0);
+  const [searchValue, setSearchValue] = useState("");
+  const [showModal, setShowModal] = useState(false);
+  const [serverType, setServerType] = useState("");
+
+  // 로그인 상태가 변경될 때 초기화
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setSelectedServer(null);
+      setSelectedChannel(null);
+      setServerName(null);
+      setIsDMOpen(false);
+      setServerRole(null);
+      setServerTag(null);
+      setBoardList([]);
+      setSelectedBoard(null);
+      setPosts([]);
+      setPage(0);
+    }
+  }, [isAuthenticated]);
 
   // 서버별 채널 목록 정의
   useEffect(() => {
@@ -44,7 +64,7 @@ function App() {
     if (isAuthenticated && token) {
       getServerList(0, 11);
     }
-  }, [isAuthenticated]); // isAuthenticated가 변경될 때마다 실행
+  }, [isAuthenticated]);
 
   const getServerList = async (page, size) => {
     const res = await axios.get(
@@ -55,11 +75,19 @@ function App() {
         },
       }
     );
+    console.log("asdasd");
+
     console.log("res =====================: ", res);
     setServerList(res.data.result);
   };
 
-  const handleSelectServer = async (serverId, title, userRole, serverTag) => {
+  const handleSelectServer = async (
+    serverId,
+    title,
+    userRole,
+    serverTag,
+    serverType
+  ) => {
     const token = localStorage.getItem("token");
     if (serverId) {
       setSelectedServer(serverId);
@@ -67,6 +95,7 @@ function App() {
       setIsDMOpen(false);
       setServerRole(userRole);
       setServerTag(serverTag);
+      setServerType(serverType);
       setSelectedBoard(null);
       setSelectedChannel(null);
 
@@ -122,6 +151,9 @@ function App() {
     });
 
     setSelectedChannel(null);
+    setPosts([]);
+    setPage(0);
+    setSearchValue("");
   };
 
   const onOpenDM = () => {
@@ -152,7 +184,9 @@ function App() {
                         onSelectServer={handleSelectServer}
                         selectedServer={selectedServer}
                         onOpenDM={onOpenDM}
-                        onRefreshServers={getServerList} // 서버 목록을 가져오는 함수
+                        onRefreshServers={getServerList}
+                        setPosts={setPosts}
+                        setPage={setPage}
                       />
                       <div className="app-content">
                         <div className="content-wrapper">
@@ -173,6 +207,9 @@ function App() {
                               boardList={boardList}
                               handleSelectBoard={onSelectBoard}
                               selectedBoard={selectedBoard?.id}
+                              serverType={serverType}
+                              setShowMemberModal={setShowModal}
+                              showMemberModal={showModal}
                             />
                           )}
                           <div className="main-content">
@@ -181,6 +218,12 @@ function App() {
                                 serverId={selectedServer}
                                 boardId={selectedBoard?.id}
                                 boardTitle={selectedBoard?.boardTitle}
+                                posts={posts}
+                                setPosts={setPosts}
+                                page={page}
+                                setPage={setPage}
+                                searchValue={searchValue}
+                                setSearchValue={setSearchValue}
                               />
                             ) : (
                               <ChatRoom
