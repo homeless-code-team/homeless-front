@@ -22,6 +22,12 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const [editMessageContent, setEditMessageContent] = useState("");
   const messageListRef = useRef(null);
   const inputRef = useRef(null);
+  const [totalPages, setTotalPages] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(30);
+  const [lastMessageId, setLastMessageId] = useState(null);
+  const [showLoadMoreButton, setShowLoadMoreButton] = useState(false);
 
   // 스크롤 처리
   const scrollToBottom = useCallback(() => {
@@ -63,6 +69,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         if (prev.some((msg) => msg.id === messageWithMeta.id)) {
           return prev; // 중복된 메시지가 있으면 상태를 변경하지 않음
         }
+
         // 새로운 메시지를 추가
         return [...prev, messageWithMeta];
       });
@@ -76,64 +83,112 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   );
 
   // 채팅 기록 불러오기
-  const fetchChatHistory = useCallback(async () => {
-    try {
-      setIsLoading(true);
-      const token = localStorage.getItem("token");
-      if (!token) {
-        throw new Error("인증 토큰이 없습니다.");
-      }
+  const fetchChatHistory = useCallback(
+    async (page = 0, size = 30, lastId = null) => {
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("인증 토큰이 없습니다.");
+        }
 
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/ch/${channelId}`,
-        {
+        let url = `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/ch/${channelId}?page=${page}&size=${size}`;
+        if (lastId) {
+          url += `&lastId=${lastId}`;
+        }
+
+        const response = await fetch(url, {
           method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
           },
+        });
+
+        const data = await response.json();
+
+        if (data.statusCode === 200 && data.result) {
+          const messages = data.result.messages || [];
+          setTotalPages(data.result.totalPages);
+          setHasMore(data.result.currentPage < data.result.totalPages - 1);
+
+          setMessages((prev) => {
+            const newMessages = messages
+              .map((msg) => ({
+                id: msg.id,
+                writer: msg.writer,
+                email: msg.email,
+                content: msg.content,
+                timestamp: new Date(msg.timestamp).toLocaleString("ko-KR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                  hour12: true,
+                }),
+              }))
+              .reverse();
+
+            if (page === 0) {
+              setTimeout(() => scrollToBottom(), 100);
+              return newMessages;
+            }
+
+            if (messages.length > 0) {
+              setLastMessageId(messages[0].id);
+            }
+
+            return [...newMessages, ...prev];
+          });
         }
-      );
-
-      const data = await response.json();
-      console.log("채팅 기록 응답 데이터 구조:", data);
-
-      if (data.statusCode === 200 && data.result) {
-        const messages = data.result.messages || [];
-        setMessages(
-          messages.map((msg) => {
-            const mappedMessage = {
-              id: msg.id,
-              writer: msg.writer,
-              email: msg.email,
-              content: msg.text || msg.content, // text나 content 필드 확인
-              messageType: msg.messageType || msg.type, // messageType이나 type 필드 확인
-              timestamp: new Date(msg.timestamp).toLocaleString("ko-KR", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: true,
-              }),
-            };
-            return mappedMessage;
-          })
-        );
-        scrollToBottom();
+      } catch (error) {
+        console.error("채팅 기록 로딩 에러:", error);
+      } finally {
+        setIsLoading(false);
       }
-    } catch (error) {
-      console.error("채팅 기록 로딩 에러:", error);
-    } finally {
-      setIsLoading(false);
-    }
-  }, [channelId, scrollToBottom]);
+    },
+    [channelId, scrollToBottom]
+  );
 
-  // 채널 변경 시 채팅 기록 로드
+  // 더 불러오기 버튼 클릭 핸들러
+  const loadMoreMessages = () => {
+    if (hasMore && !isLoading) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+
+      // 현재 스크롤 위치와 높이 저장
+      const scrollContainer = messageListRef.current;
+      const previousScrollHeight = scrollContainer.scrollHeight;
+      const previousScrollTop = scrollContainer.scrollTop;
+
+      fetchChatHistory(nextPage, pageSize, lastMessageId).then(() => {
+        // requestAnimationFrame을 사용하여 DOM 업데이트 후 스크롤 위치 조정
+        requestAnimationFrame(() => {
+          const newScrollHeight = scrollContainer.scrollHeight;
+          const scrollHeightDiff = newScrollHeight - previousScrollHeight;
+          scrollContainer.scrollTop = previousScrollTop + scrollHeightDiff;
+        });
+      });
+    }
+  };
+
+  // 스크롤 이벤트 처리
+  const handleScroll = () => {
+    if (messageListRef.current) {
+      const { scrollTop } = messageListRef.current;
+      // 스크롤이 최상단에 도달하면 더보기 버튼 표시
+      setShowLoadMoreButton(scrollTop === 0 && hasMore && !isLoading);
+    }
+  };
+
+  // 채널 변경 시 초기화
   useEffect(() => {
     if (channelId) {
-      fetchChatHistory();
-      setMessages([]); // 채널 변경시 메시지 초기화
+      setMessages([]);
+      setCurrentPage(0);
+      setHasMore(true);
+      fetchChatHistory(0, pageSize);
     }
-  }, [channelId, fetchChatHistory]);
+  }, [channelId, fetchChatHistory, pageSize]);
 
   // 메시지 전송
   const handleSubmit = async (e) => {
@@ -155,7 +210,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       setNewMessage("");
       inputRef.current?.focus();
 
-      // 서버에서 반환된 메시지 ID를 사용하여 상태 업데이트
       if (response && response.result) {
         const { chatId, content, writer, email } = response.result;
         setMessages((prev) => [
@@ -168,10 +222,10 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
             timestamp: new Date().toLocaleString("ko-KR"),
           },
         ]);
-      }
 
-      // 메시지 전송 후 스크롤
-      scrollToBottom();
+        // 메시지 전송 후 스크롤을 아래로 이동
+        setTimeout(() => scrollToBottom(), 100);
+      }
     } catch (error) {
       console.error("메시지 전송 중 오류 발생:", error);
       Swal.fire("오류 발생", "메시지 전송에 실패했습니다.", "error");
@@ -261,78 +315,85 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
               isDirectMessage ? "no-header" : ""
             }`}
             ref={messageListRef}
+            onScroll={handleScroll}
           >
-            {isLoading ? (
+            {showLoadMoreButton && (
+              <button
+                onClick={loadMoreMessages}
+                className="load-more-button"
+                disabled={isLoading}
+              >
+                이전 메시지 더 보기
+              </button>
+            )}
+            {isLoading && (
               <div className="loading-messages">메시지를 불러오는 중...</div>
-            ) : (
-              messages.map((message, index) => (
-                <div key={message.id || index} className="message-item">
-                  <div
-                    className="message-avatar"
-                    onClick={() => {
-                      setSelectedUser({
-                        name: message.writer,
-                        email: message.email,
-                      });
-                      setShowProfilePopup(true);
-                    }}
-                    style={{ cursor: "pointer" }}
-                  >
-                    {message.writer?.charAt(0).toUpperCase()}
-                  </div>
-                  <div className="message-content-wrapper">
-                    <div className="message-header">
-                      <span className="message-sender">
-                        {message.writer || "Unknown"}
-                      </span>
-                      <span className="message-time">{message.timestamp}</span>
-                      {message.email === userEmail && (
-                        <div className="message-actions">
-                          <button
-                            onClick={() => {
-                              setEditingMessageId(message.id);
-                              setEditMessageContent(message.content);
-                            }}
-                          >
-                            수정
-                          </button>
-                          <button
-                            onClick={() => handleDeleteMessage(message.id)}
-                            className="delete-button"
-                          >
-                            삭제
-                          </button>
-                        </div>
-                      )}
-                    </div>
-                    {editingMessageId === message.id ? (
-                      <div className="edit-message-form">
-                        <input
-                          type="text"
-                          value={editMessageContent}
-                          onChange={(e) =>
-                            setEditMessageContent(e.target.value)
-                          }
-                        />
-                        <button onClick={() => handleUpdateMessage(message.id)}>
-                          저장
-                        </button>
+            )}
+            {messages.map((message, index) => (
+              <div key={message.id || index} className="message-item">
+                <div
+                  className="message-avatar"
+                  onClick={() => {
+                    setSelectedUser({
+                      name: message.writer,
+                      email: message.email,
+                    });
+                    setShowProfilePopup(true);
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  {message.writer?.charAt(0).toUpperCase()}
+                </div>
+                <div className="message-content-wrapper">
+                  <div className="message-header">
+                    <span className="message-sender">
+                      {message.writer || "Unknown"}
+                    </span>
+                    <span className="message-time">{message.timestamp}</span>
+                    {message.email === userEmail && (
+                      <div className="message-actions">
                         <button
                           onClick={() => {
-                            setEditingMessageId(null);
-                            setEditMessageContent("");
+                            setEditingMessageId(message.id);
+                            setEditMessageContent(message.content);
                           }}
                         >
-                          취소
+                          수정
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMessage(message.id)}
+                          className="delete-button"
+                        >
+                          삭제
                         </button>
                       </div>
-                    ) : (
-                      <div className="message-content">{message.content}</div>
                     )}
                   </div>
+                  {editingMessageId === message.id ? (
+                    <div className="edit-message-form">
+                      <input
+                        type="text"
+                        value={editMessageContent}
+                        onChange={(e) => setEditMessageContent(e.target.value)}
+                      />
+                      <button onClick={() => handleUpdateMessage(message.id)}>
+                        저장
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingMessageId(null);
+                          setEditMessageContent("");
+                        }}
+                      >
+                        취소
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="message-content">{message.content}</div>
+                  )}
                 </div>
-              ))
-            )}
+              </div>
+            ))}
           </div>
           <div className="chat-input-container">
             <button className="add-content-button">
