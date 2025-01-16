@@ -40,6 +40,11 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     (message) => {
       console.log("수신된 메시지:", message);
 
+      // 서버 응답 메시지인 경우 무시 (statusCode가 있는 경우)
+      if (message.statusCode !== undefined) {
+        return;
+      }
+
       // 삭제된 메시지 처리
       if (message.deletedChatId) {
         setMessages((prevMessages) =>
@@ -50,11 +55,11 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
 
       // 일반 메시지 처리
       const messageWithMeta = {
-        id: message.chatId, // chatId를 ID로 사용
+        id: message.chatId,
         content: message.content,
-        writer: message.writer || "Unknown", // writer를 그대로 사용
+        writer: message.writer || "Unknown",
         email: message.email,
-        type: message.type || "TALK", // 기본 메시지 타입 설정
+        type: message.type || "TALK",
         timestamp: new Date().toLocaleString("ko-KR", {
           hour: "2-digit",
           minute: "2-digit",
@@ -64,16 +69,13 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       };
 
       setMessages((prev) => {
-        // 중복 메시지 체크
         if (prev.some((msg) => msg.id === messageWithMeta.id)) {
-          return prev; // 중복된 메시지가 있으면 상태를 변경하지 않음
+          return prev;
         }
-
-        // 새로운 메시지를 추가
         return [...prev, messageWithMeta];
       });
     },
-    [serverId] // serverId를 의존성으로 추가
+    [serverId]
   );
 
   const { sendMessage, deleteMessage } = useWebSocket(
