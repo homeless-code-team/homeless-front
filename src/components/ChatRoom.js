@@ -52,6 +52,21 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       console.log("수신된 메시지:", message);
 
       if (message.statusCode !== undefined) {
+        if (
+          message.result &&
+          message.result.chatId &&
+          message.result.reqMessage
+        ) {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === message.result.chatId
+                ? { ...msg, content: message.result.reqMessage }
+                : msg
+            )
+          );
+          setEditingMessageId(null);
+          setEditMessageContent("");
+        }
         return;
       }
 
@@ -99,7 +114,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     [serverId, isScrolledToBottom, scrollToBottom]
   );
 
-  const { sendMessage, deleteMessage } = useWebSocket(
+  const { sendMessage, deleteMessage, updateMessage } = useWebSocket(
     channelId,
     handleMessageReceived
   );
@@ -301,33 +316,10 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   // 메시지 수정 핸들러
   const handleUpdateMessage = async (messageId) => {
     try {
-      const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/message/${messageId}`,
-        {
-          method: "PATCH",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: editMessageContent,
-        }
-      );
-
-      if (response.ok) {
-        setMessages(
-          messages.map((msg) =>
-            msg.id === messageId ? { ...msg, content: editMessageContent } : msg
-          )
-        );
-        setEditingMessageId(null);
-        setEditMessageContent("");
-      } else {
-        const errorData = await response.json();
-        console.error("메시지 수정 실패:", errorData);
-      }
+      updateMessage(channelId, messageId, editMessageContent);
     } catch (error) {
       console.error("메시지 수정 중 오류 발생:", error);
+      Swal.fire("오류 발생", "메시지 수정에 실패했습니다.", "error");
     }
   };
 
