@@ -54,7 +54,7 @@ const FriendList = ({ onSelectChannel }) => {
     setError(null);
     try {
       const res = await apiClient.get(
-        "/friends-service/api/v1/friends/response"
+        "/friends-service/api/v1/friends/request"
       );
       if (res.data.code === 200) {
         setSentRequests(res.data.data);
@@ -74,7 +74,7 @@ const FriendList = ({ onSelectChannel }) => {
     setError(null);
     try {
       const res = await apiClient.get(
-        "/friends-service/api/v1/friends/request"
+        "/friends-service/api/v1/friends/response"
       );
       if (res.data.code === 200) {
         setReceivedRequests(res.data.data);
@@ -123,19 +123,19 @@ const FriendList = ({ onSelectChannel }) => {
     }
   };
 
-  const handleAccept = async (nickname) => {
+  const handleAccept = async (receiverNickname) => {
     setIsLoading(true);
     setError(null);
     try {
       const res = await apiClient.post(
         "/friends-service/api/v1/friends/response",
         {
-          receiverNickname: nickname,
+          receiverNickname: receiverNickname,
           addStatus: "ACCEPT",
         }
       );
       if (res.data.code === 200) {
-        alert(`${nickname}님과 친구가 되었습니다.`);
+        alert(`${receiverNickname}님과 친구가 되었습니다.`);
         fetchReceivedRequests();
         fetchFriends();
       } else {
@@ -148,19 +148,19 @@ const FriendList = ({ onSelectChannel }) => {
     }
   };
 
-  const handleReject = async (nickname) => {
+  const handleReject = async (receiverNickname) => {
     setIsLoading(true);
     setError(null);
     try {
       const res = await apiClient.post(
         "/friends-service/api/v1/friends/response",
         {
-          receiverNickname: nickname,
+          receiverNickname,
           addStatus: "REJECTED",
         }
       );
       if (res.data.code === 200) {
-        alert(`${nickname}님과 친구요청을 거절하였습니다..`);
+        alert(`${receiverNickname}님과 친구요청을 거절하였습니다..`);
         fetchReceivedRequests();
         fetchFriends();
       } else {
@@ -180,12 +180,12 @@ const FriendList = ({ onSelectChannel }) => {
       const res = await apiClient.delete(
         "/friends-service/api/v1/friends/request",
         {
-          receiverNickname: nickname,
+          params: { receiverNickname: nickname },
         }
       );
       if (res.data.code === 200) {
         alert(`${nickname}님과 친구 요청이 취소 되었습니다.`);
-        fetchReceivedRequests();
+        fetchSentRequests();
         fetchFriends();
       } else {
         setError("친구 추가 취소 실패");

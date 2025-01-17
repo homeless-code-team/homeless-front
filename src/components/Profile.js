@@ -107,6 +107,7 @@ const Profile = () => {
           const timestamp = new Date().getTime();
           setProfileImage(`${profileImageUrl}?t=${timestamp}`); // 캐시 무효화 URL 적용
           alert("프로필 이미지가 성공적으로 변경되었습니다!");
+          fetchData("내 계정");
         } else {
           alert("이미지 업로드에 실패했습니다.");
         }
