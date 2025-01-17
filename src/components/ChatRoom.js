@@ -35,6 +35,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const searchTimerRef = useRef(null);
   const [channelStates, setChannelStates] = useState({});
   const scrollPositionsRef = useRef({});
+  const [searchCategory, setSearchCategory] = useState("content");
 
   const scrollToBottom = useCallback(() => {
     if (messageListRef.current) {
@@ -315,7 +316,12 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
 
   const handleSearch = async (keyword) => {
     const trimmedKeyword = keyword.trim();
-    console.log("검색 시작 - 키워드:", trimmedKeyword);
+    console.log(
+      "검색 시작 - 키워드:",
+      trimmedKeyword,
+      "카테고리:",
+      searchCategory
+    );
 
     if (!trimmedKeyword) {
       setShowSearchResults(false);
@@ -325,21 +331,17 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
 
     try {
       const token = localStorage.getItem("token");
-      const url = `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/search?channelId=${channelId}&keyword=${trimmedKeyword}&page=0&size=20`;
-      console.log("검색 요청 URL:", url);
+      const url = `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/search?channelId=${channelId}&keyword=${trimmedKeyword}&category=${searchCategory}&page=0&size=20`;
 
       const response = await fetch(url, {
-        method: "GET",
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "application/json",
         },
       });
       const data = await response.json();
-      console.log("검색 응답 데이터:", data);
 
       if (response.ok) {
-        console.log("검색 결과:", data.content);
         setSearchResults(data.content || []);
         setShowSearchResults(true);
         setCurrentSearchIndex(0);
@@ -347,7 +349,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
           moveToSearchResult(0);
         }
       } else {
-        console.error("검색 실패:", data);
         Swal.fire("검색 실패", "메시지 검색 중 오류가 발생했습니다.", "error");
       }
     } catch (error) {
@@ -484,7 +485,9 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                 <input
                   type="text"
                   className="search-input"
-                  placeholder="메시지 검색"
+                  placeholder={`${
+                    searchCategory === "content" ? "메시지" : "닉네임"
+                  } 검색`}
                   value={searchQuery}
                   onChange={handleSearchInput}
                   onKeyDown={handleSearchKeyPress}
@@ -493,6 +496,26 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                     setTimeout(() => setIsSearchFocused(false), 200);
                   }}
                 />
+                <div className="search-category-toggle">
+                  <button
+                    className={`toggle-button ${
+                      searchCategory === "content" ? "active" : ""
+                    }`}
+                    onClick={() => setSearchCategory("content")}
+                    title="메시지 검색"
+                  >
+                    💬
+                  </button>
+                  <button
+                    className={`toggle-button ${
+                      searchCategory === "nickname" ? "active" : ""
+                    }`}
+                    onClick={() => setSearchCategory("nickname")}
+                    title="닉네임 검색"
+                  >
+                    👤
+                  </button>
+                </div>
                 {showSearchResults && searchResults.length > 0 && (
                   <div className="search-dropdown">
                     {searchResults.map((result, index) => (
