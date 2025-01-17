@@ -33,6 +33,8 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
   const searchTimerRef = useRef(null);
+  const [channelStates, setChannelStates] = useState({});
+  const scrollPositionsRef = useRef({});
 
   const scrollToBottom = useCallback(() => {
     if (messageListRef.current) {
@@ -119,7 +121,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   );
 
   const fetchChatHistory = useCallback(
-    async (page = 0) => {
+    async (page = 0, shouldScrollToSaved = false) => {
       try {
         setIsLoading(true);
         const token = localStorage.getItem("token");
@@ -154,25 +156,40 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
               rawTimestamp: msg.timestamp,
             }));
 
-            if (page === 0) {
-              setTimeout(() => scrollToBottom(), 100);
-              return formattedMessages.reverse();
-            }
+            const updatedMessages =
+              page === 0
+                ? formattedMessages.reverse()
+                : [...formattedMessages.reverse(), ...prev];
 
-            return [...formattedMessages.reverse(), ...prev];
+            setChannelStates((prev) => ({
+              ...prev,
+              [channelId]: {
+                messages: updatedMessages,
+                currentPage: page,
+                hasNextPage: !isLast,
+              },
+            }));
+
+            return updatedMessages;
           });
 
           setCurrentPage(page);
           setHasNextPage(!isLast);
+
+          if (shouldScrollToSaved && messageListRef.current) {
+            requestAnimationFrame(() => {
+              messageListRef.current.scrollTop =
+                scrollPositionsRef.current[channelId] || 0;
+            });
+          }
         }
       } catch (error) {
         console.error("채팅 기록 로딩 에러:", error);
-        Swal.fire("오류 발생", "채팅 기록을 불러오는데 실패했습니다.", "error");
       } finally {
         setIsLoading(false);
       }
     },
-    [channelId, scrollToBottom]
+    [channelId]
   );
 
   const loadMoreMessages = () => {
@@ -193,23 +210,41 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   };
 
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     if (messageListRef.current) {
       const { scrollTop } = messageListRef.current;
+      scrollPositionsRef.current[channelId] = scrollTop;
+
       if (scrollTop === 0 && hasNextPage && !isLoading) {
         loadMoreMessages();
       }
     }
-  };
+  }, [channelId, hasNextPage, isLoading, loadMoreMessages]);
 
   useEffect(() => {
     if (channelId) {
-      setMessages([]);
-      setCurrentPage(0);
-      setHasNextPage(true);
-      fetchChatHistory(0);
+      const savedState = channelStates[channelId];
+      if (savedState) {
+        setMessages(savedState.messages);
+        setCurrentPage(savedState.currentPage);
+        setHasNextPage(savedState.hasNextPage);
+
+        setTimeout(() => {
+          if (messageListRef.current) {
+            const savedScrollTop = scrollPositionsRef.current[channelId];
+            if (savedScrollTop !== undefined) {
+              messageListRef.current.scrollTop = savedScrollTop;
+            }
+          }
+        }, 100);
+      } else {
+        setMessages([]);
+        setCurrentPage(0);
+        setHasNextPage(true);
+        fetchChatHistory(0);
+      }
     }
-  }, [channelId, fetchChatHistory]);
+  }, [channelId, channelStates, fetchChatHistory]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -535,14 +570,14 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
             ref={messageListRef}
             onScroll={handleScroll}
           >
-            {hasNextPage && (
-              <button
-                onClick={loadMoreMessages}
-                className="load-more-button"
-                disabled={isLoading}
-              >
-                {isLoading ? "메시지를 불러오는 중..." : "이전 메시지 더 보기"}
-              </button>
+            {!hasNextPage && messages.length > 0 && (
+              <div className="system-message">
+                <div className="system-message-line">
+                  <span className="system-message-text">
+                    더이상 메시지가 없습니다
+                  </span>
+                </div>
+              </div>
             )}
             {isLoading && (
               <div className="loading-messages">메시지를 불러오는 중...</div>
