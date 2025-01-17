@@ -13,21 +13,18 @@ import Swal from "sweetalert2";
 
 const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const { userName, userEmail } = useContext(AuthContext);
-  const [channelStates, setChannelStates] = useState({});
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
+  const [currentPage, setCurrentPage] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const pageSize = 20;
+  const messageListRef = useRef(null);
+  const inputRef = useRef(null);
+  const [newMessage, setNewMessage] = useState("");
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editMessageContent, setEditMessageContent] = useState("");
-  const messageListRef = useRef(null);
-  const inputRef = useRef(null);
-  const [hasMore, setHasMore] = useState(true);
-  const [currentPage, setCurrentPage] = useState(0);
-  const [pageSize, setPageSize] = useState(30);
-  const [lastMessageId, setLastMessageId] = useState(null);
-  const [showLoadMoreButton, setShowLoadMoreButton] = useState(false);
   const [showNewMessageAlert, setShowNewMessageAlert] = useState(false);
   const [latestMessage, setLatestMessage] = useState(null);
   const [searchQuery, setSearchQuery] = useState("");
@@ -37,14 +34,12 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
   const searchTimerRef = useRef(null);
 
-  // 스크롤 처리
   const scrollToBottom = useCallback(() => {
     if (messageListRef.current) {
       messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
     }
   }, []);
 
-  // 스크롤이 맨 아래에 있는지 확인하는 함수 추가
   const isScrolledToBottom = useCallback(() => {
     if (messageListRef.current) {
       const { scrollHeight, scrollTop, clientHeight } = messageListRef.current;
@@ -53,7 +48,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     return false;
   }, []);
 
-  // 메시지 수신 처리
   const handleMessageReceived = useCallback(
     (message) => {
       console.log("수신된 메시지:", message);
@@ -101,7 +95,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       };
 
       setMessages((prev) => {
-        // 중복 메시지 체크
         if (prev.some((msg) => msg.id === messageWithMeta.id)) {
           return prev;
         }
@@ -117,7 +110,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         return [...prev, messageWithMeta];
       });
     },
-    [serverId, isScrolledToBottom, scrollToBottom]
+    [isScrolledToBottom, scrollToBottom]
   );
 
   const { sendMessage, deleteMessage, updateMessage } = useWebSocket(
@@ -125,23 +118,16 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     handleMessageReceived
   );
 
-  // 채팅 기록 불러오기
   const fetchChatHistory = useCallback(
-    async (page = 0, size = 30, lastId = null) => {
+    async (page = 0) => {
       try {
         setIsLoading(true);
         const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("인증 토큰이 없습니다.");
-        }
+        if (!token) throw new Error("인증 토큰이 없습니다.");
 
-        let url = `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/ch/${channelId}?page=${page}&size=${size}`;
-        if (lastId) {
-          url += `&lastId=${lastId}`;
-        }
+        const url = `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/ch/${channelId}?page=${page}&size=${pageSize}`;
 
         const response = await fetch(url, {
-          method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -151,39 +137,37 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         const data = await response.json();
 
         if (data.statusCode === 200 && data.result) {
-          const messages = data.result.messages || [];
-          setHasMore(data.result.currentPage < data.result.totalPages - 1);
+          const { messages: newMessages, isLast } = data.result;
 
           setMessages((prev) => {
-            const newMessages = messages
-              .map((msg) => ({
-                id: msg.id,
-                writer: msg.writer,
-                email: msg.email,
-                content: msg.content,
-                timestamp: new Date(msg.timestamp).toLocaleString("ko-KR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                  hour12: true,
-                }),
-              }))
-              .reverse();
+            const formattedMessages = newMessages.map((msg) => ({
+              id: msg.id,
+              writer: msg.writer,
+              email: msg.email,
+              content: msg.content,
+              timestamp: new Date(msg.timestamp).toLocaleString("ko-KR", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: true,
+              }),
+              rawTimestamp: msg.timestamp,
+            }));
 
             if (page === 0) {
               setTimeout(() => scrollToBottom(), 100);
-              return newMessages;
+              return formattedMessages.reverse();
             }
 
-            if (messages.length > 0) {
-              setLastMessageId(messages[0].id);
-            }
-
-            return [...newMessages, ...prev];
+            return [...formattedMessages.reverse(), ...prev];
           });
+
+          setCurrentPage(page);
+          setHasNextPage(!isLast);
         }
       } catch (error) {
         console.error("채팅 기록 로딩 에러:", error);
+        Swal.fire("오류 발생", "채팅 기록을 불러오는데 실패했습니다.", "error");
       } finally {
         setIsLoading(false);
       }
@@ -191,19 +175,15 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     [channelId, scrollToBottom]
   );
 
-  // 더 불러오기 버튼 클릭 핸들러
   const loadMoreMessages = () => {
-    if (hasMore && !isLoading) {
+    if (hasNextPage && !isLoading) {
       const nextPage = currentPage + 1;
-      setCurrentPage(nextPage);
 
-      // 현재 스크롤 위치와 높이 저장
       const scrollContainer = messageListRef.current;
       const previousScrollHeight = scrollContainer.scrollHeight;
       const previousScrollTop = scrollContainer.scrollTop;
 
-      fetchChatHistory(nextPage, pageSize, lastMessageId).then(() => {
-        // requestAnimationFrame을 사용하여 DOM 업데이트 후 스크롤 위치 조정
+      fetchChatHistory(nextPage).then(() => {
         requestAnimationFrame(() => {
           const newScrollHeight = scrollContainer.scrollHeight;
           const scrollHeightDiff = newScrollHeight - previousScrollHeight;
@@ -213,56 +193,24 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   };
 
-  // 스크롤 이벤트 처리
   const handleScroll = () => {
     if (messageListRef.current) {
       const { scrollTop } = messageListRef.current;
-      // 스크롤이 최상단에 도달하면 더보기 버튼 표시
-      setShowLoadMoreButton(scrollTop === 0 && hasMore && !isLoading);
+      if (scrollTop === 0 && hasNextPage && !isLoading) {
+        loadMoreMessages();
+      }
     }
   };
 
-  // 채널 변경 시 초기화
   useEffect(() => {
     if (channelId) {
-      const savedState = channelStates[channelId];
-
-      if (savedState) {
-        setMessages(savedState.messages);
-        setCurrentPage(savedState.currentPage);
-        setHasMore(savedState.hasMore);
-        setLastMessageId(savedState.lastMessageId);
-      } else {
-        setMessages([]);
-        setCurrentPage(0);
-        setHasMore(true);
-        setLastMessageId(null);
-        fetchChatHistory(0, pageSize);
-      }
+      setMessages([]);
+      setCurrentPage(0);
+      setHasNextPage(true);
+      fetchChatHistory(0);
     }
-  }, [channelId, pageSize, fetchChatHistory]);
+  }, [channelId, fetchChatHistory]);
 
-  // 상태 변경 시 channelStates 업데이트
-  useEffect(() => {
-    if (channelId && messages.length > 0) {
-      const currentState = channelStates[channelId];
-      const newState = {
-        messages,
-        currentPage,
-        hasMore,
-        lastMessageId,
-      };
-
-      if (JSON.stringify(currentState) !== JSON.stringify(newState)) {
-        setChannelStates((prev) => ({
-          ...prev,
-          [channelId]: newState,
-        }));
-      }
-    }
-  }, [channelId, messages]);
-
-  // 메시지 전송
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -287,7 +235,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   };
 
-  // 엔터키 처리
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -295,7 +242,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   };
 
-  // 메시지 삭제 핸들러
   const handleDeleteMessage = async (chatId) => {
     try {
       const result = await Swal.fire({
@@ -310,7 +256,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       });
 
       if (result.isConfirmed) {
-        // WebSocket으로 삭제 요청 전송
         deleteMessage(chatId);
       }
     } catch (error) {
@@ -319,7 +264,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   };
 
-  // 메시지 수정 핸들러
   const handleUpdateMessage = async (messageId) => {
     try {
       updateMessage(channelId, messageId, editMessageContent);
@@ -329,13 +273,11 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   };
 
-  // 알림 클릭 핸들러 추가
   const handleAlertClick = () => {
     scrollToBottom();
     setShowNewMessageAlert(false);
   };
 
-  // 검색 핸들러 수정
   const handleSearch = async (keyword) => {
     const trimmedKeyword = keyword.trim();
     console.log("검색 시작 - 키워드:", trimmedKeyword);
@@ -379,16 +321,13 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   };
 
-  // 검색 입력창 키 입력 핸들러 수정
   const handleSearchInput = (e) => {
     setSearchQuery(e.target.value);
 
-    // 이전 타이머가 있다면 취소
     if (searchTimerRef.current) {
       clearTimeout(searchTimerRef.current);
     }
 
-    // 새로운 타이머 설정
     searchTimerRef.current = setTimeout(() => {
       const trimmedValue = e.target.value.trim();
       if (trimmedValue) {
@@ -400,11 +339,9 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }, 500);
   };
 
-  // 검색 입력창 키 입력 핸들러 추가
   const handleSearchKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      // 진행 중인 타이머 취소
       if (searchTimerRef.current) {
         clearTimeout(searchTimerRef.current);
       }
@@ -417,7 +354,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   };
 
-  // 검색 버튼 클릭 핸들러 수정
   const handleSearchButtonClick = () => {
     if (!searchQuery.trim()) {
       setShowSearchResults(false);
@@ -427,11 +363,9 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     handleSearch(searchQuery);
   };
 
-  // 검색 결과 이동 함수 추가
   const moveToSearchResult = (index) => {
     if (searchResults.length === 0) return;
 
-    // 인덱스 순환
     let newIndex = index;
     if (index >= searchResults.length) newIndex = 0;
     if (index < 0) newIndex = searchResults.length - 1;
@@ -440,19 +374,16 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     const messageElement = document.getElementById(`message-${result.id}`);
 
     if (messageElement) {
-      // 이전 하이라이트 제거
       document.querySelectorAll(".highlight").forEach((el) => {
         el.classList.remove("highlight");
       });
 
-      // 새로운 메시지 하이라이트 및 스크롤
       messageElement.classList.add("highlight");
       messageElement.scrollIntoView({ behavior: "smooth", block: "center" });
       setCurrentSearchIndex(newIndex);
     }
   };
 
-  // 컴포넌트 cleanup을 위한 useEffect 추가
   useEffect(() => {
     return () => {
       if (searchTimerRef.current) {
@@ -461,30 +392,25 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     };
   }, []);
 
-  // 메시지 찾기 함수 추가
   const findMessageWithRetry = async (messageId, maxRetries = 10) => {
     let retryCount = 0;
 
     const findMessage = async () => {
-      // 현재 DOM에서 메시지 찾기
       const messageElement = document.getElementById(`message-${messageId}`);
       if (messageElement) {
         return messageElement;
       }
 
-      // 더 이상 불러올 메시지가 없거나 최대 시도 횟수 초과
-      if (!hasMore || retryCount >= maxRetries) {
+      if (!hasNextPage || retryCount >= maxRetries) {
         return null;
       }
 
-      // 이전 메시지 로드
       retryCount++;
       const nextPage = currentPage + 1;
       setCurrentPage(nextPage);
 
       try {
-        await fetchChatHistory(nextPage, pageSize, lastMessageId);
-        // 재귀적으로 다시 시도
+        await fetchChatHistory(nextPage);
         return await findMessage();
       } catch (error) {
         console.error("메시지 로드 중 오류:", error);
@@ -529,7 +455,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                   onKeyDown={handleSearchKeyPress}
                   onFocus={() => setIsSearchFocused(true)}
                   onBlur={() => {
-                    // 클릭 이벤트가 발생할 시간을 주기 위해 약간의 딜레이를 줍니다
                     setTimeout(() => setIsSearchFocused(false), 200);
                   }}
                 />
@@ -546,26 +471,22 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                               result.id
                             );
                             if (messageElement) {
-                              // 이전 하이라이트 제거
                               document
                                 .querySelectorAll(".highlight")
                                 .forEach((el) => {
                                   el.classList.remove("highlight");
                                 });
 
-                              // 새로운 메시지 하이라이트 및 스크롤
                               messageElement.classList.add("highlight");
                               messageElement.scrollIntoView({
                                 behavior: "smooth",
                                 block: "center",
                               });
 
-                              // 하이라이트 효과를 주기 위한 클래스 추가
                               messageElement.classList.add(
                                 "highlight-animation"
                               );
 
-                              // 2초 후에 애니메이션 클래스 제거
                               setTimeout(() => {
                                 messageElement.classList.remove(
                                   "highlight-animation"
@@ -614,13 +535,13 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
             ref={messageListRef}
             onScroll={handleScroll}
           >
-            {showLoadMoreButton && (
+            {hasNextPage && (
               <button
                 onClick={loadMoreMessages}
                 className="load-more-button"
                 disabled={isLoading}
               >
-                이전 메시지 더 보기
+                {isLoading ? "메시지를 불러오는 중..." : "이전 메시지 더 보기"}
               </button>
             )}
             {isLoading && (
