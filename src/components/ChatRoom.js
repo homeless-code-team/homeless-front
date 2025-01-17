@@ -193,7 +193,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     [channelId]
   );
 
-  const loadMoreMessages = () => {
+  const loadMoreMessages = useCallback(() => {
     if (hasNextPage && !isLoading) {
       const nextPage = currentPage + 1;
 
@@ -209,7 +209,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         });
       });
     }
-  };
+  }, [hasNextPage, isLoading, currentPage, fetchChatHistory]);
 
   const handleScroll = useCallback(() => {
     if (messageListRef.current) {
@@ -224,29 +224,23 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
 
   useEffect(() => {
     if (channelId) {
-      const savedState = channelStates[channelId];
-      if (savedState) {
-        setMessages(savedState.messages);
-        setCurrentPage(savedState.currentPage);
-        setHasNextPage(savedState.hasNextPage);
+      setMessages([]);
+      setCurrentPage(0);
+      setHasNextPage(true);
+      fetchChatHistory(0);
 
-        setTimeout(() => {
-          if (messageListRef.current) {
-            const savedScrollTop = scrollPositionsRef.current[channelId];
-            if (savedScrollTop !== undefined) {
-              messageListRef.current.scrollTop = savedScrollTop;
-            }
+      setTimeout(() => {
+        if (messageListRef.current) {
+          const savedScrollTop = scrollPositionsRef.current[channelId];
+          if (savedScrollTop !== undefined) {
+            messageListRef.current.scrollTop = savedScrollTop;
           }
-        }, 100);
-      } else {
-        setMessages([]);
-        setCurrentPage(0);
-        setHasNextPage(true);
-        fetchChatHistory(0);
-      }
+        }
+      }, 100);
     }
-  }, [channelId, channelStates, fetchChatHistory]);
+  }, [channelId, fetchChatHistory]);
 
+  // 메시지 전송 핸들러
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -513,7 +507,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                     onClick={() => setSearchCategory("nickname")}
                     title="닉네임 검색"
                   >
-                    👤
+                    🤷‍♂️
                   </button>
                 </div>
                 {showSearchResults && searchResults.length > 0 && (
