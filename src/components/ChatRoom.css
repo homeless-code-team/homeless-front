@@ -568,10 +568,24 @@
 }
 
 .highlight {
-  background-color: rgba(88, 101, 242, 0.3);
+  background-color: rgba(88, 101, 242, 0.2);
   transition: background-color 0.3s ease;
-  padding: 4px;
-  border-radius: 4px;
+}
+
+.highlight-animation {
+  animation: highlightPulse 2s ease;
+}
+
+@keyframes highlightPulse {
+  0% {
+    background-color: rgba(88, 101, 242, 0.4);
+  }
+  50% {
+    background-color: rgba(88, 101, 242, 0.2);
+  }
+  100% {
+    background-color: rgba(88, 101, 242, 0.4);
+  }
 }
 
 .search-navigation {
