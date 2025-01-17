@@ -34,6 +34,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
   const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
+  const searchTimerRef = useRef(null);
 
   // 스크롤 처리
   const scrollToBottom = useCallback(() => {
@@ -332,12 +333,18 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
 
   // 검색 핸들러 수정
   const handleSearch = async (keyword) => {
-    console.log("검색 시작 - 키워드:", keyword);
-    if (!keyword.trim()) return;
+    const trimmedKeyword = keyword.trim();
+    console.log("검색 시작 - 키워드:", trimmedKeyword);
+
+    if (!trimmedKeyword) {
+      setShowSearchResults(false);
+      setSearchResults([]);
+      return;
+    }
 
     try {
       const token = localStorage.getItem("token");
-      const url = `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/search?channelId=${channelId}&keyword=${keyword}&page=0&size=20`;
+      const url = `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/search?channelId=${channelId}&keyword=${trimmedKeyword}&page=0&size=20`;
       console.log("검색 요청 URL:", url);
 
       const response = await fetch(url, {
@@ -369,26 +376,50 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   };
 
   // 검색 입력창 키 입력 핸들러 수정
-  const handleSearchKeyPress = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      handleSearch(searchQuery);
-      e.preventDefault();
-    } else if (e.key === "ArrowUp" && showSearchResults) {
-      e.preventDefault();
-      moveToSearchResult(currentSearchIndex - 1);
-    } else if (e.key === "ArrowDown" && showSearchResults) {
-      e.preventDefault();
-      moveToSearchResult(currentSearchIndex + 1);
+  const handleSearchInput = (e) => {
+    setSearchQuery(e.target.value);
+
+    // 이전 타이머가 있다면 취소
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
     }
+
+    // 새로운 타이머 설정
+    searchTimerRef.current = setTimeout(() => {
+      const trimmedValue = e.target.value.trim();
+      if (trimmedValue) {
+        handleSearch(trimmedValue);
+      } else {
+        setShowSearchResults(false);
+        setSearchResults([]);
+      }
+    }, 500);
   };
 
   // 검색 입력창 키 입력 핸들러 추가
-  const handleSearchInput = (e) => {
-    setSearchQuery(e.target.value);
+  const handleSearchKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      // 진행 중인 타이머 취소
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+      if (!searchQuery.trim()) {
+        setShowSearchResults(false);
+        setSearchResults([]);
+        return;
+      }
+      handleSearch(searchQuery);
+    }
   };
 
-  // 검색 버튼 클릭 핸들러 추가
+  // 검색 버튼 클릭 핸들러 수정
   const handleSearchButtonClick = () => {
+    if (!searchQuery.trim()) {
+      setShowSearchResults(false);
+      setSearchResults([]);
+      return;
+    }
     handleSearch(searchQuery);
   };
 
@@ -416,6 +447,15 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       setCurrentSearchIndex(newIndex);
     }
   };
+
+  // 컴포넌트 cleanup을 위한 useEffect 추가
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="chat-room-container">
