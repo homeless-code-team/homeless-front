@@ -33,6 +33,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const [isSearchFocused, setIsSearchFocused] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [showSearchResults, setShowSearchResults] = useState(false);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
 
   // 스크롤 처리
   const scrollToBottom = useCallback(() => {
@@ -98,10 +99,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       };
 
       setMessages((prev) => {
-        if (prev.some((msg) => msg.id === messageWithMeta.id)) {
-          return prev;
-        }
-
         // 스크롤이 맨 아래가 아닐 때 알림 표시
         if (!shouldScrollToBottom) {
           setLatestMessage(messageWithMeta);
@@ -335,25 +332,35 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
 
   // 검색 핸들러 수정
   const handleSearch = async (keyword) => {
+    console.log("검색 시작 - 키워드:", keyword);
     if (!keyword.trim()) return;
 
     try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/search?channelId=${channelId}&keyword=${keyword}&page=0&size=20`,
-        {
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-        }
-      );
+      const url = `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/search?channelId=${channelId}&keyword=${keyword}&page=0&size=20`;
+      console.log("검색 요청 URL:", url);
+
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
       const data = await response.json();
-      if (data.statusCode === 200 && data.result) {
-        setSearchResults(data.result.content || []);
+      console.log("검색 응답 데이터:", data);
+
+      if (response.ok) {
+        console.log("검색 결과:", data.content);
+        setSearchResults(data.content || []);
         setShowSearchResults(true);
-        console.log("검색 결과:", data.result.content);
+        setCurrentSearchIndex(0);
+        if (data.content && data.content.length > 0) {
+          moveToSearchResult(0);
+        }
+      } else {
+        console.error("검색 실패:", data);
+        Swal.fire("검색 실패", "메시지 검색 중 오류가 발생했습니다.", "error");
       }
     } catch (error) {
       console.error("검색 중 오류 발생:", error);
@@ -363,34 +370,17 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
 
   // 검색 입력창 키 입력 핸들러 수정
   const handleSearchKeyPress = (e) => {
-    if (e.key === "Enter") {
+    if (e.key === "Enter" && !e.shiftKey) {
       handleSearch(searchQuery);
       e.preventDefault();
+    } else if (e.key === "ArrowUp" && showSearchResults) {
+      e.preventDefault();
+      moveToSearchResult(currentSearchIndex - 1);
+    } else if (e.key === "ArrowDown" && showSearchResults) {
+      e.preventDefault();
+      moveToSearchResult(currentSearchIndex + 1);
     }
   };
-
-  // 검색 결과 UI 추가 (chat-header 바로 아래에 추가)
-  {
-    showSearchResults && searchResults.length > 0 && (
-      <div className="search-results">
-        {searchResults.map((result) => (
-          <div key={result.id} className="search-result-item">
-            <div className="search-result-header">
-              <span className="search-result-writer">{result.writer}</span>
-              <span className="search-result-time">
-                {new Date(result.timestamp).toLocaleString("ko-KR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: true,
-                })}
-              </span>
-            </div>
-            <div className="search-result-content">{result.content}</div>
-          </div>
-        ))}
-      </div>
-    );
-  }
 
   // 검색 입력창 키 입력 핸들러 추가
   const handleSearchInput = (e) => {
@@ -400,6 +390,31 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   // 검색 버튼 클릭 핸들러 추가
   const handleSearchButtonClick = () => {
     handleSearch(searchQuery);
+  };
+
+  // 검색 결과 이동 함수 추가
+  const moveToSearchResult = (index) => {
+    if (searchResults.length === 0) return;
+
+    // 인덱스 순환
+    let newIndex = index;
+    if (index >= searchResults.length) newIndex = 0;
+    if (index < 0) newIndex = searchResults.length - 1;
+
+    const result = searchResults[newIndex];
+    const messageElement = document.getElementById(`message-${result.id}`);
+
+    if (messageElement) {
+      // 이전 하이라이트 제거
+      document.querySelectorAll(".highlight").forEach((el) => {
+        el.classList.remove("highlight");
+      });
+
+      // 새로운 메시지 하이라이트 및 스크롤
+      messageElement.classList.add("highlight");
+      messageElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      setCurrentSearchIndex(newIndex);
+    }
   };
 
   return (
@@ -433,10 +448,67 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                   placeholder="메시지 검색"
                   value={searchQuery}
                   onChange={handleSearchInput}
-                  onKeyPress={handleSearchKeyPress}
+                  onKeyDown={handleSearchKeyPress}
                   onFocus={() => setIsSearchFocused(true)}
-                  onBlur={() => setIsSearchFocused(false)}
+                  onBlur={() => {
+                    // 클릭 이벤트가 발생할 시간을 주기 위해 약간의 딜레이를 줍니다
+                    setTimeout(() => setIsSearchFocused(false), 200);
+                  }}
                 />
+                {showSearchResults && searchResults.length > 0 && (
+                  <div className="search-dropdown">
+                    {searchResults.map((result, index) => (
+                      <div
+                        key={result.id}
+                        className="search-result-item"
+                        onClick={() => {
+                          const messageElement = document.getElementById(
+                            `message-${result.id}`
+                          );
+                          if (messageElement) {
+                            // 이전 하이라이트 제거
+                            document
+                              .querySelectorAll(".highlight")
+                              .forEach((el) => {
+                                el.classList.remove("highlight");
+                              });
+
+                            // 새로운 메시지 하이라이트 및 스크롤
+                            messageElement.classList.add("highlight");
+                            messageElement.scrollIntoView({
+                              behavior: "smooth",
+                              block: "center",
+                            });
+                            setCurrentSearchIndex(index);
+                            setShowSearchResults(false);
+                          }
+                        }}
+                      >
+                        <div className="search-result-header">
+                          <span className="search-result-writer">
+                            {result.writer}
+                          </span>
+                          <span className="search-result-time">
+                            {new Date(result.timestamp).toLocaleString(
+                              "ko-KR",
+                              {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              }
+                            )}
+                          </span>
+                        </div>
+                        <div className="search-result-content">
+                          {result.content}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
           )}
