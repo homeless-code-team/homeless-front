@@ -256,3 +256,150 @@
   opacity: 0.5;
   cursor: not-allowed;
 }
+
+.profile-popup-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.profile-popup {
+  background-color: #36393f;
+  padding: 24px;
+  border-radius: 8px;
+  min-width: 300px;
+  position: relative;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+.profile-popup .close-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #96989d;
+  font-size: 24px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 4px;
+}
+
+.profile-popup .close-button:hover {
+  color: #dcddde;
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+.profile-popup .popup-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background-color: #7289da;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 32px;
+  font-weight: 600;
+  margin: 0 auto 16px;
+}
+
+.profile-popup h3 {
+  color: #ffffff;
+  font-size: 20px;
+  font-weight: 600;
+  text-align: center;
+  margin-bottom: 8px;
+}
+
+.profile-popup p {
+  color: #b5bac1;
+  font-size: 14px;
+  text-align: center;
+  margin: 0;
+}
+
+.message-actions {
+  display: none;
+  margin-left: 10px;
+}
+
+.message-item:hover .message-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.message-actions button {
+  background: none;
+  border: none;
+  color: #96989d;
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: 12px;
+}
+
+.message-actions button:hover {
+  color: #dcddde;
+}
+
+.edit-message-form {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.edit-message-form input {
+  flex: 1;
+  background: #40444b;
+  border: none;
+  border-radius: 4px;
+  padding: 8px;
+  color: #dcddde;
+}
+
+.edit-message-form button {
+  background: #4f545c;
+  border: none;
+  border-radius: 4px;
+  color: white;
+  padding: 4px 8px;
+  cursor: pointer;
+}
+
+.edit-message-form button:hover {
+  background: #5d6269;
+}
+
+.message-actions .delete-button {
+  color: #ff0000;
+}
+
+.load-more-button {
+  display: block;
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  background-color: #f0f0f0;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+  transition: background-color 0.2s;
+}
+
+.load-more-button:hover {
+  background-color: #e0e0e0;
+}
+
+.load-more-button:disabled {
+  background-color: #f5f5f5;
+  cursor: not-allowed;
+}

@@ -1,0 +1,103 @@
+.board-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* 수평 중앙 정렬 */
+  justify-content: center; /* 수직 중앙 정렬 */
+  height: 100vh; /* 전체 화면 높이 */
+}
+
+.chat-header {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 48px;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  background-color: #2d3037;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.3);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3), 0 2px 5px rgba(0, 0, 0, 0.2);
+  z-index: 10;
+  border-radius: 8px 8px 0 0;
+}
+
+.board-title {
+  position: relative;
+  display: inline-block;
+  padding: 10px;
+  box-shadow: 0 4px 8px rgba(1, 1, 1, 1); /* 그림자 효과 추가 */
+  border-radius: 5px; /* 모서리 둥글게 */
+  z-index: 1; /* 다른 요소 위에 표시 */
+}
+
+.board-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.add-post-button {
+  background-color: transparent;
+  border: none;
+  font-size: 15px; /* 버튼 크기 조정 */
+  cursor: pointer;
+  color: white;
+  padding: 8px 12px;
+}
+
+.header-buttons {
+  display: flex;
+  justify-content: flex-end; /* 오른쪽 정렬 */
+  flex-grow: 1; /* 남은 공간을 차지하도록 설정 */
+}
+
+.add-post-button:hover {
+  background-color: #36393f;
+  color: #dcddde;
+  border-radius: 5px;
+}
+
+.post-item {
+  display: flex;
+  flex-direction: column; /* 세로 정렬 */
+  align-items: center; /* 중앙 정렬 */
+  margin-bottom: 50px;
+  border: 1px solid #36393f;
+  box-shadow: 4px 4px 8px rgba(1, 1, 1, 1); /* 그림자 효과 추가 */
+  border-radius: 5px; /* 모서리 둥글게 */
+  z-index: 1; /* 다른 요소 위에 표시 */
+  padding: 20px;
+  height: 100px;
+  position: relative; /* post-writer 위치 조정을 위해 추가 */
+}
+
+.post-title {
+  text-align: center; /* 중앙 정렬 */
+}
+
+.post-writer {
+  position: absolute;
+  right: 10px; /* 오른쪽 끝에 위치 */
+  bottom: 10px; /* 아래쪽에 위치 */
+}
+
+.posts-list {
+  /* width: 80%;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding-bottom: 100px;
+  margin-top: 20px; */
+  width: 80%;
+  max-height: 80vh; /* 스크롤을 위한 최대 높이 설정 */
+  overflow-y: auto; /* 수직 스크롤 활성화 */
+  margin-top: 20px; /* 상단 여백 추가 */
+  padding: 10px;
+}
+.search-input {
+  background-color: #36393f;
+  border: none;
+  border-radius: 5px;
+  padding: 8px 12px;
+  color: white;
+}

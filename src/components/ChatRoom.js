@@ -6,145 +6,246 @@ import React, {
   useCallback,
 } from "react";
 import "./ChatRoom.css";
-import useWebSocket from "../hooks/useWebSocket.js";
 import AuthContext from "../context/AuthContext.js";
+import useWebSocket from "../hooks/useWebSocket.js";
+import UserProfilePopup from "./UserProfilePopup.js";
+import Swal from "sweetalert2";
 
 const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
-  const { userName } = useContext(AuthContext);
+  const { userName, userEmail } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState("");
-  const [page, setPage] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
-  const messageEndRef = useRef(null);
-  const inputRef = useRef(null);
+  const [showProfilePopup, setShowProfilePopup] = useState(false);
+  const [selectedUser, setSelectedUser] = useState(null);
+  const [editingMessageId, setEditingMessageId] = useState(null);
+  const [editMessageContent, setEditMessageContent] = useState("");
   const messageListRef = useRef(null);
+  const inputRef = useRef(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(30);
+  const [lastMessageId, setLastMessageId] = useState(null);
+  const [showLoadMoreButton, setShowLoadMoreButton] = useState(false);
 
-  // 채팅 기록 불러오기
-  const fetchChatHistory = useCallback(async () => {
-    try {
-      const response = await fetch(
-        `http://localhost:8181/api/chats/${serverId}/${channelId}/messages`
-      );
+  // 스크롤 처리
+  const scrollToBottom = useCallback(() => {
+    if (messageListRef.current) {
+      messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
+    }
+  }, []);
 
-      if (!response.ok) {
-        throw new Error("채팅 기록을 불러오는데 실패했습니다.");
+  // 메시지 수신 처리
+  const handleMessageReceived = useCallback(
+    (message) => {
+      console.log("수신된 메시지:", message);
+
+      // 서버 응답 메시지인 경우 무시 (statusCode가 있는 경우)
+      if (message.statusCode !== undefined) {
+        return;
       }
 
-      const data = await response.json();
-      console.log("받은 채팅 기록:", data);
+      // 삭제된 메시지 처리
+      if (message.deletedChatId) {
+        setMessages((prevMessages) =>
+          prevMessages.filter((msg) => msg.id !== message.deletedChatId)
+        );
+        return;
+      }
 
-      // 최근 20개의 메시지만 가져오기
-      const recentMessages = data.slice(-20);
+      // 일반 메시지 처리
+      const messageWithMeta = {
+        id: message.chatId,
+        content: message.content,
+        writer: message.writer || "Unknown",
+        email: message.email,
+        type: message.type || "TALK",
+        timestamp: new Date().toLocaleString("ko-KR", {
+          hour: "2-digit",
+          minute: "2-digit",
+          second: "2-digit",
+          hour12: true,
+        }),
+      };
 
-      setMessages(
-        recentMessages.map((msg) => ({
-          id: msg.id,
-          text: msg.content,
-          from: msg.writer || "Unknown",
-          timestamp: new Date(Number(msg.timestamp)).toLocaleString("ko-KR", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true,
-          }),
-        }))
-      );
-
-      // 메시지 로드 직후 스크롤 이동
-      requestAnimationFrame(() => {
-        if (messageListRef.current) {
-          messageListRef.current.scrollTop =
-            messageListRef.current.scrollHeight;
+      setMessages((prev) => {
+        if (prev.some((msg) => msg.id === messageWithMeta.id)) {
+          return prev;
         }
+        return [...prev, messageWithMeta];
       });
-    } catch (error) {
-      console.error("채팅 기록 로딩 에러:", error);
-    }
-  }, [serverId, channelId]);
+    },
+    [serverId]
+  );
 
-  // 채널 입장시 채팅 기록 로드
-  useEffect(() => {
-    if (channelId) {
-      fetchChatHistory();
-    }
-    return () => {
-      setMessages([]); // 채널 변경시 메시지 초기화
-    };
-  }, [channelId, fetchChatHistory]);
-
-  const handleMessageReceived = (message) => {
-    console.log("수신된 메시지:", message);
-    const messageWithTime = {
-      id: message.id,
-      text: message.content,
-      from: message.writer,
-      timestamp: new Date(Number(message.timestamp)).toLocaleString("ko-KR", {
-        hour: "2-digit",
-        minute: "2-digit",
-        second: "2-digit",
-        hour12: true,
-      }),
-    };
-    setMessages((prev) => [...prev, messageWithTime]);
-  };
-
-  const { sendMessage } = useWebSocket(
-    serverId,
+  const { sendMessage, deleteMessage } = useWebSocket(
     channelId,
     handleMessageReceived
   );
 
-  // 메시지 자동 스크롤
-  const scrollToBottom = () => {
-    if (messageListRef.current) {
-      const element = messageListRef.current;
-      element.scrollTo({
-        top: element.scrollHeight,
-        behavior: "smooth",
+  // 채팅 기록 불러오기
+  const fetchChatHistory = useCallback(
+    async (page = 0, size = 30, lastId = null) => {
+      try {
+        setIsLoading(true);
+        const token = localStorage.getItem("token");
+        if (!token) {
+          throw new Error("인증 토큰이 없습니다.");
+        }
+
+        let url = `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/ch/${channelId}?page=${page}&size=${size}`;
+        if (lastId) {
+          url += `&lastId=${lastId}`;
+        }
+
+        const response = await fetch(url, {
+          method: "GET",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        });
+
+        const data = await response.json();
+
+        if (data.statusCode === 200 && data.result) {
+          const messages = data.result.messages || [];
+          setHasMore(data.result.currentPage < data.result.totalPages - 1);
+
+          setMessages((prev) => {
+            const newMessages = messages
+              .map((msg) => ({
+                id: msg.id,
+                writer: msg.writer,
+                email: msg.email,
+                content: msg.content,
+                timestamp: new Date(msg.timestamp).toLocaleString("ko-KR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                  hour12: true,
+                }),
+              }))
+              .reverse();
+
+            if (page === 0) {
+              setTimeout(() => scrollToBottom(), 100);
+              return newMessages;
+            }
+
+            if (messages.length > 0) {
+              setLastMessageId(messages[0].id);
+            }
+
+            return [...newMessages, ...prev];
+          });
+        }
+      } catch (error) {
+        console.error("채팅 기록 로딩 에러:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [channelId, scrollToBottom]
+  );
+
+  // 더 불러오기 버튼 클릭 핸들러
+  const loadMoreMessages = () => {
+    if (hasMore && !isLoading) {
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+
+      // 현재 스크롤 위치와 높이 저장
+      const scrollContainer = messageListRef.current;
+      const previousScrollHeight = scrollContainer.scrollHeight;
+      const previousScrollTop = scrollContainer.scrollTop;
+
+      fetchChatHistory(nextPage, pageSize, lastMessageId).then(() => {
+        // requestAnimationFrame을 사용하여 DOM 업데이트 후 스크롤 위치 조정
+        requestAnimationFrame(() => {
+          const newScrollHeight = scrollContainer.scrollHeight;
+          const scrollHeightDiff = newScrollHeight - previousScrollHeight;
+          scrollContainer.scrollTop = previousScrollTop + scrollHeightDiff;
+        });
       });
     }
   };
 
-  // 새 메시지가 추가될 때마다 스크롤
-  useEffect(() => {
-    if (messages.length > 0) {
-      scrollToBottom();
-    }
-  }, [messages]);
-
-  // 채널이 변경될 때도 스크롤
-  useEffect(() => {
-    if (channelId && messages.length > 0) {
-      scrollToBottom();
-    }
-  }, [channelId, messages]);
-
-  // 채널이 변경될 때마다 입력창 포커스
-  useEffect(() => {
-    inputRef.current?.focus();
-  }, [channelId]);
-
-  // 메시지 전송 핸들러 (백엔드 API를 통한 메시지 전송)
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    if (newMessage.trim()) {
-      const message = {
-        text: newMessage.trim(),
-        writer: userName,
-        timestamp: Date.now(),
-      };
-
-      try {
-        sendMessage(message);
-        setNewMessage("");
-        inputRef.current?.focus();
-      } catch (error) {
-        console.error("메시지 전송 오류:", error);
-      }
+  // 스크롤 이벤트 처리
+  const handleScroll = () => {
+    if (messageListRef.current) {
+      const { scrollTop } = messageListRef.current;
+      // 스크롤이 최상단에 도달하면 더보기 버튼 표시
+      setShowLoadMoreButton(scrollTop === 0 && hasMore && !isLoading);
     }
   };
 
-  // 키 입력 핸들러
+  // 채널 변경 시 초기화
+  useEffect(() => {
+    if (channelId) {
+      setMessages([]);
+      setCurrentPage(0);
+      setHasMore(true);
+      fetchChatHistory(0, pageSize);
+    }
+  }, [channelId, fetchChatHistory, pageSize]);
+
+  // 메시지 전송
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!newMessage.trim()) return;
+
+    const messageData = {
+      serverId: serverId,
+      channelId: channelId,
+      writer: userName,
+      email: userEmail,
+      content: newMessage.trim(),
+      messageType: "TALK",
+    };
+
+    try {
+      console.log("전송할 메시지 데이터:", messageData);
+      const response = await sendMessage(messageData);
+      setNewMessage("");
+      inputRef.current?.focus();
+
+      if (response && response.result) {
+        const { chatId, content, writer, email } = response.result;
+
+        // 중복 메시지 체크 후 추가
+        setMessages((prev) => {
+          // 이미 같은 ID의 메시지가 있다면 상태 업데이트하지 않음
+          if (prev.some((msg) => msg.id === chatId)) {
+            return prev;
+          }
+
+          const newMessage = {
+            id: chatId,
+            content,
+            writer,
+            email,
+            timestamp: new Date().toLocaleString("ko-KR", {
+              hour: "2-digit",
+              minute: "2-digit",
+              second: "2-digit",
+              hour12: true,
+            }),
+          };
+
+          return [...prev, newMessage];
+        });
+
+        // 메시지 전송 후 스크롤을 아래로 이동
+        setTimeout(() => scrollToBottom(), 100);
+      }
+    } catch (error) {
+      console.error("메시지 전송 중 오류 발생:", error);
+      Swal.fire("오류 발생", "메시지 전송에 실패했습니다.", "error");
+    }
+  };
+
+  // 엔터키 처리
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -152,70 +253,62 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   };
 
-  // 이전 메시지 불러오기
-  const fetchPreviousMessages = useCallback(async () => {
-    if (isLoading) return;
-
+  // 메시지 삭제 핸들러
+  const handleDeleteMessage = async (chatId) => {
     try {
-      setIsLoading(true);
-      const response = await fetch(
-        `http://localhost:8181/api/chats/${serverId}/${channelId}/messages?page=${
-          page + 1
-        }`
-      );
+      const result = await Swal.fire({
+        title: "메시지 삭제",
+        text: "정말로 이 메시지를 삭제하시겠습니까?",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonColor: "#3085d6",
+        cancelButtonColor: "#d33",
+        confirmButtonText: "삭제",
+        cancelButtonText: "취소",
+      });
 
-      if (!response.ok) {
-        throw new Error("이전 메시지를 불러오는데 실패했습니다.");
-      }
-
-      const data = await response.json();
-      if (data.length > 0) {
-        const oldMessages = data.map((msg) => ({
-          id: msg.id,
-          text: msg.content,
-          from: msg.writer || "Unknown",
-          timestamp: new Date(Number(msg.timestamp)).toLocaleString("ko-KR", {
-            hour: "2-digit",
-            minute: "2-digit",
-            second: "2-digit",
-            hour12: true,
-          }),
-        }));
-
-        setMessages((prev) => [...oldMessages, ...prev]);
-        setPage((prev) => prev + 1);
+      if (result.isConfirmed) {
+        // WebSocket으로 삭제 요청 전송
+        deleteMessage(chatId);
       }
     } catch (error) {
-      console.error("이전 메시지 로딩 에러:", error);
-    } finally {
-      setIsLoading(false);
+      console.error("메시지 삭제 중 오류 발생:", error);
+      Swal.fire("오류 발생", "메시지 삭제 중 문제가 발생했습니다.", "error");
     }
-  }, [isLoading, serverId, channelId, page]);
+  };
 
-  // 스크롤 이벤트 핸들러
-  const handleScroll = useCallback(
-    (e) => {
-      const { scrollTop } = e.target;
-      if (scrollTop === 0 && !isLoading) {
-        const scrollHeight = e.target.scrollHeight;
-        fetchPreviousMessages().then(() => {
-          if (messageListRef.current) {
-            const newScrollHeight = messageListRef.current.scrollHeight;
-            messageListRef.current.scrollTop = newScrollHeight - scrollHeight;
-          }
-        });
+  // 메시지 수정 핸들러
+  const handleUpdateMessage = async (messageId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(
+        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/message/${messageId}`,
+        {
+          method: "PATCH",
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          body: editMessageContent,
+        }
+      );
+
+      if (response.ok) {
+        setMessages(
+          messages.map((msg) =>
+            msg.id === messageId ? { ...msg, content: editMessageContent } : msg
+          )
+        );
+        setEditingMessageId(null);
+        setEditMessageContent("");
+      } else {
+        const errorData = await response.json();
+        console.error("메시지 수정 실패:", errorData);
       }
-    },
-    [isLoading, fetchPreviousMessages]
-  );
-
-  useEffect(() => {
-    const messageList = messageListRef.current;
-    if (messageList) {
-      messageList.addEventListener("scroll", handleScroll);
-      return () => messageList.removeEventListener("scroll", handleScroll);
+    } catch (error) {
+      console.error("메시지 수정 중 오류 발생:", error);
     }
-  }, [page, isLoading, handleScroll]);
+  };
 
   return (
     <div className="chat-room-container">
@@ -235,20 +328,82 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
               isDirectMessage ? "no-header" : ""
             }`}
             ref={messageListRef}
+            onScroll={handleScroll}
           >
+            {showLoadMoreButton && (
+              <button
+                onClick={loadMoreMessages}
+                className="load-more-button"
+                disabled={isLoading}
+              >
+                이전 메시지 더 보기
+              </button>
+            )}
+            {isLoading && (
+              <div className="loading-messages">메시지를 불러오는 중...</div>
+            )}
             {messages.map((message, index) => (
               <div key={message.id || index} className="message-item">
-                <div className="message-avatar">
-                  {message.from?.charAt(0).toUpperCase()}
+                <div
+                  className="message-avatar"
+                  onClick={() => {
+                    setSelectedUser({
+                      name: message.writer,
+                      email: message.email,
+                    });
+                    setShowProfilePopup(true);
+                  }}
+                  style={{ cursor: "pointer" }}
+                >
+                  {message.writer?.charAt(0).toUpperCase()}
                 </div>
                 <div className="message-content-wrapper">
                   <div className="message-header">
                     <span className="message-sender">
-                      {message.from || "Unknown"}
+                      {message.writer || "Unknown"}
                     </span>
                     <span className="message-time">{message.timestamp}</span>
+                    {message.email === userEmail && (
+                      <div className="message-actions">
+                        <button
+                          onClick={() => {
+                            setEditingMessageId(message.id);
+                            setEditMessageContent(message.content);
+                          }}
+                        >
+                          수정
+                        </button>
+                        <button
+                          onClick={() => handleDeleteMessage(message.id)}
+                          className="delete-button"
+                        >
+                          삭제
+                        </button>
+                      </div>
+                    )}
                   </div>
-                  <div className="message-content">{message.text}</div>
+                  {editingMessageId === message.id ? (
+                    <div className="edit-message-form">
+                      <input
+                        type="text"
+                        value={editMessageContent}
+                        onChange={(e) => setEditMessageContent(e.target.value)}
+                      />
+                      <button onClick={() => handleUpdateMessage(message.id)}>
+                        저장
+                      </button>
+                      <button
+                        onClick={() => {
+                          setEditingMessageId(null);
+                          setEditMessageContent("");
+                        }}
+                      >
+                        취소
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="message-content">{message.content}</div>
+                  )}
                 </div>
               </div>
             ))}
@@ -270,6 +425,13 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
               />
             </form>
           </div>
+
+          {showProfilePopup && selectedUser && (
+            <UserProfilePopup
+              user={selectedUser}
+              onClose={() => setShowProfilePopup(false)}
+            />
+          )}
         </>
       ) : (
         <div className="no-messages">친구와 대화해보세요!</div>
