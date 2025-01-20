@@ -65,11 +65,17 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (isAuthenticated && token) {
+      console.log("ASdasdasdasd");
+
       getServerList();
     }
   }, [isAuthenticated]);
 
   const getServerList = async () => {
+    const token = localStorage.getItem("token");
+    if (!isAuthenticated || !token) {
+      return;
+    }
     const res = await axios.get(
       `${process.env.REACT_APP_API_BASE_URL}/server/servers`,
       {
@@ -92,6 +98,7 @@ function App() {
     serverType
   ) => {
     const token = localStorage.getItem("token");
+    getServerList();
     if (serverId) {
       setSelectedServer(serverId);
       setServerName(title);
@@ -215,6 +222,7 @@ function App() {
                               serverType={serverType}
                               setShowMemberModal={setShowModal}
                               showMemberModal={showModal}
+                              getServerList={getServerList}
                             />
                           )}
                           <div className="main-content">
@@ -229,6 +237,13 @@ function App() {
                                 setPage={setPage}
                                 searchValue={searchValue}
                                 setSearchValue={setSearchValue}
+                                handleSelectBoard={onSelectBoard}
+                                getServerList={getServerList}
+                                handleSelectServer={handleSelectServer}
+                                serverName={serverName}
+                                serverRole={serverRole}
+                                serverTag={serverTag}
+                                serverType={serverType}
                               />
                             ) : (
                               <ChatRoom

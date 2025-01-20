@@ -166,7 +166,6 @@
   /* 이미지도 원형으로 만들기 */
 }
 
-
 .profile-info {
   display: flex;
   align-items: baseline;
@@ -313,9 +312,6 @@
   color: #b5bac1;
   font-size: 14px;
   text-align: center;
-
-}
-
 }
 
 .connection-section {
@@ -401,4 +397,3 @@
   color: white;
   font-size: 0.9em;
 }
-

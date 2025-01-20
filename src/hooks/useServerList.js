@@ -27,7 +27,29 @@ export const useServerList = (
 
   const userEmail = localStorage.getItem("userEmail");
 
-  const handleLogout = useCallback(async () => {
+  const handleLogout = () => {
+    handleLogoutBack();
+    handleLogoutelctron();
+  };
+  const handleLogoutBack = async () => {
+    const token = localStorage.getItem("token");
+    try {
+      const res = await axios.delete(
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/sign-out`,
+        {
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true, // 쿠키 포함
+        }
+      );
+    } catch (error) {
+      console.error("Data fetch error:", error);
+    }
+  };
+
+  const handleLogoutelctron = useCallback(async () => {
     try {
       if (!onLogout) {
         console.error("Logout function not available");
@@ -36,12 +58,8 @@ export const useServerList = (
 
       localStorage.removeItem("token");
       localStorage.removeItem("userName");
-      localStorage.removeItem("userEmail");
       localStorage.removeItem("userId");
       localStorage.removeItem("userRole");
-      onSelectServer(null, null, null, null);
-      setPosts([]);
-      setPage(0);
 
       await onLogout();
       navigate("/");
@@ -66,12 +84,18 @@ export const useServerList = (
   const handleImageChange = (event) => {
     const file = event.target.files[0];
     if (file) {
-      setServerImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result);
-      };
-      reader.readAsDataURL(file);
+      if (file.type.startsWith("image/")) {
+        setServerImage(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviewImage(reader.result);
+        };
+        reader.readAsDataURL(file);
+      } else {
+        console.log("ASd");
+        Swal.fire("이미지 파일만 등록할 수 있습니다");
+        event.target.value = "";
+      }
     }
   };
 
@@ -174,7 +198,7 @@ export const useServerList = (
         }
       }
     } catch (error) {
-      console.error("서버 삭제 실패:", error);
+      console.error(error);
       Swal.fire({
         icon: "error",
         title: "오류",
@@ -254,5 +278,6 @@ export const useServerList = (
     handleCloseModal,
     setServerName,
     setServerTag,
+    handleLogoutelctron,
   };
 };
