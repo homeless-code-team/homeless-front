@@ -22,6 +22,151 @@ const ServerList = React.memo(
     const navigate = useNavigate();
     const { onLogout } = useContext(AuthContext);
 
+    const handleLogout = () => {
+      handleLogoutBack();
+      handleLogoutelctron();
+    };
+    const handleLogoutBack = async () => {
+      const token = localStorage.getItem("token");
+      try {
+        const res = await axios.delete(
+          `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/sign-out`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
+            },
+            withCredentials: true, // 쿠키 포함
+          }
+        );
+      } catch (error) {
+        console.error("Data fetch error:", error);
+      }
+    };
+
+    const handleLogoutelctron = useCallback(async () => {
+      try {
+        if (!onLogout) {
+          console.error("Logout function not available");
+          return;
+        }
+
+        localStorage.removeItem("token");
+        localStorage.removeItem("userName");
+        localStorage.removeItem("userId");
+        localStorage.removeItem("userRole");
+
+        await onLogout();
+        navigate("/");
+      } catch (error) {
+        console.error("Logout failed:", error);
+        // 사용자에게 에러 메시지를 표시할 수 있습니다
+      }
+    }, [onLogout, navigate]);
+
+    const handleCreateServer = () => {
+      setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+      setIsModalOpen(false);
+      setPreviewImage(null);
+      setServerName("");
+      setServerTag("");
+      setServerImage(null);
+    };
+
+    const handleImageChange = (event) => {
+      const file = event.target.files[0];
+      if (file) {
+        setServerImage(file);
+        const reader = new FileReader();
+        reader.onloadend = () => {
+          setPreviewImage(reader.result);
+        };
+        reader.readAsDataURL(file);
+      }
+    };
+
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+
+      try {
+        const formData = new FormData();
+        formData.append("title", serverName);
+        formData.append("tag", serverTag);
+
+        if (serverImage != null) {
+          console.log("asdasd");
+
+          formData.append("serverImg", serverImage);
+        }
+
+        const response = await axios.post(
+          "http://localhost:8181/server/servers",
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+        console.log(response);
+
+        if (response.status === 200) {
+          console.log("성공");
+
+          handleCloseModal();
+          if (onRefreshServers) {
+            await onRefreshServers();
+          }
+        }
+      } catch (error) {
+        console.error("서버 생성 실패:", error);
+        alert("서버 생성에 실패했습니다.");
+      }
+    };
+
+    const handleContextMenu = useCallback((e, serverId) => {
+      e.preventDefault();
+      setContextMenu({
+        visible: true,
+        x: e.pageX,
+        y: e.pageY,
+        serverId,
+      });
+    }, []);
+
+    const handleDeleteServer = async (serverId) => {
+      try {
+        const response = await axios.delete(
+          `http://localhost:8181/server/servers?id=${serverId}`,
+          {
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          onSelectServer(null);
+          setContextMenu({ visible: false, x: 0, y: 0, serverId: null });
+
+          if (onRefreshServers) {
+            await onRefreshServers();
+          }
+
+          alert("삭제되었습니다.");
+          return;
+        }
+      } catch (error) {
+        console.error("서버 삭제 실패:", error);
+        alert("서버 삭제에 실패했습니다.");
+      }
+      setContextMenu({ visible: false, x: 0, y: 0, serverId: null });
+    };
+
     const {
       isModalOpen,
       previewImage,
@@ -48,6 +193,7 @@ const ServerList = React.memo(
       setPosts,
       setPage
     );
+
 
     useEffect(() => {
       const handleClick = () =>
