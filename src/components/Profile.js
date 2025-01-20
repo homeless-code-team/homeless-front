@@ -1,327 +1,165 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import "./Profile.css";
-import axios from "axios";
 import AuthContext from "../context/AuthContext.js";
 import { useNavigate } from "react-router-dom";
-import { FaGithub } from "react-icons/fa";
+import axios from "axios";
+import PasswordModal from "./PasswordModal.js"; // 비밀번호 변경 모달 컴포넌트 추가
 
 const Profile = () => {
-  const { userName, userId, onLogin } = useContext(AuthContext);
+  const { userName: initialUserName, userId } = useContext(AuthContext);
   const [description, setDescription] = useState("");
   const [activeSection, setActiveSection] = useState("내 계정");
-  const [changeNicknameError, setChangeNicknameError] = useState("");
-  const [showNicknameModal, setShowNicknameModal] = useState(false);
-  const [newNickname, setNewNickname] = useState("");
-  const [isDuplicateChecked, setIsDuplicateChecked] = useState(false);
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [oldPassword, setOldPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmNewPassword, setConfirmNewPassword] = useState("");
-  const [passwordError, setPasswordError] = useState("");
+  const [userName, setUserName] = useState("username");
+  const [profileImage, setProfileImage] = useState("");
+  const [password, setPassword] = useState("");
+  const [localProfileImage, setLocalProfileImage] = useState(profileImage);
+  const [content, setContent] = useState("");
+  const [showPasswordModal, setShowPasswordModal] = useState(false); // 비밀번호 변경 모달 상태 추가
   const navigate = useNavigate();
-  const [previewImage, setPreviewImage] = useState(
-    localStorage.getItem("profileImage") || null
-  );
-  const fileInputRef = React.useRef(null);
+  const token = localStorage.getItem("token"); // 저장된 토큰 키 확인 필요
+  const API_BASE_URL = "http://localhost:8181/user-service";
 
-  const handleOpenModal = () => {
-    setNewNickname(userName);
-    setChangeNicknameError("");
-    setShowNicknameModal(true);
-  };
-
-  const handleCloseModal = () => {
-    setNewNickname("");
-    setChangeNicknameError("");
-    setShowNicknameModal(false);
-  };
-
-  const handleDuplicateNickname = async () => {
+  const handleContentUpdate = async () => {
     try {
-      const email = localStorage.getItem("userEmail");
-      const params = new URLSearchParams({
-        email: email,
-        nickname: newNickname,
-      });
-
-      const res = await axios.get(
-        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/duplicate?${params}`,
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      if (res.data.status === "OK") {
-        setIsDuplicateChecked(true);
-        setChangeNicknameError("사용 가능한 닉네임입니다.");
-      } else {
-        setIsDuplicateChecked(false);
-        setChangeNicknameError("닉네임이 중복되었습니다.");
-      }
-    } catch (error) {
-      console.error("닉네임 중복 확인 오류:", error);
-      setIsDuplicateChecked(false);
-      setChangeNicknameError("닉네임 중복 확인에 실패했습니다.");
-    }
-  };
-
-  const handleNicknameChange = async () => {
-    if (!newNickname) return;
-
-    if (newNickname.length < 2 || newNickname.length > 8) {
-      setChangeNicknameError("닉네임은 2~8자 사이여야 합니다.");
-      return;
-    }
-
-    if (!isDuplicateChecked) {
-      setChangeNicknameError("닉네임 중복 확인이 필요합니다.");
-      return;
-    }
-
-    try {
-      const formData = new FormData();
-      formData.append("nickname", newNickname);
       const res = await axios.patch(
-        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users`,
-        formData,
+        `${API_BASE_URL}/api/v1/users`,
+        { content },
         {
           headers: {
             "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            Authorization: `Bearer ${token}`,
           },
+          withCredentials: true, // 쿠키 포함
         }
       );
 
-      if (res.data.status === "OK") {
-        const token = localStorage.getItem("token");
-        const userEmail = localStorage.getItem("userEmail");
-        const userRole = localStorage.getItem("userRole");
+      if (res.data.code === 200) {
+        console.log("소개글이 수정 성공:", res.data);
+        alert("소개글이 성공적으로 변경되었습니다!");
 
-        // localStorage 업데이트
-        localStorage.setItem("userName", newNickname);
-
-        // AuthContext 업데이트
-        onLogin(token, userEmail, userRole, newNickname);
-
-        // 모달 닫기 전에 상태 업데이트 완료 대기
-        await new Promise((resolve) => setTimeout(resolve, 100));
-
-        setNewNickname("");
-        setIsDuplicateChecked(false);
-        setChangeNicknameError("");
-        setShowNicknameModal(false);
-
-        // 페이지 새로고침
-        window.location.reload();
+        // 닉네임 변경 성공 시 상태 업데이트
+        setUserName(res.data.data.nickname || userName);
       } else {
-        setChangeNicknameError(
-          res.data.message || "닉네임 변경에 실패했습니다."
+        console.log("소개글수정 실패:", res.status);
+        alert("닉네임 소게글이 실패하였습니다!");
+      }
+    } catch (error) {
+      console.error("닉네임 변경 요청 실패:", error);
+      alert("닉네임 변경 중 문제가 발생했습니다.");
+    }
+  };
+
+  const handleNicknameUpdate = async () => {
+    try {
+      const res = await axios.patch(
+        `${API_BASE_URL}/api/v1/users`,
+        { nickname: userName },
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true, // 쿠키 포함
+        }
+      );
+
+      if (res.data.code === 200) {
+        console.log("닉네임 수정 성공:", res.data);
+        alert("닉네임이 성공적으로 변경되었습니다!");
+
+        // 닉네임 변경 성공 시 상태 업데이트
+        setUserName(res.data.data.nickname || userName);
+      } else {
+        console.log("닉네임 수정 실패:", res.status);
+        alert("닉네임 변경이 실패하였습니다!");
+      }
+    } catch (error) {
+      console.error("닉네임 변경 요청 실패:", error);
+      alert("닉네임 변경 중 문제가 발생했습니다.");
+    }
+  };
+
+  const handleProfileImageChange = async (event) => {
+    const file = event.target.files[0];
+
+    if (file) {
+      const previewUrl = URL.createObjectURL(file);
+      setProfileImage(previewUrl); // 로컬 미리보기 반영
+
+      const formData = new FormData();
+      formData.append("profileImage", file);
+
+      try {
+        const res = await axios.patch(
+          `${API_BASE_URL}/api/v1/users`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+              Authorization: `Bearer ${token}`,
+            },
+            withCredentials: true,
+          }
         );
+
+        if (res.data.code === 200) {
+          const profileImageUrl = res.data.data.profileImage;
+          const timestamp = new Date().getTime();
+          setProfileImage(`${profileImageUrl}?t=${timestamp}`); // 캐시 무효화 URL 적용
+          alert("프로필 이미지가 성공적으로 변경되었습니다!");
+          fetchData("내 계정");
+        } else {
+          alert("이미지 업로드에 실패했습니다.");
+        }
+      } catch (error) {
+        console.error("이미지 업로드 실패:", error);
+        alert("이미지 업로드 중 문제가 발생했습니다.");
       }
-    } catch (error) {
-      console.error("닉네임 변경 오류:", error);
-      setChangeNicknameError("닉네임 변경 중 오류가 발생했습니다.");
     }
   };
 
-  const handlePasswordChange = async () => {
-    // 현재 비밀번호 입력 확인
-    if (!oldPassword) {
-      setPasswordError("현재 비밀번호를 입력해주세요.");
-      return;
-    }
-
-    // 새 비밀번호 입력 확인
-    if (!newPassword) {
-      setPasswordError("새 비밀번호를 입력해주세요.");
-      return;
-    }
-
-    // 새 비밀번호 확인 입력 확인
-    if (!confirmNewPassword) {
-      setPasswordError("새 비밀번호 확인을 입력해주세요.");
-      return;
-    }
-
-    // 새 비밀번호 일치 확인
-    if (newPassword !== confirmNewPassword) {
-      setPasswordError("새 비밀번호가 일치하지 않습니다.");
-      return;
-    }
-
-    // 새 비밀번호 길이 확인
-    if (newPassword.length < 4 || newPassword.length > 14) {
-      setPasswordError("비밀번호는 4~14자 사이여야 합니다.");
-      return;
-    }
-
-    // 현재 비밀번호와 새 비밀번호가 같은지 확인
-    if (oldPassword === newPassword) {
-      setPasswordError("새 비밀번호가 현재 비밀번호와 같습니다.");
-      return;
-    }
-
-    try {
-      // 현재 비밀번호 확인 요청
-      const checkRes = await axios.post(
-        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/password/check`,
-        { password: oldPassword },
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      if (checkRes.data.status !== "OK") {
-        setPasswordError("현재 비밀번호가 일치하지 않습니다.");
-        return;
-      }
-
-      // 새 비밀번호로 변경 요청
-      const formData = new FormData();
-      formData.append("password", newPassword);
-
-      const res = await axios.patch(
-        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      if (res.data.status === "OK") {
-        // 모달 상태 초기화
-        setShowPasswordModal(false);
-        setOldPassword("");
-        setNewPassword("");
-        setConfirmNewPassword("");
-        setPasswordError("");
-        alert("비밀번호가 변경되었습니다.");
-      } else {
-        setPasswordError(res.data.message || "비밀번호 변경에 실패했습니다.");
-      }
-    } catch (error) {
-      console.error("비밀번호 변경 오류:", error);
-      setPasswordError(
-        error.response?.data?.message || "비밀번호 변경에 실패했습니다."
-      );
-    }
-  };
+  const handlePasswordModalOpen = () => setShowPasswordModal(true); // 모달 열기
+  const handlePasswordModalClose = () => setShowPasswordModal(false); // 모달 닫기
 
   const handleDescriptionChange = (e) => {
     setDescription(e.target.value);
   };
 
-  const handleDescriptionSubmit = async () => {
+  const fetchData = async (section) => {
     try {
-      const formData = new FormData();
-      formData.append("content", description);
+      let endpoint = "";
+      if (section === "내 계정") {
+        endpoint = "/api/v1/users"; // 예: 계정 정보 API
+      } else if (section === "프로필") {
+        endpoint = "/api/v1/users"; // 예: 프로필 정보 API
+      }
 
-      const res = await axios.patch(
-        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
+      const res = await axios.get(`${API_BASE_URL}${endpoint}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        withCredentials: true,
+      });
+
+      if (res.data.code === 200) {
+        console.log(`Fetched ${section} data:`, res.data);
+        if (section === "내 계정") {
+          setProfileImage(res.data.data.profileImage || "");
+          setUserName(res.data.data.nickname || "");
+        } else if (section === "프로필") {
+          setContent(res.data.data.content || "");
         }
-      );
-
-      if (res.data.status === "OK") {
-        alert("프로필 설명이 변경되었습니다.");
       } else {
-        alert(res.data.message || "프로필 설명 변경에 실패했습니다.");
+        console.error(`Failed to fetch ${section} data:`, res.status);
       }
     } catch (error) {
-      console.error("프로필 설명 변경 오류:", error);
-      alert(
-        error.response?.data?.message || "프로필 설명 변경에 실패했습니다."
-      );
+      console.error("Data fetch error:", error);
     }
   };
 
-  const handleGithubConnect = () => {
-    // GitHub 연동 로직 구현
-    console.log("GitHub 연동");
-  };
-
-  const handleOpenPasswordModal = () => {
-    setPasswordError("");
-    setShowPasswordModal(true);
-  };
-
-  const handleImageClick = () => {
-    fileInputRef.current.click();
-  };
-
-  const handleImageChange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      alert("이미지 파일만 업로드 가능합니다.");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      alert("파일 크기는 5MB 이하여야 합니다.");
-      return;
-    }
-
-    const tempPreviewUrl = URL.createObjectURL(file);
-    setPreviewImage(tempPreviewUrl);
-
-    try {
-      const formData = new FormData();
-      formData.append("profileImage", file);
-
-      const res = await axios.patch(
-        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users`,
-        formData,
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${localStorage.getItem("token")}`,
-          },
-        }
-      );
-
-      if (res.data.status === "OK") {
-        const token = localStorage.getItem("token");
-        const userEmail = localStorage.getItem("userEmail");
-        const userRole = localStorage.getItem("userRole");
-        const userName = localStorage.getItem("userName");
-
-        // 새로운 프로필 이미지 URL을 저장하고 AuthContext 업데이트
-        localStorage.setItem("profileImage", res.data.data.profileImage);
-        onLogin(
-          token,
-          userEmail,
-          userRole,
-          userName,
-          res.data.data.profileImage
-        );
-
-        alert("프로필 사진이 변경되었습니다.");
-      } else {
-        setPreviewImage(localStorage.getItem("profileImage"));
-        alert(res.data.message || "프로필 사진 변경에 실패했습니다.");
-      }
-    } catch (error) {
-      console.error("프로필 사진 변경 오류:", error);
-      setPreviewImage(localStorage.getItem("profileImage"));
-      alert(
-        error.response?.data?.message || "프로필 사진 변경에 실패했습니다."
-      );
-    }
-  };
+  useEffect(() => {
+    fetchData(activeSection);
+  }, [activeSection]);
 
   const menuItems = ["내 계정", "프로필"];
 
@@ -338,43 +176,27 @@ const Profile = () => {
                 </div>
               </div>
               <div className="profile-avatar-section">
-                <div
-                  className="avatar-circle profile-image-container"
-                  onClick={handleImageClick}
-                  style={{ cursor: "pointer" }}
-                >
-                  {previewImage ? (
+                <label htmlFor="profileImageInput" className="avatar-circle">
+                  {profileImage ? (
                     <img
-                      src={previewImage}
+                      src={profileImage}
                       alt="프로필"
-                      className="profile-image"
-                      style={{
-                        width: "80px",
-                        height: "80px",
-                        borderRadius: "50%",
-                        objectFit: "cover",
-                      }}
+                      className="avatar-image"
                     />
                   ) : (
-                    <div className="profile-image-placeholder">
-                      {userName?.charAt(0).toUpperCase()}
-                    </div>
+                    userName?.charAt(0).toUpperCase()
                   )}
-                  <div className="image-overlay">
-                    <span>변경</span>
-                  </div>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    onChange={handleImageChange}
-                    accept="image/*"
-                    style={{ display: "none" }}
-                  />
-                </div>
-                <div className="profile-info">
-                  <div className="profile-name">{userName}</div>
-                  <div className="profile-tag">#1234</div>
-                </div>
+                </label>
+                <input
+                  id="profileImageInput"
+                  type="file"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleProfileImageChange}
+                />
+                <div className="profile-name">{userName}</div>
+                <div className="profile-tag">#1234</div>
+                <div className="profile-info"></div>
               </div>
             </div>
 
@@ -384,20 +206,6 @@ const Profile = () => {
                 <label>이메일</label>
                 <div className="field-value">{userId}</div>
               </div>
-              <div className="profile-field connection-section">
-                <label>연결된 계정</label>
-                <div className="connection-info">
-                  <div className="connection-item">
-                    <span className="connection-name">GitHub</span>
-                    <button
-                      className="connection-button"
-                      onClick={handleGithubConnect}
-                    >
-                      <FaGithub size={24} />
-                    </button>
-                  </div>
-                </div>
-              </div>
             </div>
 
             <div className="profile-section">
@@ -406,28 +214,33 @@ const Profile = () => {
                 <div className="settings-item">
                   <div className="settings-text">
                     <div className="settings-label">닉네임</div>
-                    <div className="settings-value">{userName}</div>
+                    <input
+                      type="text"
+                      className="settings-value"
+                      value={userName}
+                      onChange={(e) => setUserName(e.target.value)}
+                    />
                   </div>
-                  <button className="profile-button" onClick={handleOpenModal}>
+                  <button
+                    className="profile-button"
+                    onClick={handleNicknameUpdate}
+                  >
                     ✎
                   </button>
                 </div>
                 <div className="settings-item">
-                  <div className="settings-text">
-                    <div className="settings-label">비밀번호</div>
-                    <div className="settings-value">********</div>
-                  </div>
                   <button
                     className="profile-button"
-                    onClick={handleOpenPasswordModal}
+                    onClick={handlePasswordModalOpen} // 비밀번호 변경 모달 열기
                   >
-                    ✎
+                    비밀번호 변경
                   </button>
                 </div>
               </div>
             </div>
           </>
         );
+
       case "프로필":
         return (
           <>
@@ -441,26 +254,26 @@ const Profile = () => {
             </div>
 
             <div className="profile-section">
+              <div className="section-title">연결</div>
+              <div className="connection-info">
+                <div className="connection-text">연결된 계정이 없습니다.</div>
+              </div>
+            </div>
+            <div className="profile-section">
               <div className="section-title">프로필 설명</div>
               <textarea
                 className="profile-description"
-                value={description}
-                onChange={handleDescriptionChange}
-                placeholder="자신을 소개해보세요"
+                value={content || ""}
+                onChange={(e) => setContent(e.target.value)}
+                placeholder={content ? "" : "자신을 소개해보세요"}
                 maxLength={190}
               />
-              <div className="description-info">
-                <div className="description-length">
-                  {description.length}/190
-                </div>
-                <button
-                  className="profile-button save-button"
-                  onClick={handleDescriptionSubmit}
-                  style={{ marginTop: "10px" }}
-                >
-                  저장
-                </button>
+              <div className="description-length">
+                {(content || "").length}/190
               </div>
+              <button className="profile-button" onClick={handleContentUpdate}>
+                ✎
+              </button>
             </div>
           </>
         );
@@ -497,89 +310,8 @@ const Profile = () => {
         <div className="profile-content">{renderContent()}</div>
       </div>
 
-      {showNicknameModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>닉네임 변경</h3>
-            <input
-              type="text"
-              value={newNickname}
-              onChange={(e) => {
-                setNewNickname(e.target.value);
-                setIsDuplicateChecked(false);
-              }}
-              placeholder="새로운 닉네임 입력"
-              maxLength={8}
-            />
-            <button
-              onClick={handleDuplicateNickname}
-              className="duplicate-check-button"
-            >
-              중복 확인
-            </button>
-            {changeNicknameError && (
-              <div
-                className={`error-message ${
-                  isDuplicateChecked ? "success" : ""
-                }`}
-              >
-                {changeNicknameError}
-              </div>
-            )}
-            <div className="modal-buttons">
-              <button
-                onClick={handleNicknameChange}
-                disabled={!isDuplicateChecked}
-              >
-                변경
-              </button>
-              <button onClick={handleCloseModal}>취소</button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {showPasswordModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <h3>비밀번호 변경</h3>
-            <input
-              type="password"
-              value={oldPassword}
-              onChange={(e) => setOldPassword(e.target.value)}
-              placeholder="현재 비밀번호"
-            />
-            <input
-              type="password"
-              value={newPassword}
-              onChange={(e) => setNewPassword(e.target.value)}
-              placeholder="새 비밀번호"
-            />
-            <input
-              type="password"
-              value={confirmNewPassword}
-              onChange={(e) => setConfirmNewPassword(e.target.value)}
-              placeholder="새 비밀번호 확인"
-            />
-            {passwordError && (
-              <div className="error-message">{passwordError}</div>
-            )}
-            <div className="modal-buttons">
-              <button onClick={handlePasswordChange}>변경</button>
-              <button
-                onClick={() => {
-                  setShowPasswordModal(false);
-                  setOldPassword("");
-                  setNewPassword("");
-                  setConfirmNewPassword("");
-                  setPasswordError("");
-                }}
-              >
-                취소
-              </button>
-            </div>
-          </div>
-        </div>
+        <PasswordModal onClose={handlePasswordModalClose} />
       )}
     </div>
   );
