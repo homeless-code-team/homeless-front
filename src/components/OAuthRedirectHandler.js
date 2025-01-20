@@ -19,13 +19,17 @@ const OAuthRedirectHandler = () => {
       console.log("Search:", window.location.search);
 
       const code = new URLSearchParams(window.location.search).get("code");
+      const provider = new URLSearchParams(window.location.search).get(
+        "provider"
+      ); // provider 추가
       console.log("Received code:", code);
+      console.log("Provider:", provider); // provider 로그 추가
 
       if (code) {
         try {
           const tokenResponse = await axios.post(
-            `${API_BASE_URL}/user-service/api/v1/users/callback`,
-            { code, provider: "google" },
+            `${API_BASE_URL}/user-service/api/v1/users/callback`, // API 엔드포인트
+            { code, provider }, // provider를 동적으로 전달
             {
               headers: {
                 "Content-Type": "application/json",

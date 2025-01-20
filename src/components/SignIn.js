@@ -5,6 +5,7 @@ import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 import "./SignIn.css";
 import googleImage from "../asset/google.png";
+import githubImage from "../asset/github.png";
 
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:8181";
@@ -173,6 +174,20 @@ const SignIn = () => {
             }}
           >
             <span style={{ visibility: "hidden" }}>Google Login</span>
+          </button>
+          <button
+            onClick={() => oauthLogin("github")}
+            className="oauth-button"
+            disabled={isLoading}
+            style={{
+              backgroundImage: `url(${githubImage})`,
+              backgroundSize: "contain",
+              backgroundRepeat: "no-repeat",
+              backgroundPosition: "center",
+              opacity: isLoading ? 0.7 : 1,
+            }}
+          >
+            <span style={{ visibility: "hidden" }}>Github Login</span>
           </button>
         </div>
 
