@@ -62,13 +62,15 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (isAuthenticated && token) {
+      console.log("ASdasdasdasd");
+
       getServerList();
     }
   }, [isAuthenticated]);
 
   const getServerList = async () => {
     const token = localStorage.getItem("token");
-    if (!isAuthenticated && !token) {
+    if (!isAuthenticated || !token) {
       return;
     }
     const res = await axios.get(
@@ -96,8 +98,6 @@ function App() {
     getServerList();
     if (serverId) {
       setSelectedServer(serverId);
-      console.log("asdad", title);
-
       setServerName(title);
       setIsDMOpen(false);
       setServerRole(userRole);

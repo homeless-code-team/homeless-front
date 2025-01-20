@@ -175,6 +175,8 @@ const ChatRoomList = ({
         }
       }
     } catch (error) {
+      getServerList();
+      handleSelectServer(serverId);
       console.error("채널 삭제 중 오류 발생:", error);
       Swal.fire("오류 발생", "채널 삭제 중 문제가 발생했습니다.", "error");
     }
@@ -259,8 +261,9 @@ const ChatRoomList = ({
         }
       }
     } catch (error) {
-      console.error("게시판 생성 중 오류 발생:", error);
-      Swal.fire("오류 발생", "게시판 삭제 중 문제가 발생했습니다.", "error");
+      getServerList();
+      console.error("게시판 생성 중 오류 발생:", error.message);
+      Swal.fire("권한 부족", "권한이 없습니다..", error.message);
     }
   };
 
