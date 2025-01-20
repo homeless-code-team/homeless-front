@@ -173,13 +173,18 @@ function Board({
 
     if (result.isConfirmed) {
       const res = await axios.delete(
-        `${process.env.REACT_APP_API_BASE_URL}/server/boards?id=${boardId}`,
+        `${process.env.REACT_APP_API_BASE_URL}/server/boards`, // Base URL
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
+          params: {
+            serveId: serverId, // 서버 ID
+            boardId: boardId, // 게시판 ID
+          },
         }
       );
+
       if (res.status === 200) {
         setShowModal(false);
         setPosts([]); // 기존 게시글 목록 초기화
@@ -313,28 +318,31 @@ function Board({
           </div>
         </div>
       )}
-      {contextMenu.visible && contextMenu.writer === email && (
-        <div
-          className="context-menu"
-          style={{
-            position: "fixed",
-            top: contextMenu.y,
-            left: contextMenu.x,
-          }}
-        >
-          <button onClick={() => handleDeleteBoard(contextMenu.boardId)}>
-            게시글 삭제
-          </button>
-          <button
-            onClick={() => {
-              setEditBoardId(contextMenu.boardId);
-              setEditModal(true);
+      {contextMenu.visible &&
+        (contextMenu.writer === email ||
+          serverRole === "OWNER" ||
+          serverRole === "MANAGER") && (
+          <div
+            className="context-menu"
+            style={{
+              position: "fixed",
+              top: contextMenu.y,
+              left: contextMenu.x,
             }}
           >
-            게시글 수정
-          </button>
-        </div>
-      )}
+            <button onClick={() => handleDeleteBoard(contextMenu.boardId)}>
+              게시글 삭제
+            </button>
+            <button
+              onClick={() => {
+                setEditBoardId(contextMenu.boardId);
+                setEditModal(true);
+              }}
+            >
+              게시글 수정
+            </button>
+          </div>
+        )}
 
       {editModal && (
         <div className="modal-overlay">
