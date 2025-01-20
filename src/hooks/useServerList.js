@@ -174,7 +174,7 @@ export const useServerList = (
         }
       }
     } catch (error) {
-      console.error("서버 삭제 실패:", error);
+      console.error(error);
       Swal.fire({
         icon: "error",
         title: "오류",
