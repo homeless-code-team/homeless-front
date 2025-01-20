@@ -15,6 +15,7 @@ import axios from "axios";
 import OAuthRedirectHandler from "./components/OAuthRedirectHandler.js";
 import PasswordModal from "./components/PasswordModal.js";
 import Board from "./components/Board.js";
+import OAuthCallback from "./components/OAuthCallback.js";
 
 // ProtectedRoute Component
 const ProtectedRoute = ({ element }) => {
@@ -175,11 +176,12 @@ function App() {
     <div className="app-container">
       <MenuBar />
       <Routes>
+        <Route path="/oauth2/redirect" element={<OAuthRedirectHandler />} />
+        <Route path="/oauth/callback" element={<OAuthRedirectHandler />} />
+
         {!isAuthenticated ? (
           <>
-            <Route path="/oauth2/redirect" element={<OAuthRedirectHandler />} />
             <Route path="/" element={<SignIn />} />
-            <Route path="/sign-up" element={<SignUp />} />
             <Route path="/sign-up" element={<SignUp />} />
           </>
         ) : (
