@@ -40,6 +40,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const [selectedFile, setSelectedFile] = useState(null);
   const [filePreview, setFilePreview] = useState("");
   const [uploadedFileUrl, setUploadedFileUrl] = useState("");
+  const [uploadedFileName, setUploadedFileName] = useState("");
   const fileInputRef = useRef(null);
 
   const scrollToBottom = useCallback(() => {
@@ -101,6 +102,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
           hour12: true,
         }),
         fileUrl: message.fileUrl || null,
+        fileName: message.fileName || null,
       };
 
       if (messageWithMeta.fileUrl) {
@@ -115,45 +117,50 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         if (isImage) {
           messageWithMeta.content = (
             <div>
-              <img
-                src={messageWithMeta.fileUrl}
-                alt="파일 미리보기"
-                style={{ maxWidth: "200px", maxHeight: "200px" }}
-              />
+              <a
+                href={messageWithMeta.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <img
+                  src={messageWithMeta.fileUrl}
+                  alt="파일 미리보기"
+                  style={{
+                    maxWidth: "200px",
+                    maxHeight: "200px",
+                    cursor: "pointer",
+                  }}
+                />
+              </a>
               <p>{messageWithMeta.content}</p>
             </div>
           );
         } else {
           messageWithMeta.content = (
             <div>
-              <a href={messageWithMeta.fileUrl} download>
+              <a
+                href={messageWithMeta.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 <button className="download-button">
-                  <i className="fa fa-file-download"></i> 다운로드
+                  <i className="fa fa-file-download"></i> 💽{" "}
+                  {messageWithMeta.fileName}
                 </button>
               </a>
-              <p>{messageWithMeta.content}</p>
+              <p>{messageWithMeta.fileName}</p>
             </div>
           );
         }
       }
 
-      setMessages((prev) => {
-        if (prev.some((msg) => msg.id === messageWithMeta.id)) {
-          return prev;
-        }
+      setMessages((prevMessages) => [...prevMessages, messageWithMeta]);
 
-        if (!shouldScrollToBottom) {
-          setLatestMessage(messageWithMeta);
-          setShowNewMessageAlert(true);
-          setTimeout(() => setShowNewMessageAlert(false), 10000);
-        } else {
-          setTimeout(() => scrollToBottom(), 100);
-        }
-
-        return [...prev, messageWithMeta];
-      });
+      if (shouldScrollToBottom) {
+        scrollToBottom();
+      }
     },
-    [isScrolledToBottom, scrollToBottom]
+    [setMessages, scrollToBottom]
   );
 
   const { sendMessage, deleteMessage, updateMessage } = useWebSocket(
@@ -185,6 +192,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
           setMessages((prev) => {
             const formattedMessages = newMessages.map((msg) => {
               const fileUrl = msg.fileUrl || null; // Ensure fileUrl is defined
+              const fileName = msg.fileName || null;
               const fileExtension = fileUrl
                 ? fileUrl.split(".").pop().toLowerCase()
                 : "";
@@ -215,7 +223,8 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                   ) : (
                     <a href={fileUrl} target="_blank" rel="noopener noreferrer">
                       <button className="download-button">
-                        <i className="fa fa-file-download"></i> 다운로드
+                        <i className="fa fa-file-download"></i> 💽
+                        {fileName}
                       </button>
                     </a>
                   )}
@@ -354,6 +363,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       content: newMessage.trim(),
       messageType: uploadedFileUrl ? "FILE" : "TALK", // 파일이 선택된 경우 "FILE"로 설정
       fileUrl: uploadedFileUrl || null, // 업로드된 파일 URL 포함, 없으면 null
+      fileName: uploadedFileName || null, // 업로드된 파일 이름 포함
     };
 
     console.log("전송할 메시지 데이터:", messageData); // 전송할 메시지 데이터 로그 추가
@@ -365,6 +375,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       setSelectedFile(null);
       setFilePreview("");
       setUploadedFileUrl(""); // 메시지 전송 후 URL 초기화
+      setUploadedFileName(""); // 파일 이름 초기화
     } catch (error) {
       console.error("메시지 전송 중 오류 발생:", error);
       Swal.fire("오류 발생", "메시지 전송에 실패했습니다.", "error");
@@ -563,6 +574,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       setSelectedFile(file);
       setFilePreview(`${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
       handleFileUpload(file);
+      setUploadedFileName(file.name);
     }
   };
   const handleFileUpload = async (file) => {
