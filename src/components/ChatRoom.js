@@ -183,20 +183,68 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
           const { messages: newMessages, isLast } = data.result;
 
           setMessages((prev) => {
-            const formattedMessages = newMessages.map((msg) => ({
-              id: msg.id,
-              writer: msg.writer,
-              email: msg.email,
-              content: msg.content,
-              timestamp: new Date(msg.timestamp).toLocaleString("ko-KR", {
-                hour: "2-digit",
-                minute: "2-digit",
-                second: "2-digit",
-                hour12: true,
-              }),
-              fileurl: msg.fileurl,
-              rawTimestamp: msg.timestamp,
-            }));
+            const formattedMessages = newMessages.map((msg) => {
+              const fileUrl = msg.fileUrl || null; // Ensure fileUrl is defined
+              const fileExtension = fileUrl
+                ? fileUrl.split(".").pop().toLowerCase()
+                : "";
+              const isImage = [
+                "jpg",
+                "jpeg",
+                "png",
+                "gif",
+                "bmp",
+                "webp",
+              ].includes(fileExtension);
+
+              // Format message content based on file type
+              const content = fileUrl ? (
+                isImage ? (
+                  <a
+                    href={fileUrl}
+                    download
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <img
+                      src={fileUrl}
+                      alt="파일 미리보기"
+                      style={{
+                        maxWidth: "200px",
+                        maxHeight: "200px",
+                        cursor: "pointer",
+                      }}
+                    />
+                  </a>
+                ) : (
+                  <a
+                    href={fileUrl}
+                    download
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button className="download-button">
+                      <i className="fa fa-file-download"></i> 다운로드
+                    </button>
+                  </a>
+                )
+              ) : (
+                msg.content // Fallback to original content if no fileUrl
+              );
+
+              return {
+                id: msg.id,
+                writer: msg.writer,
+                email: msg.email,
+                content: content,
+                timestamp: new Date(msg.timestamp).toLocaleString("ko-KR", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                  hour12: true,
+                }),
+                fileUrl: fileUrl,
+                rawTimestamp: msg.timestamp,
+              };
+            });
 
             const updatedMessages =
               page === 0
@@ -505,7 +553,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       handleFileUpload(file);
     }
   };
-  console.log("fileUrl : ", uploadedFileUrl);
   const handleFileUpload = async (file) => {
     const formData = new FormData();
     formData.append("file", file);
