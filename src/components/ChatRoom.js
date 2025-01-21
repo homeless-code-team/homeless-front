@@ -10,6 +10,7 @@ import AuthContext from "../context/AuthContext.js";
 import useWebSocket from "../hooks/useWebSocket.js";
 import UserProfilePopup from "./UserProfilePopup.js";
 import Swal from "sweetalert2";
+import axios from "axios";
 
 const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const { userName, userEmail } = useContext(AuthContext);
@@ -36,6 +37,10 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const [channelStates, setChannelStates] = useState({});
   const scrollPositionsRef = useRef({});
   const [searchCategory, setSearchCategory] = useState("content");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState("");
+  const [uploadedFileUrl, setUploadedFileUrl] = useState("");
+  const fileInputRef = useRef(null);
 
   const scrollToBottom = useCallback(() => {
     if (messageListRef.current) {
@@ -243,7 +248,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   // 메시지 전송 핸들러
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() && !uploadedFileUrl) return; // 메시지와 파일 URL이 모두 없을 경우 전송하지 않음
 
     const messageData = {
       serverId: serverId,
@@ -251,14 +256,18 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       writer: userName,
       email: userEmail,
       content: newMessage.trim(),
-      messageType: "TALK",
+      messageType: uploadedFileUrl ? "FILE" : "TALK", // 파일이 선택된 경우 "FILE"로 설정
+      fileUrl: uploadedFileUrl || null, // 업로드된 파일 URL 포함, 없으면 null
     };
 
+    console.log("전송할 메시지 데이터:", messageData); // 전송할 메시지 데이터 로그 추가
+
     try {
-      console.log("전송할 메시지 데이터:", messageData);
+      // WebSocket을 통해 메시지 전송
       await sendMessage(messageData);
-      setNewMessage("");
-      inputRef.current?.focus();
+      setSelectedFile(null);
+      setFilePreview("");
+      setUploadedFileUrl(""); // 메시지 전송 후 URL 초기화
     } catch (error) {
       console.error("메시지 전송 중 오류 발생:", error);
       Swal.fire("오류 발생", "메시지 전송에 실패했습니다.", "error");
@@ -449,6 +458,67 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     };
 
     return await findMessage();
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setFilePreview(`${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+      handleFileUpload(file);
+    }
+  };
+  console.log("fileUrl : ", uploadedFileUrl);
+  const handleFileUpload = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/file/chats/upload`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (response.data && response.data.result) {
+        console.log("파일 전송 API 응답:", response.data);
+        const fileUrl = response.data.result.fileUrl;
+        setUploadedFileUrl(fileUrl);
+      }
+    } catch (error) {
+      console.error("파일 업로드 중 오류 발생:", error);
+      Swal.fire("오류 발생", "파일 업로드에 실패했습니다.", "error");
+    }
+  };
+
+  const handleFileDelete = async () => {
+    if (uploadedFileUrl) {
+      try {
+        const response = await axios.delete(
+          `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/file/chats/delete`,
+          {
+            params: { fileUrl: uploadedFileUrl },
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          console.log("파일 삭제 성공, fileUrl:", uploadedFileUrl);
+          setUploadedFileUrl(null);
+          setFilePreview("");
+          setSelectedFile(null);
+        }
+      } catch (error) {
+        console.error("파일 삭제 중 오류 발생:", error);
+        Swal.fire("오류 발생", "파일 삭제에 실패했습니다.", "error");
+      }
+    }
   };
 
   return (
@@ -670,7 +740,22 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
             ))}
           </div>
           <div className="chat-input-container">
-            <button className="add-content-button">
+            {filePreview && (
+              <div className="file-preview">
+                <span>{filePreview}</span>
+                <button onClick={handleFileDelete}>X</button>
+              </div>
+            )}
+            <input
+              type="file"
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+              ref={fileInputRef}
+            />
+            <button
+              className="add-content-button"
+              onClick={() => fileInputRef.current.click()}
+            >
               <span className="plus-icon">+</span>
             </button>
             <form onSubmit={handleSubmit} className="chat-form">
