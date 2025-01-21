@@ -104,18 +104,37 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       };
 
       if (messageWithMeta.fileUrl) {
-        messageWithMeta.content = (
-          <span>
-            {messageWithMeta.content}{" "}
-            <a
-              href={messageWithMeta.fileUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              {messageWithMeta.fileUrl}
-            </a>
-          </span>
+        const fileExtension = messageWithMeta.fileUrl
+          .split(".")
+          .pop()
+          .toLowerCase();
+        const isImage = ["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(
+          fileExtension
         );
+
+        if (isImage) {
+          messageWithMeta.content = (
+            <div>
+              <img
+                src={messageWithMeta.fileUrl}
+                alt="파일 미리보기"
+                style={{ maxWidth: "200px", maxHeight: "200px" }}
+              />
+              <p>{messageWithMeta.content}</p>
+            </div>
+          );
+        } else {
+          messageWithMeta.content = (
+            <div>
+              <a href={messageWithMeta.fileUrl} download>
+                <button className="download-button">
+                  <i className="fa fa-file-download"></i> 다운로드
+                </button>
+              </a>
+              <p>{messageWithMeta.content}</p>
+            </div>
+          );
+        }
       }
 
       setMessages((prev) => {
@@ -175,6 +194,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                 second: "2-digit",
                 hour12: true,
               }),
+              fileurl: msg.fileurl,
               rawTimestamp: msg.timestamp,
             }));
 
