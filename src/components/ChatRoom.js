@@ -380,6 +380,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       setFilePreview("");
       setUploadedFileUrl(""); // 메시지 전송 후 URL 초기화
       setUploadedFileName(""); // 파일 이름 초기화
+      setTimeout(() => scrollToBottom(), 100);
     } catch (error) {
       console.error("메시지 전송 중 오류 발생:", error);
       Swal.fire("오류 발생", "메시지 전송에 실패했습니다.", "error");
