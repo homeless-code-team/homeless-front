@@ -199,33 +199,45 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
 
               // Format message content based on file type
               const content = fileUrl ? (
-                isImage ? (
+                <div style={{ position: "relative" }}>
+                  {isImage ? (
+                    <a href={fileUrl} target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={fileUrl}
+                        alt="파일 미리보기"
+                        style={{
+                          maxWidth: "200px",
+                          maxHeight: "200px",
+                          cursor: "pointer",
+                        }}
+                      />
+                    </a>
+                  ) : (
+                    <a href={fileUrl} target="_blank" rel="noopener noreferrer">
+                      <button className="download-button">
+                        <i className="fa fa-file-download"></i> 다운로드
+                      </button>
+                    </a>
+                  )}
+                  {/* 다운로드 아이콘 추가 */}
                   <a
                     href={fileUrl}
-                    download
-                    onClick={(e) => e.stopPropagation()}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      position: "absolute",
+                      bottom: "5px",
+                      right: "5px",
+                      textDecoration: "none",
+                      color: "black",
+                    }}
                   >
-                    <img
-                      src={fileUrl}
-                      alt="파일 미리보기"
-                      style={{
-                        maxWidth: "200px",
-                        maxHeight: "200px",
-                        cursor: "pointer",
-                      }}
-                    />
+                    <i
+                      className="fa fa-download"
+                      style={{ fontSize: "16px" }}
+                    ></i>
                   </a>
-                ) : (
-                  <a
-                    href={fileUrl}
-                    download
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <button className="download-button">
-                      <i className="fa fa-file-download"></i> 다운로드
-                    </button>
-                  </a>
-                )
+                </div>
               ) : (
                 msg.content // Fallback to original content if no fileUrl
               );
