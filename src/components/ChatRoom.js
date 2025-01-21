@@ -89,9 +89,57 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         return;
       }
 
+      const fileExtension = message.fileUrl
+        ? message.fileUrl.split(".").pop().toLowerCase()
+        : null;
+      const isImage = fileExtension
+        ? ["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(fileExtension)
+        : false;
+
+      const content = message.fileUrl ? (
+        <div style={{ position: "relative" }}>
+          {isImage ? (
+            <a href={message.fileUrl} target="_blank" rel="noopener noreferrer">
+              <img
+                src={message.fileUrl}
+                alt="파일 미리보기"
+                style={{
+                  maxWidth: "200px",
+                  maxHeight: "200px",
+                  cursor: "pointer",
+                }}
+              />
+            </a>
+          ) : (
+            <a href={message.fileUrl} target="_blank" rel="noopener noreferrer">
+              <button className="download-button">
+                <i className="fa fa-file-download"></i>
+                {message.fileName}
+              </button>
+            </a>
+          )}
+          {/* 다운로드 아이콘 추가 */}
+          <a
+            href={message.fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              position: "absolute",
+              bottom: "5px",
+              right: "5px",
+              textDecoration: "none",
+              color: "black",
+            }}
+          >
+            <i className="fa fa-download" style={{ fontSize: "16px" }}></i>
+          </a>
+        </div>
+      ) : (
+        message.content || "내용 없음" // 파일 URL이 없을 경우 기본 내용
+      );
+
       const messageWithMeta = {
         id: message.chatId,
-        content: message.content,
         writer: message.writer || "Unknown",
         email: message.email,
         type: message.messageType || "TALK",
@@ -103,64 +151,21 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         }),
         fileUrl: message.fileUrl || null,
         fileName: message.fileName || null,
+        content, // 파일 또는 기본 메시지 내용
       };
-
-      if (messageWithMeta.fileUrl) {
-        const fileExtension = messageWithMeta.fileUrl
-          .split(".")
-          .pop()
-          .toLowerCase();
-        const isImage = ["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(
-          fileExtension
-        );
-
-        if (isImage) {
-          messageWithMeta.content = (
-            <div>
-              <a
-                href={messageWithMeta.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <img
-                  src={messageWithMeta.fileUrl}
-                  alt="파일 미리보기"
-                  style={{
-                    maxWidth: "200px",
-                    maxHeight: "200px",
-                    cursor: "pointer",
-                  }}
-                />
-              </a>
-              <p>{messageWithMeta.content}</p>
-            </div>
-          );
-        } else {
-          messageWithMeta.content = (
-            <div>
-              <a
-                href={messageWithMeta.fileUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <button className="download-button">
-                  <i className="fa fa-file-download"></i> 💽{" "}
-                  {messageWithMeta.fileName}
-                </button>
-              </a>
-              <p>{messageWithMeta.fileName}</p>
-            </div>
-          );
-        }
-      }
 
       setMessages((prevMessages) => [...prevMessages, messageWithMeta]);
 
-      if (shouldScrollToBottom) {
+      if (!shouldScrollToBottom) {
+        setShowNewMessageAlert(true);
+      } else {
         scrollToBottom();
       }
+
+      // Update latestMessage with the newly received message
+      setLatestMessage(message);
     },
-    [setMessages, scrollToBottom]
+    [setMessages, scrollToBottom, setLatestMessage]
   );
 
   const { sendMessage, deleteMessage, updateMessage } = useWebSocket(
@@ -223,8 +228,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                   ) : (
                     <a href={fileUrl} target="_blank" rel="noopener noreferrer">
                       <button className="download-button">
-                        <i className="fa fa-file-download"></i> 💽
-                        {fileName}
+                        <i className="fa fa-file-download"></i> 💽 {fileName}
                       </button>
                     </a>
                   )}
@@ -421,6 +425,8 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   };
 
   const handleAlertClick = () => {
+    console.log("알람작동.");
+
     scrollToBottom();
     setShowNewMessageAlert(false);
   };
