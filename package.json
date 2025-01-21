@@ -10,8 +10,7 @@
     "type": "git",
     "url": "https://github.com/homeless-code-team/homeless-front.git"
   },
-  "main": "src/main.mjs",
-  "type": "module",
+  "main": "src/main.js",
   "dependencies": {
     "@emotion/react": "^11.13.5",
     "@emotion/styled": "^11.13.5",
@@ -54,7 +53,7 @@
     "@testing-library/user-event": "^13.5.0",
     "concurrently": "^9.1.0",
     "cross-env": "^7.0.3",
-    "electron": "^33.2.1",
+    "electron": "^33.3.1",
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.2",
     "rimraf": "^6.0.1",

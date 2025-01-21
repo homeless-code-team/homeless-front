@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import "./ChatRoomList.css";
 import axios from "axios";
 import Swal from "sweetalert2";
@@ -20,6 +20,7 @@ const ChatRoomList = ({
   serverType,
   setShowMemberModal,
   showMemberModal,
+  getServerList,
 }) => {
   const [showModal, setShowModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
@@ -37,8 +38,24 @@ const ChatRoomList = ({
   const [editBoardTag, setEditBoardTag] = useState("");
   const [showMembersModal, setShowMembersModal] = useState(false);
   const [members, setMembers] = useState([]);
+  const [contextMenu, setContextMenu] = useState(null);
+  const [selectedMember, setSelectedMember] = useState(null);
 
   const userEmail = localStorage.getItem("userEmail");
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (contextMenu && !event.target.closest(".role-box")) {
+        setContextMenu(null);
+      }
+    };
+
+    document.addEventListener("click", handleClickOutside);
+
+    return () => {
+      document.removeEventListener("click", handleClickOutside);
+    };
+  }, [contextMenu]);
 
   // 채널 생성 핸들러
   const handleCreateChannel = async () => {
@@ -76,7 +93,13 @@ const ChatRoomList = ({
           );
         }
       } catch (error) {
+        getServerList();
+        handleSelectServer(serverId);
         console.error("채널 생성 중 오류 발생:", error);
+        Swal.fire(
+          "채널 생성 중 문제가 발생했습니다.",
+          "권한을 다시 확인해주세요"
+        );
       }
     }
   };
@@ -113,7 +136,13 @@ const ChatRoomList = ({
           );
         }
       } catch (error) {
+        getServerList();
+        handleSelectServer(serverId);
         console.error("채널 수정 중 오류 발생:", error);
+        Swal.fire(
+          "채널 수정 중 문제가 발생했습니다.",
+          "권한을 다시 확인해주세요"
+        );
       }
     }
   };
@@ -158,8 +187,13 @@ const ChatRoomList = ({
         }
       }
     } catch (error) {
+      getServerList();
+      handleSelectServer(serverId);
       console.error("채널 삭제 중 오류 발생:", error);
-      Swal.fire("오류 발생", "채널 삭제 중 문제가 발생했습니다.", "error");
+      Swal.fire(
+        "채널 삭제 중 문제가 발생했습니다.",
+        "권한을 다시 확인해주세요"
+      );
     }
   };
 
@@ -200,8 +234,13 @@ const ChatRoomList = ({
           );
         }
       } catch (error) {
+        getServerList();
+        handleSelectServer(serverId);
         console.error("게시판 생성 중 오류 발생:", error);
-        Swal.fire("오류 발생", "게시판 생성 중 문제가 발생했습니다.", "error");
+        Swal.fire(
+          "게시판 생성 중 문제가 발생했습니다.",
+          "권한을 다시 확인해주세요"
+        );
       }
     }
   };
@@ -242,8 +281,13 @@ const ChatRoomList = ({
         }
       }
     } catch (error) {
-      console.error("게시판 생성 중 오류 발생:", error);
-      Swal.fire("오류 발생", "게시판 삭제 중 문제가 발생했습니다.", "error");
+      getServerList();
+      handleSelectServer(serverId);
+      console.error("게시판 삭제 중 오류 발생:", error);
+      Swal.fire(
+        "게시판 삭제 중 문제가 발생했습니다.",
+        "권한을 다시 확인해주세요"
+      );
     }
   };
 
@@ -290,8 +334,13 @@ const ChatRoomList = ({
         }
       }
     } catch (error) {
-      console.error("게시판 생성 중 오류 발생:", error);
-      Swal.fire("오류 발생", "게시판 삭제 중 문제가 발생했습니다.", "error");
+      getServerList();
+      handleSelectServer(serverId);
+      console.error("게시판 수정 중 오류 발생:", error);
+      Swal.fire(
+        "게시판 수정 중 문제가 발생했습니다.",
+        "권한을 다시 확인해주세요"
+      );
     }
   };
 
@@ -318,11 +367,94 @@ const ChatRoomList = ({
           },
         }
       );
+      console.log("asd");
       console.log(response);
 
-      setMembers(response.data.result);
+      const sortedMembers = response.data.result.sort((a, b) => {
+        if (a.role === b.role) return 0;
+        if (a.role === "OWNER") return -1;
+        if (b.role === "OWNER") return 1;
+        if (a.role === "MANAGER") return -1;
+        if (b.role === "MANAGER") return 1;
+        return 0; // 기본적으로 GENERAL은 마지막에 위치
+      });
+
+      setMembers(sortedMembers);
+
+      console.log(response.data);
     } catch (error) {
       console.error("서버 멤버를 불러오는데 실패했습니다:", error);
+    }
+  };
+
+  const handleContextMenu = (event, email) => {
+    event.preventDefault();
+    const userEmail = localStorage.getItem("userEmail");
+    if (serverRole === "OWNER" && email !== userEmail) {
+      setSelectedMember(email);
+      setContextMenu({
+        mouseX: event.clientX - 2,
+        mouseY: event.clientY - 4,
+      });
+    }
+  };
+
+  const handleRoleChange = async (newRole) => {
+    try {
+      const res = await axios.put(
+        `${process.env.REACT_APP_API_BASE_URL}/server/userRole`,
+        {
+          id: serverId,
+          email: selectedMember,
+          role: newRole,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.status === 200) {
+        // Update the UI or refetch members
+
+        console.log("Asdasd");
+        console.log(newRole);
+
+        console.log("변경변경");
+        fetchMembers();
+        setContextMenu(null);
+      }
+    } catch (error) {
+      console.error("역할 변경 중 오류 발생:", error);
+      Swal.fire("오류 발생", "역할 변경 중 문제가 발생했습니다.", "error");
+    }
+  };
+
+  const resignUser = async () => {
+    try {
+      const res = await axios.delete(
+        `${process.env.REACT_APP_API_BASE_URL}/server/resign`,
+        {
+          data: {
+            serverId: serverId,
+            email: selectedMember,
+          },
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+        }
+      );
+
+      if (res.status === 200) {
+        // Update the UI or refetch members
+
+        fetchMembers();
+        setContextMenu(null);
+      }
+    } catch (error) {
+      console.error("유저 삭제 중 오류 발생:", error);
+      Swal.fire("오류 발생", "유저 삭제 중 문제가 발생했습니다.", "error");
     }
   };
 
@@ -555,18 +687,61 @@ const ChatRoomList = ({
           <div className="modal">
             <h3>서버 멤버 목록</h3>
 
-            <ul style={{ listStyleType: "none", padding: 0 }}>
-              {members.map((member) => (
-                <li key={member.id} className="member-item">
-                  {member.profileimage ? (
-                    <img src={member.profileimage} alt="업따" />
-                  ) : (
-                    <ImEllo />
-                  )}
-                  {member.nickname}
+            {Object.entries(
+              members.reduce((acc, member) => {
+                if (!acc[member.role]) acc[member.role] = [];
+                acc[member.role].push(member);
+                return acc;
+              }, {})
+            ).map(([role, members]) => (
+              <div key={role}>
+                <h4>{role}</h4>
+                <ul style={{ listStyleType: "none", padding: 0 }}>
+                  {members.map((member) => (
+                    <li
+                      key={member.id}
+                      className="member-item"
+                      onContextMenu={(e) => handleContextMenu(e, member.email)}
+                    >
+                      {member.profileimage ? (
+                        <img src={member.profileimage} alt="업따" />
+                      ) : (
+                        <ImEllo />
+                      )}
+                      {member.nickname}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+
+            {contextMenu && (
+              <ul
+                className="role-box"
+                style={{
+                  top: contextMenu.mouseY,
+                  left: contextMenu.mouseX,
+                }}
+              >
+                <li
+                  className="manager-btn"
+                  onClick={() => handleRoleChange("MANAGER")}
+                >
+                  MANAGER
                 </li>
-              ))}
-            </ul>
+                <br />
+                <li
+                  className="general-btn"
+                  onClick={() => handleRoleChange("GENERAL")}
+                >
+                  GENERAL
+                </li>
+                <br />
+                <li className="resign-btn" onClick={() => resignUser()}>
+                  서버 추방
+                </li>
+              </ul>
+            )}
 
             <div className="modal-buttons">
               <button onClick={() => setShowMemberModal(false)}>닫기</button>

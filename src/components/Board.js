@@ -15,6 +15,13 @@ function Board({
   setPage,
   setSearchValue,
   searchValue,
+  handleSelectBoard,
+  getServerList,
+  handleSelectServer,
+  serverName,
+  serverRole,
+  serverTag,
+  serverType,
 }) {
   // const [posts, setPosts] = useState([]);
   // const [isModalOpen, setIsModalOpen] = useState(false);
@@ -98,6 +105,7 @@ function Board({
       setHasMore(!response.data.result.content.last);
     } catch (error) {
       console.error("게시글을 불러오는데 실패했습니다:", error);
+      handleSelectBoard(null);
     }
   };
 
@@ -106,23 +114,34 @@ function Board({
 
     formData.append("title", newBoardTitle);
     formData.append("boardListId", boardId);
-    const res = await axios.post(
-      `${process.env.REACT_APP_API_BASE_URL}/server/boards`,
-      formData,
-      {
-        headers: {
-          Authorization: `Bearer ${localStorage.getItem("token")}`,
-          "Content-Type": "multipart/form-data",
-        },
+    try {
+      const res = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/server/boards`,
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      if (res.status === 200) {
+        setShowModal(false);
+        setPosts([]); // 기존 게시글 목록 초기화
+        setPage(0);
+        fetchPosts(0);
       }
-    );
-    if (res.status === 200) {
+    } catch (error) {
       setShowModal(false);
-      setPosts([]); // 기존 게시글 목록 초기화
-      setPage(0);
-      fetchPosts(0);
-    } else {
-      alert("게시글 작성중 문제가 발생했습니다.");
+      handleSelectBoard(null);
+      handleSelectServer(
+        serverId,
+        serverName,
+        serverRole,
+        serverTag,
+        serverType
+      );
+      Swal.fire("삭제된 서버의 게시판이거나 삭제된 게시판입니다.");
     }
   };
 
@@ -153,13 +172,18 @@ function Board({
 
     if (result.isConfirmed) {
       const res = await axios.delete(
-        `${process.env.REACT_APP_API_BASE_URL}/server/boards?id=${boardId}`,
+        `${process.env.REACT_APP_API_BASE_URL}/server/boards`, // Base URL
         {
           headers: {
             Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
+          params: {
+            serveId: serverId, // 서버 ID
+            boardId: boardId, // 게시판 ID
+          },
         }
       );
+
       if (res.status === 200) {
         setShowModal(false);
         setPosts([]); // 기존 게시글 목록 초기화
@@ -167,7 +191,15 @@ function Board({
         fetchPosts(0);
         setContextMenu({ visible: false, x: 0, y: 0, serverId: null });
       } else {
-        alert("게시글 삭제중 문제가 발생했습니다.");
+        Swal.fire("삭제된 서버의 게시판이거나 삭제된 게시판입니다.");
+        handleSelectServer(
+          serverId,
+          serverName,
+          serverRole,
+          serverTag,
+          serverType
+        );
+        getServerList();
         setContextMenu({ visible: false, x: 0, y: 0, serverId: null });
       }
     }
@@ -199,10 +231,18 @@ function Board({
       fetchPosts(0);
       setContextMenu({ visible: false, x: 0, y: 0, serverId: null });
     } else {
-      alert("게시글 삭제중 문제가 발생했습니다.");
+      Swal.fire("삭제된 서버의 게시판이거나 삭제된 게시판입니다.");
       setEditModal(false);
       setEditModal(null);
       setNewBoardTitle(null);
+      handleSelectServer(
+        serverId,
+        serverName,
+        serverRole,
+        serverTag,
+        serverType
+      );
+      getServerList();
       setContextMenu({ visible: false, x: 0, y: 0, serverId: null });
     }
   };
@@ -277,28 +317,31 @@ function Board({
           </div>
         </div>
       )}
-      {contextMenu.visible && contextMenu.writer === email && (
-        <div
-          className="context-menu"
-          style={{
-            position: "fixed",
-            top: contextMenu.y,
-            left: contextMenu.x,
-          }}
-        >
-          <button onClick={() => handleDeleteBoard(contextMenu.boardId)}>
-            게시글 삭제
-          </button>
-          <button
-            onClick={() => {
-              setEditBoardId(contextMenu.boardId);
-              setEditModal(true);
+      {contextMenu.visible &&
+        (contextMenu.writer === email ||
+          serverRole === "OWNER" ||
+          serverRole === "MANAGER") && (
+          <div
+            className="context-menu"
+            style={{
+              position: "fixed",
+              top: contextMenu.y,
+              left: contextMenu.x,
             }}
           >
-            게시글 수정
-          </button>
-        </div>
-      )}
+            <button onClick={() => handleDeleteBoard(contextMenu.boardId)}>
+              게시글 삭제
+            </button>
+            <button
+              onClick={() => {
+                setEditBoardId(contextMenu.boardId);
+                setEditModal(true);
+              }}
+            >
+              게시글 수정
+            </button>
+          </div>
+        )}
 
       {editModal && (
         <div className="modal-overlay">

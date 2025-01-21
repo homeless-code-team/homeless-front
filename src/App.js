@@ -11,7 +11,11 @@ import AuthContext from "./context/AuthContext.js";
 import DirectMessage from "./components/DirectMessage.js";
 import Profile from "./components/Profile.js";
 import axios from "axios";
+
+import OAuthRedirectHandler from "./components/OAuthRedirectHandler.js";
+import PasswordModal from "./components/PasswordModal.js";
 import Board from "./components/Board.js";
+import OAuthCallback from "./components/OAuthCallback.js";
 
 // ProtectedRoute Component
 const ProtectedRoute = ({ element }) => {
@@ -62,11 +66,17 @@ function App() {
   useEffect(() => {
     const token = localStorage.getItem("token");
     if (isAuthenticated && token) {
+      console.log("ASdasdasdasd");
+
       getServerList();
     }
   }, [isAuthenticated]);
 
   const getServerList = async () => {
+    const token = localStorage.getItem("token");
+    if (!isAuthenticated || !token) {
+      return;
+    }
     const res = await axios.get(
       `${process.env.REACT_APP_API_BASE_URL}/server/servers`,
       {
@@ -86,6 +96,7 @@ function App() {
     serverType
   ) => {
     const token = localStorage.getItem("token");
+    getServerList();
     if (serverId) {
       setSelectedServer(serverId);
       setServerName(title);
@@ -162,6 +173,9 @@ function App() {
     <div className="app-container">
       <MenuBar />
       <Routes>
+        <Route path="/oauth2/redirect" element={<OAuthRedirectHandler />} />
+        <Route path="/oauth/callback" element={<OAuthRedirectHandler />} />
+
         {!isAuthenticated ? (
           <>
             <Route path="/" element={<SignIn />} />
@@ -207,6 +221,7 @@ function App() {
                               serverType={serverType}
                               setShowMemberModal={setShowModal}
                               showMemberModal={showModal}
+                              getServerList={getServerList}
                             />
                           )}
                           <div className="main-content">
@@ -221,6 +236,13 @@ function App() {
                                 setPage={setPage}
                                 searchValue={searchValue}
                                 setSearchValue={setSearchValue}
+                                handleSelectBoard={onSelectBoard}
+                                getServerList={getServerList}
+                                handleSelectServer={handleSelectServer}
+                                serverName={serverName}
+                                serverRole={serverRole}
+                                serverTag={serverTag}
+                                serverType={serverType}
                               />
                             ) : (
                               <ChatRoom
