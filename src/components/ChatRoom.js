@@ -100,7 +100,23 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
           second: "2-digit",
           hour12: true,
         }),
+        fileUrl: message.fileUrl || null,
       };
+
+      if (messageWithMeta.fileUrl) {
+        messageWithMeta.content = (
+          <span>
+            {messageWithMeta.content}{" "}
+            <a
+              href={messageWithMeta.fileUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {messageWithMeta.fileUrl}
+            </a>
+          </span>
+        );
+      }
 
       setMessages((prev) => {
         if (prev.some((msg) => msg.id === messageWithMeta.id)) {
@@ -265,6 +281,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     try {
       // WebSocket을 통해 메시지 전송
       await sendMessage(messageData);
+      setNewMessage("");
       setSelectedFile(null);
       setFilePreview("");
       setUploadedFileUrl(""); // 메시지 전송 후 URL 초기화

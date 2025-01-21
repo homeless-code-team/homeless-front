@@ -75,9 +75,6 @@ function App() {
         },
       }
     );
-    console.log("asdasd");
-
-    console.log("res =====================: ", res);
     setServerList(res.data.result);
   };
 
