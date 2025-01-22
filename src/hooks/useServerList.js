@@ -18,15 +18,19 @@ export const useServerList = (
   const [serverName, setServerName] = useState("");
   const [serverTag, setServerTag] = useState("");
   const [serverImage, setServerImage] = useState(null);
+  const [serverEditModal, setSeverEditModal] = useState(false);
   const [contextMenu, setContextMenu] = useState({
     visible: false,
     x: 0,
     y: 0,
     serverId: null,
+    serverImg: null,
+    serverTag: null,
+    serverTitle: null,
   });
-
   const userEmail = localStorage.getItem("userEmail");
-
+  const [serverImg, setServerImg] = useState(null);
+  const [editServerId, setEditServerId] = useState(null);
   const handleLogout = () => {
     handleLogoutBack();
     handleLogoutelctron();
@@ -148,6 +152,73 @@ export const useServerList = (
     }
   };
 
+  const handleServerEditModal = (contextMenu) => {
+    setEditServerId(contextMenu.serverId);
+
+    setSeverEditModal(true);
+    setServerName(contextMenu.serverTitle);
+    setServerTag(contextMenu.serverTag);
+    setServerImg(contextMenu.serverImg);
+  };
+
+  const editServer = async (e) => {
+    e.preventDefault();
+
+    try {
+      const formData = new FormData();
+      formData.append("id", editServerId);
+      formData.append("title", serverName);
+      formData.append("tag", serverTag);
+
+      if (serverImage != null) {
+        formData.append("serverImg", serverImage);
+      }
+
+      const response = await axios.put(
+        "http://localhost:8181/server/servers",
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+            "Content-Type": "multipart/form-data",
+          },
+        }
+      );
+      console.log(response);
+
+      if (response.status === 200) {
+        Swal.fire({
+          icon: "success",
+          title: "성공!",
+          text: "서버가 성공적으로 수정되었습니다.",
+          confirmButtonText: "확인",
+        });
+        setSeverEditModal(false);
+
+        if (onRefreshServers) {
+          await onRefreshServers();
+        }
+      }
+    } catch (error) {
+      console.error("서버 수정 실패:", error);
+      Swal.fire({
+        icon: "error",
+        title: "오류",
+        text: "서버 수정에 실패했습니다.",
+        confirmButtonText: "확인",
+      });
+    }
+  };
+
+  const hadleCloseEditModal = () => {
+    setServerName(null);
+    setServerTag(null);
+    setServerImg(null);
+    setSeverEditModal(false);
+    setPreviewImage(null);
+    setServerImage(null);
+  };
+
   const handleContextMenu = useCallback((e, server) => {
     e.preventDefault();
     setContextMenu({
@@ -156,6 +227,9 @@ export const useServerList = (
       y: e.pageY,
       serverId: server.id,
       serverEmail: server.email,
+      serverTitle: server.title,
+      serverImg: server.serverImg,
+      serverTag: server.tag,
     });
   }, []);
 
@@ -279,5 +353,12 @@ export const useServerList = (
     setServerName,
     setServerTag,
     handleLogoutelctron,
+    setSeverEditModal,
+    serverEditModal,
+    editServer,
+    handleServerEditModal,
+    setEditServerId,
+    serverImg,
+    hadleCloseEditModal,
   };
 };

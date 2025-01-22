@@ -41,6 +41,11 @@ const ServerList = React.memo(
       handleCloseModal,
       setServerName,
       setServerTag,
+      serverEditModal,
+      editServer,
+      handleServerEditModal,
+      serverImg,
+      hadleCloseEditModal,
     } = useServerList(
       onLogout,
       onSelectServer,
@@ -168,9 +173,16 @@ const ServerList = React.memo(
             }}
           >
             {contextMenu.serverEmail === userEmail ? (
-              <button onClick={() => handleDeleteServer(contextMenu.serverId)}>
-                서버 삭제
-              </button>
+              <div>
+                <button
+                  onClick={() => handleDeleteServer(contextMenu.serverId)}
+                >
+                  서버 삭제
+                </button>
+                <button onClick={() => handleServerEditModal(contextMenu)}>
+                  서버 수정
+                </button>
+              </div>
             ) : (
               <button onClick={() => handleLeaveServer(contextMenu.serverId)}>
                 서버 탈퇴
@@ -178,6 +190,65 @@ const ServerList = React.memo(
             )}
           </div>
         )}
+        {serverEditModal && (
+          <div className="modal-overlay">
+            <div className="modal-content">
+              <h2>서버 수정하기</h2>
+              <form onSubmit={editServer}>
+                <div
+                  className="custom-file-upload"
+                  onClick={() =>
+                    document.getElementById("serverImageInput").click()
+                  }
+                >
+                  {previewImage ? (
+                    <img
+                      src={previewImage}
+                      alt="미리보기 이미지"
+                      className="preview-image"
+                    />
+                  ) : serverImg ? (
+                    <img
+                      src={serverImg}
+                      alt="서버 이미지"
+                      className="preview-image"
+                    />
+                  ) : (
+                    "이미지 업로드"
+                  )}
+                </div>
+                <input
+                  type="file"
+                  accept="image/*"
+                  id="serverImageInput"
+                  style={{ display: "none" }}
+                  onChange={handleImageChange}
+                />
+                <input
+                  type="text"
+                  placeholder="서버 이름"
+                  value={serverName}
+                  onChange={(e) => setServerName(e.target.value)}
+                  required
+                />
+                <input
+                  type="text"
+                  placeholder="서버 태그"
+                  value={serverTag}
+                  onChange={(e) => setServerTag(e.target.value)}
+                  required
+                />
+                <div className="modal-buttons">
+                  <button type="submit">수정</button>
+                  <button type="button" onClick={() => hadleCloseEditModal()}>
+                    취소
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        )}
+
         <div className="server-list-footer" style={{ marginTop: "auto" }}>
           <div className="server-separator"></div>
           <button

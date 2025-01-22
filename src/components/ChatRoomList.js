@@ -236,7 +236,8 @@ const ChatRoomList = ({
       } catch (error) {
         getServerList();
         handleSelectServer(serverId);
-        console.error("게시판 생성 중 오류 발생:", error);
+        console.log(error);
+
         Swal.fire(
           "게시판 생성 중 문제가 발생했습니다.",
           "권한을 다시 확인해주세요"
