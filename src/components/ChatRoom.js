@@ -97,46 +97,58 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         ? ["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(fileExtension)
         : false;
 
-      const content = message.fileUrl ? (
+      const content = (
         <div style={{ position: "relative" }}>
-          {isImage ? (
-            <a href={message.fileUrl} target="_blank" rel="noopener noreferrer">
-              <img
-                src={message.fileUrl}
-                alt="파일 미리보기"
+          {message.fileUrl ? (
+            <div>
+              {isImage ? (
+                <a
+                  href={message.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <img
+                    src={message.fileUrl}
+                    alt="파일 미리보기"
+                    style={{
+                      maxWidth: "200px",
+                      maxHeight: "200px",
+                      cursor: "pointer",
+                    }}
+                  />
+                </a>
+              ) : (
+                <a
+                  href={message.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <button className="download-button">
+                    <i className="fa fa-file-download"></i>
+                    💽 {message.fileName}
+                  </button>
+                </a>
+              )}
+              {/* 다운로드 아이콘 추가 */}
+              <a
+                href={message.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
-                  maxWidth: "200px",
-                  maxHeight: "200px",
-                  cursor: "pointer",
+                  position: "absolute",
+                  bottom: "5px",
+                  right: "5px",
+                  textDecoration: "none",
+                  color: "black",
                 }}
-              />
-            </a>
-          ) : (
-            <a href={message.fileUrl} target="_blank" rel="noopener noreferrer">
-              <button className="download-button">
-                <i className="fa fa-file-download"></i>
-                {message.fileName}
-              </button>
-            </a>
-          )}
-          {/* 다운로드 아이콘 추가 */}
-          <a
-            href={message.fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              position: "absolute",
-              bottom: "5px",
-              right: "5px",
-              textDecoration: "none",
-              color: "black",
-            }}
-          >
-            <i className="fa fa-download" style={{ fontSize: "16px" }}></i>
-          </a>
+              >
+                <i className="fa fa-download" style={{ fontSize: "16px" }}></i>
+              </a>
+            </div>
+          ) : null}
+          <p>{message.content || "내용 없음"}</p>{" "}
+          {/* 파일 아래에 메시지 내용 표시 */}
         </div>
-      ) : (
-        message.content || "내용 없음" // 파일 URL이 없을 경우 기본 내용
       );
 
       const messageWithMeta = {
@@ -166,7 +178,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       // Update latestMessage with the newly received message
       setLatestMessage(message);
     },
-    [setMessages, scrollToBottom, setLatestMessage]
+    [setMessages, scrollToBottom, setLatestMessage, isScrolledToBottom]
   );
 
   const { sendMessage, deleteMessage, updateMessage } = useWebSocket(
