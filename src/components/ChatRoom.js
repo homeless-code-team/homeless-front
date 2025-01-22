@@ -114,7 +114,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
             <a href={message.fileUrl} target="_blank" rel="noopener noreferrer">
               <button className="download-button">
                 <i className="fa fa-file-download"></i>
-                {message.fileName}
+                💽 {message.fileName}
               </button>
             </a>
           )}
