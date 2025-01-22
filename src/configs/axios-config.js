@@ -6,6 +6,7 @@
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
+const API_BASE_URL = "http://localhost:8181";
 // Axios 인스턴스 생성
 const axiosInstance = axios.create({
   headers: {
@@ -66,14 +67,23 @@ axiosInstance.interceptors.response.use(
       originalRequest._retry = true;
 
       try {
-        const id = localStorage.getItem("USER_ID");
+        const userInfo = localStorage.getItem("userInfo");
+        console.log("====================================");
+        console.log(userInfo);
+        console.log("====================================");
+        const parsedUserInfo = JSON.parse(userInfo);
+        console.log("====================================");
+        console.log(parsedUserInfo);
+        console.log("====================================");
+        const id = parsedUserInfo.userId;
         console.log(id);
 
         const res = await axios.post(
-          `${process.env.REACT_APP_API_BASE_URL}user-service/api/v1/users/refresh-token`
+          `${API_BASE_URL}/user-service/api/v1/users/refresh-token`,
+          { id }
         );
 
-        const token = res.data.result.token; // axios는 json() 안씁니다.
+        const token = res.data.data; // axios는 json() 안씁니다.
         localStorage.setItem("ACCESS_TOKEN", token); // 동일한 이름으로 토큰 담기 (덮어씀)
 
         // 실패한 원본 요청 정보에서 Authorization의 값을 새 토큰으로 바꿔놓자.
