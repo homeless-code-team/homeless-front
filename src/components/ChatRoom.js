@@ -297,6 +297,16 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
               },
             }));
 
+            // 첫 페이지 로드 완료 후 스크롤 맨 아래로 이동
+            if (page === 0) {
+              requestAnimationFrame(() => {
+                if (messageListRef.current) {
+                  messageListRef.current.scrollTop =
+                    messageListRef.current.scrollHeight;
+                }
+              });
+            }
+
             return updatedMessages;
           });
 
@@ -353,16 +363,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       setMessages([]);
       setCurrentPage(0);
       setHasNextPage(true);
-      fetchChatHistory(0);
-
-      setTimeout(() => {
-        if (messageListRef.current) {
-          const savedScrollTop = scrollPositionsRef.current[channelId];
-          if (savedScrollTop !== undefined) {
-            messageListRef.current.scrollTop = savedScrollTop;
-          }
-        }
-      }, 100);
+      fetchChatHistory(0, false); // shouldScrollToSaved를 false로 설정
     }
   }, [channelId, fetchChatHistory]);
 
