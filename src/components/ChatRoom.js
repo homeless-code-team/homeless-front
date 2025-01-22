@@ -358,14 +358,30 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   }, [channelId, hasNextPage, isLoading, loadMoreMessages]);
 
+  // 검색 상태 초기화 함수
+  const resetSearchState = useCallback(() => {
+    setSearchQuery(""); // 검색어 초기화
+    setShowSearchResults(false); // 검색 결과 창 숨기기
+    setSearchResults([]); // 검색 결과 초기화
+    setCurrentSearchIndex(-1); // 검색 인덱스 초기화
+  }, []);
+
+  // useEffect에서 채널 변경 시 검색 상태 초기화
   useEffect(() => {
     if (channelId) {
       setMessages([]);
       setCurrentPage(0);
       setHasNextPage(true);
-      fetchChatHistory(0, false); // shouldScrollToSaved를 false로 설정
+      fetchChatHistory(0, false);
+      resetSearchState(); // 채널 변경 시 검색 상태 초기화
     }
-  }, [channelId, fetchChatHistory]);
+  }, [channelId, fetchChatHistory, resetSearchState]);
+
+  // 검색 카테고리 변경 핸들러 수정
+  const handleSearchCategoryChange = (category) => {
+    setSearchCategory(category);
+    resetSearchState(); // 카테고리 변경 시 검색 상태 초기화
+  };
 
   // 메시지 전송 핸들러
   const handleSubmit = async (e) => {
@@ -693,7 +709,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                     className={`toggle-button ${
                       searchCategory === "content" ? "active" : ""
                     }`}
-                    onClick={() => setSearchCategory("content")}
+                    onClick={() => handleSearchCategoryChange("content")}
                     title="메시지 검색"
                   >
                     💬
@@ -702,7 +718,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                     className={`toggle-button ${
                       searchCategory === "nickname" ? "active" : ""
                     }`}
-                    onClick={() => setSearchCategory("nickname")}
+                    onClick={() => handleSearchCategoryChange("nickname")}
                     title="닉네임 검색"
                   >
                     🤷‍♂️
