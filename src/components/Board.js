@@ -98,7 +98,6 @@ function Board({
           },
         }
       );
-      console.log("asd");
 
       console.log(response.data);
 

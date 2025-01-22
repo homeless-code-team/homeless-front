@@ -15,12 +15,34 @@ import axios from "axios";
 const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const { userName, userEmail } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
-  const [newMessage, setNewMessage] = useState("");
+  const [currentPage, setCurrentPage] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const pageSize = 20;
+  const messageListRef = useRef(null);
+  const inputRef = useRef(null);
+  const [newMessage, setNewMessage] = useState("");
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [editingMessageId, setEditingMessageId] = useState(null);
   const [editMessageContent, setEditMessageContent] = useState("");
+  const [showNewMessageAlert, setShowNewMessageAlert] = useState(false);
+  const [latestMessage, setLatestMessage] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isSearchFocused, setIsSearchFocused] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSearchResults, setShowSearchResults] = useState(false);
+  const [currentSearchIndex, setCurrentSearchIndex] = useState(-1);
+  const searchTimerRef = useRef(null);
+  const [channelStates, setChannelStates] = useState({});
+  const scrollPositionsRef = useRef({});
+  const [searchCategory, setSearchCategory] = useState("content");
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [filePreview, setFilePreview] = useState("");
+  const [uploadedFileUrl, setUploadedFileUrl] = useState("");
+  const [uploadedFileName, setUploadedFileName] = useState("");
+  const fileInputRef = useRef(null);
+
   const messageListRef = useRef(null);
   const inputRef = useRef(null);
   const [hasMore, setHasMore] = useState(true);
@@ -71,17 +93,39 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   }, []);
 
-  // 메시지 수신 처리
+  const isScrolledToBottom = useCallback(() => {
+    if (messageListRef.current) {
+      const { scrollHeight, scrollTop, clientHeight } = messageListRef.current;
+      return Math.abs(scrollHeight - scrollTop - clientHeight) < 10;
+    }
+    return false;
+  }, []);
+
   const handleMessageReceived = useCallback(
     (message) => {
       console.log("수신된 메시지:", message);
 
-      // 서버 응답 메시지인 경우 무시 (statusCode가 있는 경우)
       if (message.statusCode !== undefined) {
+        if (
+          message.result &&
+          message.result.chatId &&
+          message.result.reqMessage
+        ) {
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === message.result.chatId
+                ? { ...msg, content: message.result.reqMessage }
+                : msg
+            )
+          );
+          setEditingMessageId(null);
+          setEditMessageContent("");
+        }
         return;
       }
 
-      // 삭제된 메시지 처리
+      const shouldScrollToBottom = isScrolledToBottom();
+
       if (message.deletedChatId) {
         setMessages((prevMessages) =>
           prevMessages.filter((msg) => msg.id !== message.deletedChatId)
@@ -89,53 +133,100 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         return;
       }
 
-      // 일반 메시지 처리
+      const fileExtension = message.fileUrl
+        ? message.fileUrl.split(".").pop().toLowerCase()
+        : null;
+      const isImage = fileExtension
+        ? ["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(fileExtension)
+        : false;
+
+      const content = message.fileUrl ? (
+        <div style={{ position: "relative" }}>
+          {isImage ? (
+            <a href={message.fileUrl} target="_blank" rel="noopener noreferrer">
+              <img
+                src={message.fileUrl}
+                alt="파일 미리보기"
+                style={{
+                  maxWidth: "200px",
+                  maxHeight: "200px",
+                  cursor: "pointer",
+                }}
+              />
+            </a>
+          ) : (
+            <a href={message.fileUrl} target="_blank" rel="noopener noreferrer">
+              <button className="download-button">
+                <i className="fa fa-file-download"></i>
+                💽 {message.fileName}
+              </button>
+            </a>
+          )}
+          {/* 다운로드 아이콘 추가 */}
+          <a
+            href={message.fileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{
+              position: "absolute",
+              bottom: "5px",
+              right: "5px",
+              textDecoration: "none",
+              color: "black",
+            }}
+          >
+            <i className="fa fa-download" style={{ fontSize: "16px" }}></i>
+          </a>
+        </div>
+      ) : (
+        message.content || "내용 없음" // 파일 URL이 없을 경우 기본 내용
+      );
+
       const messageWithMeta = {
         id: message.chatId,
-        content: message.content,
         writer: message.writer || "Unknown",
         email: message.email,
-        type: message.type || "TALK",
+        type: message.messageType || "TALK",
         timestamp: new Date().toLocaleString("ko-KR", {
           hour: "2-digit",
           minute: "2-digit",
           second: "2-digit",
           hour12: true,
         }),
+        fileUrl: message.fileUrl || null,
+        fileName: message.fileName || null,
+        content, // 파일 또는 기본 메시지 내용
       };
 
-      setMessages((prev) => {
-        if (prev.some((msg) => msg.id === messageWithMeta.id)) {
-          return prev;
-        }
-        return [...prev, messageWithMeta];
-      });
+      setMessages((prevMessages) => [...prevMessages, messageWithMeta]);
+
+      if (!shouldScrollToBottom) {
+        setShowNewMessageAlert(true);
+      } else {
+        scrollToBottom();
+      }
+
+      // Update latestMessage with the newly received message
+      setLatestMessage(message);
     },
-    [serverId]
+    [setMessages, scrollToBottom, setLatestMessage]
   );
 
-  const { sendMessage, deleteMessage } = useWebSocket(
+  const { sendMessage, deleteMessage, updateMessage } = useWebSocket(
     channelId,
     handleMessageReceived
   );
 
-  // 채팅 기록 불러오기
   const fetchChatHistory = useCallback(
-    async (page = 0, size = 30, lastId = null) => {
+    async (page = 0, shouldScrollToSaved = false) => {
       try {
         setIsLoading(true);
         const token = localStorage.getItem("token");
-        if (!token) {
-          throw new Error("인증 토큰이 없습니다.");
-        }
+        if (!token) throw new Error("인증 토큰이 없습니다.");
 
-        let url = `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/ch/${channelId}?page=${page}&size=${size}`;
-        if (lastId) {
-          url += `&lastId=${lastId}`;
-        }
+        const url = `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/ch/${channelId}?page=${page}&size=${pageSize}`;
 
         const response = await fetch(url, {
-          method: "GET",
           headers: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
@@ -145,36 +236,111 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         const data = await response.json();
 
         if (data.statusCode === 200 && data.result) {
-          const messages = data.result.messages || [];
-          setHasMore(data.result.currentPage < data.result.totalPages - 1);
+          const { messages: newMessages, isLast } = data.result;
 
           setMessages((prev) => {
-            const newMessages = messages
-              .map((msg) => ({
+            const formattedMessages = newMessages.map((msg) => {
+              const fileUrl = msg.fileUrl || null; // Ensure fileUrl is defined
+              const fileName = msg.fileName || null;
+              const fileExtension = fileUrl
+                ? fileUrl.split(".").pop().toLowerCase()
+                : "";
+              const isImage = [
+                "jpg",
+                "jpeg",
+                "png",
+                "gif",
+                "bmp",
+                "webp",
+              ].includes(fileExtension);
+
+              // Format message content based on file type
+              const content = fileUrl ? (
+                <div style={{ position: "relative" }}>
+                  {isImage ? (
+                    <a href={fileUrl} target="_blank" rel="noopener noreferrer">
+                      <img
+                        src={fileUrl}
+                        alt="파일 미리보기"
+                        style={{
+                          maxWidth: "200px",
+                          maxHeight: "200px",
+                          cursor: "pointer",
+                        }}
+                      />
+                    </a>
+                  ) : (
+                    <a href={fileUrl} target="_blank" rel="noopener noreferrer">
+                      <button className="download-button">
+                        <i className="fa fa-file-download"></i> 💽 {fileName}
+                      </button>
+                    </a>
+                  )}
+                  {/* 다운로드 아이콘 추가 */}
+                  <a
+                    href={fileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      position: "absolute",
+                      bottom: "5px",
+                      right: "5px",
+                      textDecoration: "none",
+                      color: "black",
+                    }}
+                  >
+                    <i
+                      className="fa fa-download"
+                      style={{ fontSize: "16px" }}
+                    ></i>
+                  </a>
+                </div>
+              ) : (
+                msg.content // Fallback to original content if no fileUrl
+              );
+
+              return {
                 id: msg.id,
                 writer: msg.writer,
                 email: msg.email,
-                content: msg.content,
+                content: content,
                 timestamp: new Date(msg.timestamp).toLocaleString("ko-KR", {
                   hour: "2-digit",
                   minute: "2-digit",
                   second: "2-digit",
                   hour12: true,
                 }),
-              }))
-              .reverse();
+                fileUrl: fileUrl,
+                rawTimestamp: msg.timestamp,
+              };
+            });
 
-            if (page === 0) {
-              setTimeout(() => scrollToBottom(), 100);
-              return newMessages;
-            }
+            const updatedMessages =
+              page === 0
+                ? formattedMessages.reverse()
+                : [...formattedMessages.reverse(), ...prev];
 
-            if (messages.length > 0) {
-              setLastMessageId(messages[0].id);
-            }
+            setChannelStates((prev) => ({
+              ...prev,
+              [channelId]: {
+                messages: updatedMessages,
+                currentPage: page,
+                hasNextPage: !isLast,
+              },
+            }));
 
-            return [...newMessages, ...prev];
+            return updatedMessages;
           });
+
+          setCurrentPage(page);
+          setHasNextPage(!isLast);
+
+          if (shouldScrollToSaved && messageListRef.current) {
+            requestAnimationFrame(() => {
+              messageListRef.current.scrollTop =
+                scrollPositionsRef.current[channelId] || 0;
+            });
+          }
         }
       } catch (error) {
         console.error("채팅 기록 로딩 에러:", error);
@@ -182,22 +348,18 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         setIsLoading(false);
       }
     },
-    [channelId, scrollToBottom]
+    [channelId]
   );
 
-  // 더 불러오기 버튼 클릭 핸들러
-  const loadMoreMessages = () => {
-    if (hasMore && !isLoading) {
+  const loadMoreMessages = useCallback(() => {
+    if (hasNextPage && !isLoading) {
       const nextPage = currentPage + 1;
-      setCurrentPage(nextPage);
 
-      // 현재 스크롤 위치와 높이 저장
       const scrollContainer = messageListRef.current;
       const previousScrollHeight = scrollContainer.scrollHeight;
       const previousScrollTop = scrollContainer.scrollTop;
 
-      fetchChatHistory(nextPage, pageSize, lastMessageId).then(() => {
-        // requestAnimationFrame을 사용하여 DOM 업데이트 후 스크롤 위치 조정
+      fetchChatHistory(nextPage).then(() => {
         requestAnimationFrame(() => {
           const newScrollHeight = scrollContainer.scrollHeight;
           const scrollHeightDiff = newScrollHeight - previousScrollHeight;
@@ -205,31 +367,41 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         });
       });
     }
-  };
+  }, [hasNextPage, isLoading, currentPage, fetchChatHistory]);
 
-  // 스크롤 이벤트 처리
-  const handleScroll = () => {
+  const handleScroll = useCallback(() => {
     if (messageListRef.current) {
       const { scrollTop } = messageListRef.current;
-      // 스크롤이 최상단에 도달하면 더보기 버튼 표시
-      setShowLoadMoreButton(scrollTop === 0 && hasMore && !isLoading);
-    }
-  };
+      scrollPositionsRef.current[channelId] = scrollTop;
 
-  // 채널 변경 시 초기화
+      if (scrollTop === 0 && hasNextPage && !isLoading) {
+        loadMoreMessages();
+      }
+    }
+  }, [channelId, hasNextPage, isLoading, loadMoreMessages]);
+
   useEffect(() => {
     if (channelId) {
       setMessages([]);
       setCurrentPage(0);
-      setHasMore(true);
-      fetchChatHistory(0, pageSize);
-    }
-  }, [channelId, fetchChatHistory, pageSize]);
+      setHasNextPage(true);
+      fetchChatHistory(0);
 
-  // 메시지 전송
+      setTimeout(() => {
+        if (messageListRef.current) {
+          const savedScrollTop = scrollPositionsRef.current[channelId];
+          if (savedScrollTop !== undefined) {
+            messageListRef.current.scrollTop = savedScrollTop;
+          }
+        }
+      }, 100);
+    }
+  }, [channelId, fetchChatHistory]);
+
+  // 메시지 전송 핸들러
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!newMessage.trim()) return;
+    if (!newMessage.trim() && !uploadedFileUrl) return; // 메시지와 파일 URL이 모두 없을 경우 전송하지 않음
 
     const messageData = {
       serverId: serverId,
@@ -237,51 +409,28 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       writer: userName,
       email: userEmail,
       content: newMessage.trim(),
-      messageType: "TALK",
+      messageType: uploadedFileUrl ? "FILE" : "TALK", // 파일이 선택된 경우 "FILE"로 설정
+      fileUrl: uploadedFileUrl || null, // 업로드된 파일 URL 포함, 없으면 null
+      fileName: uploadedFileName || null, // 업로드된 파일 이름 포함
     };
 
+    console.log("전송할 메시지 데이터:", messageData); // 전송할 메시지 데이터 로그 추가
+
     try {
-      console.log("전송할 메시지 데이터:", messageData);
-      const response = await sendMessage(messageData);
+      // WebSocket을 통해 메시지 전송
+      await sendMessage(messageData);
       setNewMessage("");
-      inputRef.current?.focus();
-
-      if (response && response.result) {
-        const { chatId, content, writer, email } = response.result;
-
-        // 중복 메시지 체크 후 추가
-        setMessages((prev) => {
-          // 이미 같은 ID의 메시지가 있다면 상태 업데이트하지 않음
-          if (prev.some((msg) => msg.id === chatId)) {
-            return prev;
-          }
-
-          const newMessage = {
-            id: chatId,
-            content,
-            writer,
-            email,
-            timestamp: new Date().toLocaleString("ko-KR", {
-              hour: "2-digit",
-              minute: "2-digit",
-              second: "2-digit",
-              hour12: true,
-            }),
-          };
-
-          return [...prev, newMessage];
-        });
-
-        // 메시지 전송 후 스크롤을 아래로 이동
-        setTimeout(() => scrollToBottom(), 100);
-      }
+      setSelectedFile(null);
+      setFilePreview("");
+      setUploadedFileUrl(""); // 메시지 전송 후 URL 초기화
+      setUploadedFileName(""); // 파일 이름 초기화
+      setTimeout(() => scrollToBottom(), 100);
     } catch (error) {
       console.error("메시지 전송 중 오류 발생:", error);
       Swal.fire("오류 발생", "메시지 전송에 실패했습니다.", "error");
     }
   };
 
-  // 엔터키 처리
   const handleKeyPress = (e) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -289,7 +438,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   };
 
-  // 메시지 삭제 핸들러
   const handleDeleteMessage = async (chatId) => {
     try {
       const result = await Swal.fire({
@@ -304,7 +452,6 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       });
 
       if (result.isConfirmed) {
-        // WebSocket으로 삭제 요청 전송
         deleteMessage(chatId);
       }
     } catch (error) {
@@ -313,36 +460,223 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   };
 
-  // 메시지 수정 핸들러
   const handleUpdateMessage = async (messageId) => {
     try {
+      updateMessage(channelId, messageId, editMessageContent);
+    } catch (error) {
+      console.error("메시지 수정 중 오류 발생:", error);
+      Swal.fire("오류 발생", "메시지 수정에 실패했습니다.", "error");
+    }
+  };
+
+  const handleAlertClick = () => {
+    console.log("알람작동.");
+
+    scrollToBottom();
+    setShowNewMessageAlert(false);
+  };
+
+  const handleSearch = async (keyword) => {
+    const trimmedKeyword = keyword.trim();
+    console.log(
+      "검색 시작 - 키워드:",
+      trimmedKeyword,
+      "카테고리:",
+      searchCategory
+    );
+
+    if (!trimmedKeyword) {
+      setShowSearchResults(false);
+      setSearchResults([]);
+      return;
+    }
+
+    try {
       const token = localStorage.getItem("token");
-      const response = await fetch(
-        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/message/${messageId}`,
+      const url = `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/chats/search?channelId=${channelId}&keyword=${trimmedKeyword}&category=${searchCategory}&page=0&size=20`;
+
+      const response = await fetch(url, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+      });
+      const data = await response.json();
+
+      if (response.ok) {
+        setSearchResults(data.content || []);
+        setShowSearchResults(true);
+        setCurrentSearchIndex(0);
+        if (data.content && data.content.length > 0) {
+          moveToSearchResult(0);
+        }
+      } else {
+        Swal.fire("검색 실패", "메시지 검색 중 오류가 발생했습니다.", "error");
+      }
+    } catch (error) {
+      console.error("검색 중 오류 발생:", error);
+      Swal.fire("오류 발생", "검색 중 문제가 발생했습니다.", "error");
+    }
+  };
+
+  const handleSearchInput = (e) => {
+    setSearchQuery(e.target.value);
+
+    if (searchTimerRef.current) {
+      clearTimeout(searchTimerRef.current);
+    }
+
+    searchTimerRef.current = setTimeout(() => {
+      const trimmedValue = e.target.value.trim();
+      if (trimmedValue) {
+        handleSearch(trimmedValue);
+      } else {
+        setShowSearchResults(false);
+        setSearchResults([]);
+      }
+    }, 500);
+  };
+
+  const handleSearchKeyPress = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+      if (!searchQuery.trim()) {
+        setShowSearchResults(false);
+        setSearchResults([]);
+        return;
+      }
+      handleSearch(searchQuery);
+    }
+  };
+
+  const handleSearchButtonClick = () => {
+    if (!searchQuery.trim()) {
+      setShowSearchResults(false);
+      setSearchResults([]);
+      return;
+    }
+    handleSearch(searchQuery);
+  };
+
+  const moveToSearchResult = (index) => {
+    if (searchResults.length === 0) return;
+
+    let newIndex = index;
+    if (index >= searchResults.length) newIndex = 0;
+    if (index < 0) newIndex = searchResults.length - 1;
+
+    const result = searchResults[newIndex];
+    const messageElement = document.getElementById(`message-${result.id}`);
+
+    if (messageElement) {
+      document.querySelectorAll(".highlight").forEach((el) => {
+        el.classList.remove("highlight");
+      });
+
+      messageElement.classList.add("highlight");
+      messageElement.scrollIntoView({ behavior: "smooth", block: "center" });
+      setCurrentSearchIndex(newIndex);
+    }
+  };
+
+  useEffect(() => {
+    return () => {
+      if (searchTimerRef.current) {
+        clearTimeout(searchTimerRef.current);
+      }
+    };
+  }, []);
+
+  const findMessageWithRetry = async (messageId, maxRetries = 10) => {
+    let retryCount = 0;
+
+    const findMessage = async () => {
+      const messageElement = document.getElementById(`message-${messageId}`);
+      if (messageElement) {
+        return messageElement;
+      }
+
+      if (!hasNextPage || retryCount >= maxRetries) {
+        return null;
+      }
+
+      retryCount++;
+      const nextPage = currentPage + 1;
+      setCurrentPage(nextPage);
+
+      try {
+        await fetchChatHistory(nextPage);
+        return await findMessage();
+      } catch (error) {
+        console.error("메시지 로드 중 오류:", error);
+        return null;
+      }
+    };
+
+    return await findMessage();
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setFilePreview(`${file.name} (${(file.size / 1024).toFixed(2)} KB)`);
+      handleFileUpload(file);
+      setUploadedFileName(file.name);
+    }
+  };
+  const handleFileUpload = async (file) => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/file/chats/upload`,
+        formData,
         {
-          method: "PATCH",
           headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
           },
-          body: editMessageContent,
         }
       );
 
-      if (response.ok) {
-        setMessages(
-          messages.map((msg) =>
-            msg.id === messageId ? { ...msg, content: editMessageContent } : msg
-          )
-        );
-        setEditingMessageId(null);
-        setEditMessageContent("");
-      } else {
-        const errorData = await response.json();
-        console.error("메시지 수정 실패:", errorData);
+      if (response.data && response.data.result) {
+        console.log("파일 전송 API 응답:", response.data);
+        const fileUrl = response.data.result.fileUrl;
+        setUploadedFileUrl(fileUrl);
       }
     } catch (error) {
-      console.error("메시지 수정 중 오류 발생:", error);
+      console.error("파일 업로드 중 오류 발생:", error);
+      Swal.fire("오류 발생", "파일 업로드에 실패했습니다.", "error");
+    }
+  };
+
+  const handleFileDelete = async () => {
+    if (uploadedFileUrl) {
+      try {
+        const response = await axios.delete(
+          `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/file/chats/delete`,
+          {
+            params: { fileUrl: uploadedFileUrl },
+            headers: {
+              Authorization: `Bearer ${localStorage.getItem("token")}`,
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          console.log("파일 삭제 성공, fileUrl:", uploadedFileUrl);
+          setUploadedFileUrl(null);
+          setFilePreview("");
+          setSelectedFile(null);
+        }
+      } catch (error) {
+        console.error("파일 삭제 중 오류 발생:", error);
+        Swal.fire("오류 발생", "파일 삭제에 실패했습니다.", "error");
+      }
     }
   };
 
@@ -352,11 +686,127 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         <>
           {!isDirectMessage && (
             <div className="chat-header">
-              <h3>{channelName}</h3>
-              <div className="header-divider"></div>
-              <p className="channel-description">
-                {channelName} 채널에 오신 것을 환영합니다
-              </p>
+              <div className="header-left">
+                <h3>{channelName}</h3>
+                <div className="header-divider"></div>
+                <p className="channel-description">
+                  {channelName} 채널에 오신 것을 환영합니다
+                </p>
+              </div>
+              <div
+                className={`search-container ${
+                  isSearchFocused ? "focused" : ""
+                }`}
+              >
+                <span
+                  className="search-icon"
+                  onClick={handleSearchButtonClick}
+                  style={{ cursor: "pointer" }}
+                >
+                  🔍
+                </span>
+                <input
+                  type="text"
+                  className="search-input"
+                  placeholder={`${
+                    searchCategory === "content" ? "메시지" : "닉네임"
+                  } 검색`}
+                  value={searchQuery}
+                  onChange={handleSearchInput}
+                  onKeyDown={handleSearchKeyPress}
+                  onFocus={() => setIsSearchFocused(true)}
+                  onBlur={() => {
+                    setTimeout(() => setIsSearchFocused(false), 200);
+                  }}
+                />
+                <div className="search-category-toggle">
+                  <button
+                    className={`toggle-button ${
+                      searchCategory === "content" ? "active" : ""
+                    }`}
+                    onClick={() => setSearchCategory("content")}
+                    title="메시지 검색"
+                  >
+                    💬
+                  </button>
+                  <button
+                    className={`toggle-button ${
+                      searchCategory === "nickname" ? "active" : ""
+                    }`}
+                    onClick={() => setSearchCategory("nickname")}
+                    title="닉네임 검색"
+                  >
+                    🤷‍♂️
+                  </button>
+                </div>
+                {showSearchResults && searchResults.length > 0 && (
+                  <div className="search-dropdown">
+                    {searchResults.map((result, index) => (
+                      <div
+                        key={result.id}
+                        className="search-result-item"
+                        onClick={async () => {
+                          console.log("클릭한 메시지 ID:", result.id);
+                          try {
+                            const messageElement = await findMessageWithRetry(
+                              result.id
+                            );
+                            if (messageElement) {
+                              document
+                                .querySelectorAll(".highlight")
+                                .forEach((el) => {
+                                  el.classList.remove("highlight");
+                                });
+
+                              messageElement.classList.add("highlight");
+                              messageElement.scrollIntoView({
+                                behavior: "smooth",
+                                block: "center",
+                              });
+
+                              messageElement.classList.add(
+                                "highlight-animation"
+                              );
+
+                              setTimeout(() => {
+                                messageElement.classList.remove(
+                                  "highlight-animation"
+                                );
+                              }, 2000);
+
+                              setCurrentSearchIndex(index);
+                            }
+                          } catch (error) {
+                            console.error("메시지 찾기 중 오류:", error);
+                          }
+                        }}
+                      >
+                        <div className="search-result-header">
+                          <span className="search-result-writer">
+                            {result.writer}
+                          </span>
+                          <span className="search-result-time">
+                            {new Date(result.timestamp).toLocaleString(
+                              "ko-KR",
+                              {
+                                year: "numeric",
+                                month: "2-digit",
+                                day: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                                hour12: true,
+                              }
+                            )}
+                          </span>
+                        </div>
+                        <div className="search-result-content">
+                          {result.content}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           )}
           <div
@@ -366,20 +816,24 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
             ref={messageListRef}
             onScroll={handleScroll}
           >
-            {showLoadMoreButton && (
-              <button
-                onClick={loadMoreMessages}
-                className="load-more-button"
-                disabled={isLoading}
-              >
-                이전 메시지 더 보기
-              </button>
+            {!hasNextPage && messages.length > 0 && (
+              <div className="system-message">
+                <div className="system-message-line">
+                  <span className="system-message-text">
+                    더이상 메시지가 없습니다
+                  </span>
+                </div>
+              </div>
             )}
             {isLoading && (
               <div className="loading-messages">메시지를 불러오는 중...</div>
             )}
             {messages.map((message, index) => (
-              <div key={message.id || index} className="message-item">
+              <div
+                key={message.id || index}
+                id={`message-${message.id}`}
+                className="message-item"
+              >
                 <div
                   className="message-avatar"
                   onClick={() => {
@@ -470,7 +924,22 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
           </div>
 
           <div className="chat-input-container">
-            <button className="add-content-button">
+            {filePreview && (
+              <div className="file-preview">
+                <span>{filePreview}</span>
+                <button onClick={handleFileDelete}>X</button>
+              </div>
+            )}
+            <input
+              type="file"
+              style={{ display: "none" }}
+              onChange={handleFileChange}
+              ref={fileInputRef}
+            />
+            <button
+              className="add-content-button"
+              onClick={() => fileInputRef.current.click()}
+            >
               <span className="plus-icon">+</span>
             </button>
             <form onSubmit={handleSubmit} className="chat-form">
@@ -496,6 +965,17 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         </>
       ) : (
         <div className="no-messages">친구와 대화해보세요!</div>
+      )}
+      {showNewMessageAlert && latestMessage && (
+        <div className="new-message-alert" onClick={handleAlertClick}>
+          <div className="alert-avatar">
+            {latestMessage.writer?.charAt(0).toUpperCase()}
+          </div>
+          <div className="alert-content">
+            <span className="new-message-writer">{latestMessage.writer}</span>
+            <span className="new-message-preview">{latestMessage.content}</span>
+          </div>
+        </div>
       )}
     </div>
   );

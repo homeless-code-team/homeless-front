@@ -22,13 +22,17 @@ const useWebSocket = (channelId, onMessageReceived) => {
 
     const connect = () => {
       if (!client.current) {
+        const sockJSOptions = {
+          transports: ["websocket", "xhr-streaming", "xhr-polling"],
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+
         const socket = new SockJS(
           `${process.env.REACT_APP_API_BASE_URL}/chat-service/ws`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          null,
+          sockJSOptions
         );
 
         client.current = new Client({
@@ -36,6 +40,14 @@ const useWebSocket = (channelId, onMessageReceived) => {
           connectHeaders: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
+          },
+          beforeConnect: () => {
+            if (!token) {
+              throw new Error("Authentication token is missing");
+            }
+          },
+          debug: (str) => {
+            console.log("STOMP Debug:", str);
           },
           onConnect: () => {
             if (currentSubscription.current) {
