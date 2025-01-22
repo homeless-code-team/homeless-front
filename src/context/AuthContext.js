@@ -3,7 +3,7 @@ import React, { createContext, useState, useCallback } from "react";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [auth, setAuth] = useState({
+  const [isAuthenticated, setIsAuthenticated] = useState({
     token: localStorage.getItem("token"),
     userId: localStorage.getItem("userId"),
     userEmail: localStorage.getItem("userEmail"),
@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem("userName", name);
     localStorage.setItem("userId", userId);
 
-    setAuth({
+    setIsAuthenticated({
       token,
       userId,
       userEmail: email,
@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem("userRole");
     localStorage.removeItem("userName");
 
-    setAuth({
+    setIsAuthenticated({
       token: null,
       userId: null,
       userEmail: null,
@@ -47,7 +47,9 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   return (
-    <AuthContext.Provider value={{ ...auth, onLogin, onLogout }}>
+    <AuthContext.Provider
+      value={{ ...isAuthenticated, setIsAuthenticated, onLogin, onLogout }}
+    >
       {children}
     </AuthContext.Provider>
   );
