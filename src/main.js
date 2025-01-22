@@ -52,6 +52,50 @@ function createWindow() {
       globalShortcut.unregister("F12");
     }
   });
+
+  // IPC 핸들러
+  ipcMain.handle("window:close", () => {
+    mainWindow.close();
+    return true;
+  });
+
+  ipcMain.handle("window:minimize", () => {
+    mainWindow.minimize();
+    return true;
+  });
+
+  ipcMain.handle("window:maximize", () => {
+    if (mainWindow.isMaximized()) {
+      mainWindow.unmaximize();
+      return false;
+    } else {
+      mainWindow.maximize();
+      return true;
+    }
+  });
+
+  ipcMain.handle("window:isMaximized", () => {
+    return mainWindow.isMaximized();
+  });
+  ipcMain.handle("window:logout", async () => {
+    try {
+      const response = await axios.post(
+        `${API_BASE_URL}/user-service/api/v1/users/sign-out`,
+        {},
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`,
+          },
+        }
+      );
+      console.log("로그아웃 성공:", response.data);
+    } catch (error) {
+      console.error("로그아웃 실패:", error);
+    } finally {
+      // Access Token 삭제
+      localStorage.removeItem("ACCESS_TOKEN");
+    }
+  });
 }
 
 // OAuth 로그인 처리
