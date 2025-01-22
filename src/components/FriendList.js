@@ -197,6 +197,27 @@ const FriendList = ({ onSelectChannel }) => {
     }
   };
 
+  const handleDeleteFriend = async (nickname) => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      console.log(nickname);
+      const res = await apiClient.delete("/friends-service/api/v1/friends", {
+        params: { receiverNickname: nickname },
+      });
+      if (res.data.code === 200) {
+        alert(`${nickname}님과 친구 관계가 삭제되었습니다.`);
+        fetchFriends();
+      } else {
+        setError("친구 관계 삭제 실패");
+      }
+    } catch (error) {
+      setError("오류 발생: 친구 관계 삭제 실패했습니다.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (currentTab === "friends") {
       fetchFriends();
@@ -252,6 +273,20 @@ const FriendList = ({ onSelectChannel }) => {
               </div>
               <div className="friend-info">
                 <span className="friend-name">{friend.name}</span>
+                <button
+                  onClick={() => {
+                    if (
+                      window.confirm(
+                        `정말 ${friend.name}친구를 삭제하시겠습니까?`
+                      )
+                    ) {
+                      handleDeleteFriend(friend.name);
+                    }
+                  }}
+                >
+                  {" "}
+                  삭제{" "}
+                </button>
               </div>
             </div>
           ))}

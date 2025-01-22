@@ -1,11 +1,16 @@
 import { app, BrowserWindow, ipcMain, globalShortcut } from "electron";
 import path from "path";
 import { fileURLToPath } from "url";
+import axios from "axios";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-let mainWindow;
+let mainWindow = null;
+let authWindow = null;
+
+const API_BASE_URL =
+  process.env.REACT_APP_API_BASE_URL || "http://localhost:8181";
 
 // 개발 환경인지 확인
 const isDev = process.env.NODE_ENV === "development";
@@ -16,9 +21,9 @@ function createWindow() {
     height: 800,
     frame: false,
     webPreferences: {
-      nodeIntegration: true,
+      nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.cjs"),
+      preload: path.join(__dirname, "preload.js"),
       webSecurity: true,
       additionalArguments: [`--js-flags=--max-old-space-size=4096`],
     },
@@ -55,7 +60,10 @@ function createWindow() {
 
   // 윈도우가 닫힐 때 단축키 해제
   mainWindow.on("closed", () => {
-    globalShortcut.unregister("F12");
+    mainWindow = null;
+    if (globalShortcut.isRegistered("F12")) {
+      globalShortcut.unregister("F12");
+    }
   });
 
   // IPC 핸들러
@@ -97,17 +105,79 @@ function createWindow() {
   });
 }
 
+// OAuth 로그인 처리
+ipcMain.handle("oauth:login", async (event, provider) => {
+  try {
+    const response = await axios.get(
+      `${API_BASE_URL}/user-service/api/v1/users/o-auth`,
+      { params: { provider } }
+    );
+
+    if (response.data) {
+      // OAuth 창 생성
+      authWindow = new BrowserWindow({
+        width: 600,
+        height: 800,
+        webPreferences: {
+          nodeIntegration: false,
+          contextIsolation: true,
+        },
+      });
+
+      // OAuth URL로 이동
+      authWindow.loadURL(response.data);
+
+      // URL 변경 감지
+      authWindow.webContents.on("did-navigate", async (event, url) => {
+        if (url.startsWith("http://localhost:3000/oauth")) {
+          const urlObj = new URL(url);
+          const code = urlObj.searchParams.get("code");
+
+          if (code) {
+            try {
+              // 토큰 요청
+              const tokenResponse = await axios.post(
+                `${API_BASE_URL}/user-service/api/v1/users/callback`,
+                { code, provider },
+                {
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                }
+              );
+
+              // 메인 윈도우로 결과 전송
+              mainWindow.webContents.send("oauth:callback", tokenResponse.data);
+
+              // OAuth 창 닫기
+              authWindow.close();
+              authWindow = null;
+            } catch (error) {
+              console.error("Token request failed:", error);
+              mainWindow.webContents.send("oauth:callback", {
+                error: error.message,
+              });
+            }
+          }
+        }
+      });
+    }
+  } catch (error) {
+    console.error("OAuth request failed:", error);
+    return { error: error.message };
+  }
+});
+
 app.whenReady().then(createWindow);
 
 app.on("window-all-closed", () => {
-  globalShortcut.unregisterAll(); // 모든 단축키 해제
   if (process.platform !== "darwin") {
     app.quit();
   }
 });
 
 app.on("activate", () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
+  if (mainWindow === null) {
     createWindow();
   }
 });

@@ -47,6 +47,7 @@ const SignUp = () => {
     }
   };
 
+  //닉네임 변경 메서드
   const handleNicknameChange = (e) => {
     const nicknameValue = e.target.value;
     setNickname(nicknameValue);
@@ -74,6 +75,7 @@ const SignUp = () => {
     }
   }, [password, confirmPassword]);
 
+  // 유효성 및 중복성 검사
   const handleCheckDuplicate = async (type, value) => {
     try {
       const response = await axios.get(
@@ -107,6 +109,7 @@ const SignUp = () => {
     }
   };
 
+  // 인증코드 이메이 전송
   const handleSendAuthCode = async () => {
     if (isEmailAvailable) {
       try {
