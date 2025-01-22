@@ -113,7 +113,7 @@ const ChatRoomList = ({
 
       try {
         const res = await axios.put(
-          `http://localhost:8181/server/channels`,
+          `${process.env.REACT_APP_API_BASE_URL}/server/channels`,
           data,
           {
             headers: {

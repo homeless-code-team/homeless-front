@@ -1,9 +1,7 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import "./UserProfilePopup.css";
 
 const UserProfilePopup = ({ user, onClose }) => {
-  if (!user) return null;
-
   return (
     <div className="profile-popup-overlay" onClick={onClose}>
       <div className="profile-popup" onClick={(e) => e.stopPropagation()}>

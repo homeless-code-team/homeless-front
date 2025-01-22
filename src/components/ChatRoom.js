@@ -10,6 +10,7 @@ import AuthContext from "../context/AuthContext.js";
 import useWebSocket from "../hooks/useWebSocket.js";
 import UserProfilePopup from "./UserProfilePopup.js";
 import Swal from "sweetalert2";
+import axios from "axios";
 
 const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const { userName, userEmail } = useContext(AuthContext);
@@ -27,6 +28,41 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const [pageSize, setPageSize] = useState(30);
   const [lastMessageId, setLastMessageId] = useState(null);
   const [showLoadMoreButton, setShowLoadMoreButton] = useState(false);
+  const [contextMenu, setContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    serverId: null,
+    serverImg: null,
+    serverTag: null,
+    serverTitle: null,
+  });
+  const [inviteModal, setInviteModal] = useState(false);
+
+  /// 서버 초대 로직
+  const handleContextMenu = useCallback((e, server) => {
+    e.preventDefault();
+    setContextMenu({
+      visible: true,
+      x: e.pageX,
+      y: e.pageY,
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleClick = () =>
+      setContextMenu({ visible: false, x: 0, y: 0, serverId: null });
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, []);
+
+  const handleInviteModal = () => {
+    setInviteModal(true);
+
+    const res = axios.get(
+      `${process.env.REACT_APP_API_BASE_URL}/server/server`
+    );
+  };
 
   // 스크롤 처리
   const scrollToBottom = useCallback(() => {
@@ -354,6 +390,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                     setShowProfilePopup(true);
                   }}
                   style={{ cursor: "pointer" }}
+                  onContextMenu={(e) => handleContextMenu(e)}
                 >
                   {message.writer?.charAt(0).toUpperCase()}
                 </div>
@@ -407,7 +444,31 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                 </div>
               </div>
             ))}
+            {contextMenu.visible && (
+              <div
+                className="context-menu"
+                style={{
+                  position: "fixed",
+                  top: contextMenu.y,
+                  left: contextMenu.x,
+                }}
+              >
+                <button>친구 추가</button>
+                <button onClick={handleInviteModal}>서버 초대</button>
+              </div>
+            )}
+
+            {inviteModal && (
+              <div className="modal-overlay">
+                <div className="modal-content">
+                  <h2>서버 수정하기</h2>
+
+                  <button onClick={() => setInviteModal(false)}>취소</button>
+                </div>
+              </div>
+            )}
           </div>
+
           <div className="chat-input-container">
             <button className="add-content-button">
               <span className="plus-icon">+</span>
