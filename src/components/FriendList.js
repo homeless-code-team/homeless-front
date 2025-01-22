@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import "./FriendList.css";
 import axios from "axios";
+import axiosInstance from "../configs/axios-config";
 
 const FriendList = ({ onSelectChannel }) => {
   const token = localStorage.getItem("token");
@@ -18,17 +19,17 @@ const FriendList = ({ onSelectChannel }) => {
   const [searchInput, setSearchInput] = useState(""); // 검색 입력 상태
   const [requestSearchInput, setRequestSearchInput] = useState(""); // 요청 검색 입력 상태
 
-  const apiClient = axios.create({
-    baseURL: process.env.REACT_APP_API_BASE_URL,
-    headers: { Authorization: `Bearer ${token}` },
-    withCredentials: true,
-  });
-
   const fetchFriends = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await apiClient.get("/friends-service/api/v1/friends");
+      const res = await axiosInstance.get(
+        `${process.env.REACT_APP_API_BASE_URL}/friends-service/api/v1/friends`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        }
+      );
       if (res.data.code === 200) {
         const friendsData = res.data.data;
         const friends = friendsData.map(
@@ -53,9 +54,14 @@ const FriendList = ({ onSelectChannel }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await apiClient.get(
-        "/friends-service/api/v1/friends/request"
+      const res = await axiosInstance.get(
+        `${process.env.REACT_APP_API_BASE_URL}/friends-service/api/v1/friends/request`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        }
       );
+
       if (res.data.code === 200) {
         setSentRequests(res.data.data);
         setFilteredSentRequests(res.data.data);
@@ -73,8 +79,12 @@ const FriendList = ({ onSelectChannel }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await apiClient.get(
-        "/friends-service/api/v1/friends/response"
+      const res = await axiosInstance.get(
+        `${process.env.REACT_APP_API_BASE_URL}/friends-service/api/v1/friends/response`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        }
       );
       if (res.data.code === 200) {
         setReceivedRequests(res.data.data);
@@ -93,7 +103,13 @@ const FriendList = ({ onSelectChannel }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await apiClient.get("/user-service/api/v1/users/all");
+      const res = await axiosInstance.get(
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/all`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        }
+      );
       if (res.data.code === 200) {
         setAllUsers(res.data.data);
         setFilteredUsers(res.data.data);
@@ -109,9 +125,16 @@ const FriendList = ({ onSelectChannel }) => {
 
   const handleAddFriend = async (nickname) => {
     try {
-      const res = await apiClient.post("/friends-service/api/v1/friends", {
-        receiverNickname: nickname,
-      });
+      const res = await axiosInstance.post(
+        `${process.env.REACT_APP_API_BASE_URL}/friends-service/api/v1/friends`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        },
+        {
+          receiverNickname: nickname,
+        }
+      );
       if (res.data.code === 200) {
         alert(`${nickname}님에게 친구 요청을 보냈습니다.`);
         fetchSentRequests();
@@ -127,8 +150,12 @@ const FriendList = ({ onSelectChannel }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await apiClient.post(
-        "/friends-service/api/v1/friends/response",
+      const res = await axiosInstance.post(
+        `${process.env.REACT_APP_API_BASE_URL}/friends-service/api/v1/friends/response`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        },
         {
           receiverNickname: receiverNickname,
           addStatus: "ACCEPT",
@@ -152,8 +179,12 @@ const FriendList = ({ onSelectChannel }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await apiClient.post(
-        "/friends-service/api/v1/friends/response",
+      const res = await axiosInstance.post(
+        `${process.env.REACT_APP_API_BASE_URL}/friends-service/api/v1/friends/response`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        },
         {
           receiverNickname,
           addStatus: "REJECTED",
@@ -177,8 +208,12 @@ const FriendList = ({ onSelectChannel }) => {
     setIsLoading(true);
     setError(null);
     try {
-      const res = await apiClient.delete(
-        "/friends-service/api/v1/friends/request",
+      const res = await axiosInstance.delete(
+        `${process.env.REACT_APP_API_BASE_URL}/friends-service/api/v1/friends/request`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        },
         {
           params: { receiverNickname: nickname },
         }
@@ -202,9 +237,16 @@ const FriendList = ({ onSelectChannel }) => {
     setError(null);
     try {
       console.log(nickname);
-      const res = await apiClient.delete("/friends-service/api/v1/friends", {
-        params: { receiverNickname: nickname },
-      });
+      const res = await axiosInstance.delete(
+        `${process.env.REACT_APP_API_BASE_URL}/friends-service/api/v1/friends`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          withCredentials: true,
+        },
+        {
+          params: { receiverNickname: nickname },
+        }
+      );
       if (res.data.code === 200) {
         alert(`${nickname}님과 친구 관계가 삭제되었습니다.`);
         fetchFriends();

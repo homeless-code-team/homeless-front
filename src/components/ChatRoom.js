@@ -11,6 +11,7 @@ import useWebSocket from "../hooks/useWebSocket.js";
 import UserProfilePopup from "./UserProfilePopup.js";
 import Swal from "sweetalert2";
 import axios from "axios";
+import axiosInstance from "../configs/axios-config.js";
 
 const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const { userName, userEmail } = useContext(AuthContext);
@@ -589,7 +590,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     formData.append("file", file);
 
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/file/chats/upload`,
         formData,
         {
@@ -613,7 +614,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const handleFileDelete = async () => {
     if (uploadedFileUrl) {
       try {
-        const response = await axios.delete(
+        const response = await axiosInstance.delete(
           `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/file/chats/delete`,
           {
             params: { fileUrl: uploadedFileUrl },

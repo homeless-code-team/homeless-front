@@ -3,6 +3,7 @@ import "./ChatRoomList.css";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { ImEllo } from "react-icons/im";
+import axiosInstance from "../configs/axios-config";
 
 const ChatRoomList = ({
   serverId,
@@ -70,7 +71,7 @@ const ChatRoomList = ({
       data.append("serverId", serverId);
 
       try {
-        const res = await axios.post(
+        const res = await axiosInstance.post(
           "http://localhost:8181/server/channels",
           data,
           {
@@ -112,7 +113,7 @@ const ChatRoomList = ({
       data.append("channelId", editChannelId);
 
       try {
-        const res = await axios.put(
+        const res = await axiosInstance.put(
           `http://localhost:8181/server/channels`,
           data,
           {
@@ -162,7 +163,7 @@ const ChatRoomList = ({
       });
 
       if (result.isConfirmed) {
-        const res = await axios.delete(
+        const res = await axiosInstance.delete(
           `${process.env.REACT_APP_API_BASE_URL}/server/channels?id=${channelId}`,
           {
             headers: {
@@ -211,7 +212,7 @@ const ChatRoomList = ({
       data.append("tag", serverTag);
 
       try {
-        const res = await axios.post(
+        const res = await axiosInstance.post(
           `${process.env.REACT_APP_API_BASE_URL}/server/boardList`,
           data,
           {
@@ -261,7 +262,7 @@ const ChatRoomList = ({
       });
 
       if (result.isConfirmed) {
-        const res = await axios.delete(
+        const res = await axiosInstance.delete(
           `${process.env.REACT_APP_API_BASE_URL}/server/boardList?id=${boardId}`,
           {
             headers: {
@@ -311,7 +312,7 @@ const ChatRoomList = ({
       data.append("tag", editBoardTag);
       data.append("serverId", serverId);
       if (result.isConfirmed) {
-        const res = await axios.put(
+        const res = await axiosInstance.put(
           `${process.env.REACT_APP_API_BASE_URL}/server/boardList`,
           data,
           {
@@ -360,7 +361,7 @@ const ChatRoomList = ({
 
   const fetchMembers = async () => {
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         `${process.env.REACT_APP_API_BASE_URL}/server/userList?id=${serverId}`,
         {
           headers: {
@@ -402,7 +403,7 @@ const ChatRoomList = ({
 
   const handleRoleChange = async (newRole) => {
     try {
-      const res = await axios.put(
+      const res = await axiosInstance.put(
         `${process.env.REACT_APP_API_BASE_URL}/server/userRole`,
         {
           id: serverId,
@@ -434,7 +435,7 @@ const ChatRoomList = ({
 
   const resignUser = async () => {
     try {
-      const res = await axios.delete(
+      const res = await axiosInstance.delete(
         `${process.env.REACT_APP_API_BASE_URL}/server/resign`,
         {
           data: {

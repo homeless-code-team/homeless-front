@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import "./PasswordModule.css"; // 모달 스타일링 추가
 import axios from "axios";
+import axiosInstance from "../configs/axios-config";
 
 const PasswordModal = ({ onClose }) => {
   const [emailVerified, setEmailVerified] = useState(false);
@@ -18,9 +19,12 @@ const PasswordModal = ({ onClose }) => {
 
   const handleEmailVerification = async () => {
     try {
-      const res = await axios.post(`${API_BASE_URL}/api/v1/users/confirm`, {
-        email: email,
-      });
+      const res = await axiosInstance.post(
+        `${API_BASE_URL}/api/v1/users/confirm`,
+        {
+          email: email,
+        }
+      );
       console.log("====================================");
       console.log(email);
       console.log("====================================");
@@ -37,9 +41,12 @@ const PasswordModal = ({ onClose }) => {
 
   const handleVerifyAuthCode = async () => {
     try {
-      const res = await axios.get(`${API_BASE_URL}/api/v1/users/confirm`, {
-        params: { email, token: authCode },
-      });
+      const res = await axiosInstance.get(
+        `${API_BASE_URL}/api/v1/users/confirm`,
+        {
+          params: { email, token: authCode },
+        }
+      );
       if (res.data.code === 200) {
         setEmailVerified(true);
         alert("이메일 인증 성공!");

@@ -11,7 +11,6 @@ import AuthContext from "./context/AuthContext.js";
 import DirectMessage from "./components/DirectMessage.js";
 import Profile from "./components/Profile.js";
 import axios from "axios";
-import autoLogin from "./configs/autoLogin.js"; // autoLogin 함수 import
 import OAuthRedirectHandler from "./components/OAuthRedirectHandler.js";
 import PasswordModal from "./components/PasswordModal.js";
 import Board from "./components/Board.js";
@@ -44,23 +43,6 @@ function App() {
   const [searchValue, setSearchValue] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [serverType, setServerType] = useState("");
-
-  // 자동 로그인 처리
-  useEffect(() => {
-    async function initializeApp() {
-      const isLoggedIn = await autoLogin();
-
-      if (isLoggedIn) {
-        console.log("사용자가 자동 로그인되었습니다.");
-        setIsAuthenticated(true); // 로그인 상태 업데이트
-      } else {
-        console.log("자동 로그인이 실패했습니다. 로그인 화면 표시.");
-        setIsAuthenticated(false); // 로그아웃 상태로 설정
-      }
-    }
-
-    initializeApp();
-  }, [setIsAuthenticated]);
 
   // 창 닫힐 때 로그아웃 처리
   useEffect(() => {
