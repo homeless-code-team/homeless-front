@@ -22,13 +22,17 @@ const useWebSocket = (channelId, onMessageReceived) => {
 
     const connect = () => {
       if (!client.current) {
+        const sockJSOptions = {
+          transports: ["websocket", "xhr-streaming", "xhr-polling"],
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+
         const socket = new SockJS(
           `${process.env.REACT_APP_API_BASE_URL}/chat-service/ws`,
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
+          null,
+          sockJSOptions
         );
 
         client.current = new Client({
@@ -36,6 +40,14 @@ const useWebSocket = (channelId, onMessageReceived) => {
           connectHeaders: {
             Authorization: `Bearer ${token}`,
             "Content-Type": "application/json",
+          },
+          beforeConnect: () => {
+            if (!token) {
+              throw new Error("Authentication token is missing");
+            }
+          },
+          debug: (str) => {
+            console.log("STOMP Debug:", str);
           },
           onConnect: () => {
             if (currentSubscription.current) {
@@ -100,25 +112,7 @@ const useWebSocket = (channelId, onMessageReceived) => {
     }
   };
 
-  const updateMessage = (channelId, chatId, content) => {
-    if (client.current?.connected) {
-      const token = localStorage.getItem("token");
-      client.current.publish({
-        destination: `/pub/chat.message.update.${channelId}`,
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          chatId: chatId,
-          reqMessage: content,
-        }),
-      });
-    } else {
-      console.error("WebSocket이 연결되어 있지 않습니다.");
-    }
-  };
-
-  return { sendMessage, deleteMessage, updateMessage };
+  return { sendMessage, deleteMessage };
 };
 
 export default useWebSocket;

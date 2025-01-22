@@ -193,3 +193,9 @@ app.on("activate", () => {
 });
 
 // IPC 핸들러
+ipcMain.on("window:close", (event) => {
+  const win = BrowserWindow.fromWebContents(event.sender);
+  if (win) {
+    win.close(); // 현재 창을 닫습니다.
+  }
+});
