@@ -4,6 +4,7 @@ import "./Board.css";
 import Swal from "sweetalert2";
 import { IoSearch } from "react-icons/io5";
 import { ImEllo } from "react-icons/im";
+import axiosInstance from "../configs/axios-config";
 
 function Board({
   serverId,
@@ -88,7 +89,7 @@ function Board({
     }
 
     try {
-      const response = await axios.get(
+      const response = await axiosInstance.get(
         `${process.env.REACT_APP_API_BASE_URL}/server/boards`,
 
         {
@@ -115,7 +116,7 @@ function Board({
     formData.append("title", newBoardTitle);
     formData.append("boardListId", boardId);
     try {
-      const res = await axios.post(
+      const res = await axiosInstance.post(
         `${process.env.REACT_APP_API_BASE_URL}/server/boards`,
         formData,
         {
@@ -171,7 +172,7 @@ function Board({
     });
 
     if (result.isConfirmed) {
-      const res = await axios.delete(
+      const res = await axiosInstance.delete(
         `${process.env.REACT_APP_API_BASE_URL}/server/boards`, // Base URL
         {
           headers: {
@@ -211,7 +212,7 @@ function Board({
     formData.append("boardId", editBoardId);
     formData.append("boardTitle", newBoardTitle);
 
-    const res = await axios.put(
+    const res = await axiosInstance.put(
       `${process.env.REACT_APP_API_BASE_URL}/server/boards`,
       formData,
       {

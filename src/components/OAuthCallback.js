@@ -2,6 +2,7 @@ import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
+import axiosInstance from "../configs/axios-config";
 
 const API_BASE_URL = "http://localhost:8181";
 
@@ -20,9 +21,9 @@ const OAuthCallback = () => {
 
       if (code) {
         try {
-          const tokenResponse = await axios.post(
+          const tokenResponse = await axiosInstance.post(
             `${API_BASE_URL}/user-service/api/v1/users/callback`,
-            { code, provider: "google" }
+            { code }
           );
 
           if (tokenResponse.data.status === "OK") {
