@@ -4,7 +4,7 @@ import FriendList from "./FriendList.js";
 import ServerInviteList from "./ServerInviteList.js";
 import { FaUserFriends } from "react-icons/fa";
 
-const DirectMessage = ({ onSelectChannel }) => {
+const DirectMessage = ({ onSelectChannel, getServerList }) => {
   const [showFriends, setShowFriends] = useState(false);
   const users = [
     { id: 1, name: "사용자1" },
@@ -27,7 +27,7 @@ const DirectMessage = ({ onSelectChannel }) => {
       {showFriends ? (
         <div>
           <FriendList onSelectChannel={onSelectChannel} />
-          <ServerInviteList />
+          <ServerInviteList getServerList={getServerList} />
         </div>
       ) : (
         <>

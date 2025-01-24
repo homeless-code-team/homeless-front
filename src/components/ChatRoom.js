@@ -975,15 +975,17 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
             {inviteModal && (
               <div className="modal-overlay">
                 <div className="modal-content">
-                  <h2>서버 수정하기</h2>
+                  <h2>서버에 초대하기</h2>
                   {serverList?.map((server) => (
                     <div key={server.id}>
                       <div className="ch-server-item">
-                        <img
-                          className="serverList-Img"
-                          src={server.serverImg}
-                          alt="업따"
-                        />
+                        {serverList.serverImg && (
+                          <img
+                            className="serverList-Img"
+                            src={server.serverImg}
+                            alt="업따"
+                          />
+                        )}
                         <span>{server.title}</span>
                         <button onClick={() => inviteServer(server.id)}>
                           초대하기
