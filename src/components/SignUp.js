@@ -13,9 +13,9 @@ const SignUp = () => {
   const [isEmailValid, setIsEmailValid] = useState(false);
   const [isNicknameValid, setIsNicknameValid] = useState(false);
   const [isPasswordValid, setIsPasswordValid] = useState(false);
-  const [isAuthCodeValid, setIsAuthCodeValid] = useState(false);
+  const [isAuthCodeValid, setIsAuthCodeValid] = useState(true);
   const [authCodeSent, setAuthCodeSent] = useState(false);
-  const [isEmailAvailable, setIsEmailAvailable] = useState(false);
+  const [isEmailAvailable, setIsEmailAvailable] = useState(true);
   const [isNicknameAvailable, setIsNicknameAvailable] = useState(false);
   const [emailFeedback, setEmailFeedback] = useState("");
   const [authCodeFeedback, setAuthCodeFeedback] = useState("");

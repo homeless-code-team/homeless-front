@@ -16,12 +16,8 @@ import axiosInstance from "../configs/axios-config.js";
 const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const { userName, userEmail } = useContext(AuthContext);
   const [messages, setMessages] = useState([]);
-  const [currentPage, setCurrentPage] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [hasNextPage, setHasNextPage] = useState(true);
-  const pageSize = 20;
-  const messageListRef = useRef(null);
-  const inputRef = useRef(null);
   const [newMessage, setNewMessage] = useState("");
   const [showProfilePopup, setShowProfilePopup] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
@@ -44,6 +40,85 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const [uploadedFileName, setUploadedFileName] = useState("");
   const fileInputRef = useRef(null);
 
+  const messageListRef = useRef(null);
+  const inputRef = useRef(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [currentPage, setCurrentPage] = useState(0);
+  const [pageSize, setPageSize] = useState(30);
+  const [lastMessageId, setLastMessageId] = useState(null);
+  const [showLoadMoreButton, setShowLoadMoreButton] = useState(false);
+  const [contextMenu, setContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+  });
+  const [inviteModal, setInviteModal] = useState(false);
+  const [serverList, setServerList] = useState([]);
+  const [inviteUserEmail, setInviteUserEmail] = useState(null);
+  const token = localStorage.getItem("token");
+
+  /// 서버 초대 로직
+  const handleContextMenu = useCallback((e, message) => {
+    e.preventDefault();
+    setInviteUserEmail(message.email);
+    setContextMenu({
+      visible: true,
+      x: e.pageX,
+      y: e.pageY,
+    });
+  }, []);
+
+  useEffect(() => {
+    const handleClick = () =>
+      setContextMenu({ visible: false, x: 0, y: 0, serverId: null });
+    document.addEventListener("click", handleClick);
+    return () => document.removeEventListener("click", handleClick);
+  }, []);
+
+  const handleInviteModal = () => {
+    fetchServer();
+    setInviteModal(true);
+  };
+
+  const fetchServer = async () => {
+    const res = await axios.get(
+      `${process.env.REACT_APP_API_BASE_URL}/server/serverList`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    console.log(res.data);
+    setServerList(res.data);
+  };
+
+  const inviteServer = async (serverId) => {
+    const data = {
+      serverId: serverId, // 여기에 실제 serverId 값을 입력
+      email: inviteUserEmail, // 여기에 실제 email 값을 입력
+      addStatus: "PENDING", // AddStatus의 값에 맞는 문자열 (예: "PENDING")
+    };
+
+    const res = await axios.post(
+      `${process.env.REACT_APP_API_BASE_URL}/server/invite`,
+      data, // 데이터를 여기 넣어야 함
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // 토큰을 헤더에 추가
+        },
+      }
+    );
+
+    if (res.data.statusCode === 200) {
+      Swal.fire(res.data.statusMessage);
+    } else {
+      Swal.fire(res.data.statusMessage);
+    }
+  };
+
+  // 스크롤 처리
   const scrollToBottom = useCallback(() => {
     if (messageListRef.current) {
       messageListRef.current.scrollTop = messageListRef.current.scrollHeight;
@@ -830,6 +905,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                     setShowProfilePopup(true);
                   }}
                   style={{ cursor: "pointer" }}
+                  onContextMenu={(e) => handleContextMenu(e, message)}
                 >
                   {message.writer?.charAt(0).toUpperCase()}
                 </div>
@@ -883,7 +959,46 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                 </div>
               </div>
             ))}
+            {contextMenu.visible && (
+              <div
+                className="context-menu"
+                style={{
+                  position: "fixed",
+                  top: contextMenu.y,
+                  left: contextMenu.x,
+                }}
+              >
+                <button>친구 추가</button>
+                <button onClick={handleInviteModal}>서버 초대</button>
+              </div>
+            )}
+
+            {inviteModal && (
+              <div className="modal-overlay">
+                <div className="modal-content">
+                  <h2>서버 수정하기</h2>
+                  {serverList?.map((server) => (
+                    <div key={server.id}>
+                      <div className="ch-server-item">
+                        <img
+                          className="serverList-Img"
+                          src={server.serverImg}
+                          alt="업따"
+                        />
+                        <span>{server.title}</span>
+                        <button onClick={() => inviteServer(server.id)}>
+                          초대하기
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+
+                  <button onClick={() => setInviteModal(false)}>취소</button>
+                </div>
+              </div>
+            )}
           </div>
+
           <div className="chat-input-container">
             {filePreview && (
               <div className="file-preview">
