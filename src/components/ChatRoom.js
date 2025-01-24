@@ -80,7 +80,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   };
 
   const fetchServer = async () => {
-    const res = await axios.get(
+    const res = await axiosInstance.get(
       `${process.env.REACT_APP_API_BASE_URL}/server/serverList`,
       {
         headers: {
@@ -100,7 +100,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       addStatus: "PENDING", // AddStatus의 값에 맞는 문자열 (예: "PENDING")
     };
 
-    const res = await axios.post(
+    const res = await axiosInstance.post(
       `${process.env.REACT_APP_API_BASE_URL}/server/invite`,
       data, // 데이터를 여기 넣어야 함
       {

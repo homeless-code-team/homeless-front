@@ -7,21 +7,9 @@ import Swal from "sweetalert2";
 
 const FriendList = ({ getServerList }) => {
   const token = localStorage.getItem("token");
-  const [currentTab, setCurrentTab] = useState("friends"); // 현재 탭 상태
   const [inviteServerList, setInviteServerList] = useState([]);
-
-  const [friends, setFriends] = useState([]); // 친구 목록 상태
-  const [sentRequests, setSentRequests] = useState([]); // 친구 요청한 목록
-  const [filteredSentRequests, setFilteredSentRequests] = useState([]); // 검색된 보낸 요청
-  const [receivedRequests, setReceivedRequests] = useState([]); // 친구 요청받은 목록
-  const [filteredReceivedRequests, setFilteredReceivedRequests] = useState([]); // 검색된 받은 요청
-  const [allUsers, setAllUsers] = useState([]); // 모든 유저 목록
-  const [filteredUsers, setFilteredUsers] = useState([]); // 검색된 유저 목록
-  const [isModalOpen, setIsModalOpen] = useState(false); // 모달 상태
   const [isLoading, setIsLoading] = useState(false); // 로딩 상태
   const [error, setError] = useState(null); // 에러 상태
-  const [searchInput, setSearchInput] = useState(""); // 검색 입력 상태
-  const [requestSearchInput, setRequestSearchInput] = useState(""); // 요청 검색 입력 상태
 
   useEffect(() => {
     fetchInviteServer();
@@ -37,10 +25,14 @@ const FriendList = ({ getServerList }) => {
       }
     );
 
+    console.log(res.data.result);
+
     setInviteServerList(res.data.result);
   };
 
   const acceptanceInvite = async (serverId, addStatus) => {
+    console.log(serverId);
+
     const res = await axiosInstance.post(
       `${process.env.REACT_APP_API_BASE_URL}/server/acceptanceInvite`,
       {
@@ -83,10 +75,10 @@ const FriendList = ({ getServerList }) => {
             )}
             <span>{server.title}</span>
           </div>
-          <button onClick={() => acceptanceInvite(server.id, "ACCEPT")}>
+          <button onClick={() => acceptanceInvite(server.serverId, "ACCEPT")}>
             수락
           </button>
-          <button onClick={() => acceptanceInvite(server.id, "REJECTED")}>
+          <button onClick={() => acceptanceInvite(server.serverId, "REJECTED")}>
             거절
           </button>
         </div>
