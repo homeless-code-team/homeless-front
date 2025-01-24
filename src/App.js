@@ -231,6 +231,7 @@ function App() {
                           {isDMOpen ? (
                             <DirectMessage
                               onSelectChannel={handleSelectChannel}
+                              getServerList={getServerList}
                             />
                           ) : (
                             <ChatRoomList
