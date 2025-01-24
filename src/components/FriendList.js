@@ -33,12 +33,16 @@ const FriendList = ({ onSelectChannel }) => {
       if (res.data.code === 200) {
         const friendsData = res.data.data;
         const friends = friendsData.map(
-          ({ receiverNickname, profileImage }) => ({
-            id: receiverNickname,
+          ({ id, receiverNickname, profileImage }) => ({
+            id: id,
             name: receiverNickname,
             profileImage: profileImage || null,
           })
         );
+
+        // 모든 친구 목록을 로그에 찍기
+        console.log("친구 목록:", friends);
+
         setFriends(friends);
       } else {
         setError("친구 목록을 가져오지 못했습니다.");

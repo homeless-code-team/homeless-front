@@ -11,11 +11,6 @@ const DirectMessage = ({ onSelectChannel }) => {
     { id: 3, name: "사용자3" },
   ];
 
-  useEffect(() => {
-    // DM 채널에서는 serverId를 0으로 설정
-    onSelectChannel(999, "DM");
-  }, [onSelectChannel]);
-
   return (
     <div className="direct-message-container">
       <div className="dm-header">
@@ -32,7 +27,7 @@ const DirectMessage = ({ onSelectChannel }) => {
         <FriendList onSelectChannel={onSelectChannel} />
       ) : (
         <>
-          <h2 className="dm-title">다이렉트 메시지</h2>
+          <h2 className="dm-title">다이렉트 메시지임다</h2>
           <ul className="user-list">
             {users.map((user) => (
               <li key={user.id} onClick={() => onSelectChannel(0, user.name)}>
