@@ -35,7 +35,7 @@ const FriendList = ({ onSelectChannel }) => {
         const friends = friendsData.map(
           ({ id, receiverNickname, profileImage }) => ({
             id: id,
-            name: receiverNickname,
+            nickname: receiverNickname,
             profileImage: profileImage || null,
           })
         );
