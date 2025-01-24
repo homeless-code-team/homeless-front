@@ -17,6 +17,7 @@ function Board({
   setSearchValue,
   searchValue,
   handleSelectBoard,
+  handleEnterPostChat,
   getServerList,
   handleSelectServer,
   serverName,
@@ -260,6 +261,12 @@ function Board({
     }
   };
 
+  // 게시글 클릭 핸들러 수정
+  const handlePostClick = (post) => {
+    // 게시글의 채팅방으로 입장
+    handleEnterPostChat(post.id, post.title);
+  };
+
   return (
     <div className="board-container">
       <div className="chat-header">
@@ -290,6 +297,7 @@ function Board({
           <div
             key={post.index}
             className="post-item"
+            onClick={() => handlePostClick(post)}
             onContextMenu={(e) => {
               e.preventDefault();
               handleContextMenu(e, post);

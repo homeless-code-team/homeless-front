@@ -43,6 +43,8 @@ function App() {
   const [searchValue, setSearchValue] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [serverType, setServerType] = useState("");
+  const [selectedBoardId, setSelectedBoardId] = useState(null);
+  const [currentView, setCurrentView] = useState("chatRoom");
 
   // 창 닫힐 때 로그아웃 처리
   useEffect(() => {
@@ -169,16 +171,24 @@ function App() {
     setSelectedBoard(null);
   };
 
-  const onSelectBoard = (boardId, boardTitle) => {
+  const handleSelectBoard = (boardId, boardTitle) => {
     setSelectedBoard({
       id: boardId,
       boardTitle: boardTitle,
     });
-
     setSelectedChannel(null);
     setPosts([]);
     setPage(0);
     setSearchValue("");
+  };
+
+  // 게시글 채팅방 입장을 위한 새로운 함수 추가
+  const handleEnterPostChat = (postId, postTitle) => {
+    setSelectedChannel({
+      id: postId,
+      name: postTitle,
+    });
+    setSelectedBoard(null);
   };
 
   const onOpenDM = () => {
@@ -233,7 +243,7 @@ function App() {
                               serverRole={serverRole}
                               serverTag={serverTag}
                               boardList={boardList}
-                              handleSelectBoard={onSelectBoard}
+                              handleSelectBoard={handleSelectBoard}
                               selectedBoard={selectedBoard?.id}
                               serverType={serverType}
                               setShowMemberModal={setShowModal}
@@ -253,7 +263,8 @@ function App() {
                                 setPage={setPage}
                                 searchValue={searchValue}
                                 setSearchValue={setSearchValue}
-                                handleSelectBoard={onSelectBoard}
+                                handleSelectBoard={handleSelectBoard}
+                                handleEnterPostChat={handleEnterPostChat}
                                 getServerList={getServerList}
                                 handleSelectServer={handleSelectServer}
                                 serverName={serverName}

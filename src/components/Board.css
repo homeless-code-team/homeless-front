@@ -70,6 +70,12 @@
   padding: 20px;
   height: 100px;
   position: relative; /* post-writer 위치 조정을 위해 추가 */
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.post-item:hover {
+  background-color: rgba(0, 0, 0, 0.05);
 }
 
 .post-title {
