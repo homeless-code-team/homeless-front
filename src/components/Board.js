@@ -260,6 +260,12 @@ function Board({
     }
   };
 
+  // 게시글 클릭 핸들러 추가
+  const handlePostClick = (postId) => {
+    // 게시글 ID를 채널 ID로 사용하여 채팅방으로 이동
+    handleSelectBoard(postId);
+  };
+
   return (
     <div className="board-container">
       <div className="chat-header">
@@ -290,6 +296,7 @@ function Board({
           <div
             key={post.index}
             className="post-item"
+            onClick={() => handlePostClick(post.id)}
             onContextMenu={(e) => {
               e.preventDefault();
               handleContextMenu(e, post);

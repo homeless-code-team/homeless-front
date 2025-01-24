@@ -43,6 +43,8 @@ function App() {
   const [searchValue, setSearchValue] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [serverType, setServerType] = useState("");
+  const [selectedBoardId, setSelectedBoardId] = useState(null);
+  const [currentView, setCurrentView] = useState('chatRoom');
 
   // 창 닫힐 때 로그아웃 처리
   useEffect(() => {
@@ -169,16 +171,9 @@ function App() {
     setSelectedBoard(null);
   };
 
-  const onSelectBoard = (boardId, boardTitle) => {
-    setSelectedBoard({
-      id: boardId,
-      boardTitle: boardTitle,
-    });
-
-    setSelectedChannel(null);
-    setPosts([]);
-    setPage(0);
-    setSearchValue("");
+  const handleSelectBoard = (boardId) => {
+    setSelectedBoardId(boardId);
+    setCurrentView('chatRoom'); // 채팅방 뷰로 전환
   };
 
   const onOpenDM = () => {
@@ -233,7 +228,7 @@ function App() {
                               serverRole={serverRole}
                               serverTag={serverTag}
                               boardList={boardList}
-                              handleSelectBoard={onSelectBoard}
+                              handleSelectBoard={handleSelectBoard}
                               selectedBoard={selectedBoard?.id}
                               serverType={serverType}
                               setShowMemberModal={setShowModal}
@@ -253,7 +248,7 @@ function App() {
                                 setPage={setPage}
                                 searchValue={searchValue}
                                 setSearchValue={setSearchValue}
-                                handleSelectBoard={onSelectBoard}
+                                handleSelectBoard={handleSelectBoard}
                                 getServerList={getServerList}
                                 handleSelectServer={handleSelectServer}
                                 serverName={serverName}
