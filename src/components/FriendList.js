@@ -123,6 +123,8 @@ const FriendList = ({ onSelectChannel }) => {
       if (res.data.code === 200) {
         alert(`${nickname}님에게 친구 요청을 보냈습니다.`);
         fetchSentRequests();
+      }else if(res.data.code === 400){
+        alert(res.data.message)
       } else {
         alert("친구 요청을 보내는 데 실패했습니다.");
       }
@@ -136,7 +138,10 @@ const FriendList = ({ onSelectChannel }) => {
     setError(null);
     try {
       const res = await axiosInstance.post(
-        `${process.env.REACT_APP_API_BASE_URL}/friends-service/api/v1/friends/response`
+        `${process.env.REACT_APP_API_BASE_URL}/friends-service/api/v1/friends/response`,{
+          receiverNickname,
+          addStatus: "ACCEPT",
+        }
       );
       if (res.data.code === 200) {
         alert(`${receiverNickname}님과 친구가 되었습니다.`);

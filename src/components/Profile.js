@@ -41,7 +41,9 @@ const Profile = () => {
         // 닉네임 변경 성공 시 상태 업데이트
         setUserName(res.data.data.nickname || userName);
         localStorage.setNickname(res.data.data.nickname);
-      } else {
+      } else if(res.data.code === 400){
+        alert(res.data.message)}
+        else {
         console.log("소개글수정 실패:", res.status);
         alert("닉네임 소게글이 실패하였습니다!");
       }
@@ -71,7 +73,8 @@ const Profile = () => {
 
         // 닉네임 변경 성공 시 상태 업데이트
         setUserName(res.data.data.nickname || userName);
-      } else {
+      } else if(res.data.code === 400){
+        alert(res.data.message)} else {
         console.log("닉네임 수정 실패:", res.status);
         alert("닉네임 변경이 실패하였습니다!");
       }
@@ -110,7 +113,8 @@ const Profile = () => {
           setProfileImage(`${profileImageUrl}?t=${timestamp}`); // 캐시 무효화 URL 적용
           alert("프로필 이미지가 성공적으로 변경되었습니다!");
           fetchData("내 계정");
-        } else {
+        } else if(res.data.code === 400){
+          alert(res.data.message)} else {
           alert("이미지 업로드에 실패했습니다.");
         }
       } catch (error) {

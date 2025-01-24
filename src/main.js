@@ -103,7 +103,7 @@ function createWindow() {
 ipcMain.handle("oauth:login", async (event, provider) => {
   try {
     const response = await axios.get(
-      `${API_BASE_URL}/user-service/api/v1/users/o-auth`,
+      `${API_BASE_URL}/user-service/oauth2/authorization/${provider}`,
       {
         params: { provider },
         withCredentials: true,
