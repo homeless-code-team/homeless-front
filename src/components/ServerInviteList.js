@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import "./FriendList.css";
 import axios from "axios";
 import axiosInstance from "../configs/axios-config";
+import "./serverInviteList.css";
+import Swal from "sweetalert2";
 
-const FriendList = ({ onSelectChannel }) => {
+const FriendList = ({ getServerList }) => {
   const token = localStorage.getItem("token");
   const [currentTab, setCurrentTab] = useState("friends"); // 현재 탭 상태
   const [inviteServerList, setInviteServerList] = useState([]);
@@ -35,9 +37,34 @@ const FriendList = ({ onSelectChannel }) => {
       }
     );
 
-    console.log("asdasdasdsasadassa", res);
-
     setInviteServerList(res.data.result);
+  };
+
+  const acceptanceInvite = async (serverId, addStatus) => {
+    const res = await axiosInstance.post(
+      `${process.env.REACT_APP_API_BASE_URL}/server/acceptanceInvite`,
+      {
+        serverId, // 서버 ID
+        addStatus, // AddStatus (e.g., 'APPROVE' or 'REJECTED')
+      },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // 인증 헤더
+        },
+      }
+    );
+
+    console.log(res);
+    console.log(res.data.statusMessage);
+
+    if (res.status === 200) {
+      Swal.fire(res.data.statusMessage);
+      getServerList();
+      fetchInviteServer();
+    } else {
+      Swal.fire("서버 가입 수락중 문제가 발생했습니다.");
+      getServerList();
+    }
   };
 
   return (
@@ -51,11 +78,17 @@ const FriendList = ({ onSelectChannel }) => {
       {inviteServerList.map((server) => (
         <div key={server.id}>
           <div>
-            <img src={server.serverImg} alt="asd" />
+            {inviteServerList.serverImg && (
+              <img className="server-img" src={server.serverImg} alt="asd" />
+            )}
             <span>{server.title}</span>
           </div>
-          <button>수락</button>
-          <button>거절</button>
+          <button onClick={() => acceptanceInvite(server.id, "ACCEPT")}>
+            수락
+          </button>
+          <button onClick={() => acceptanceInvite(server.id, "REJECTED")}>
+            거절
+          </button>
         </div>
       ))}
     </div>

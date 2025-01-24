@@ -41,6 +41,8 @@ const ChatRoomList = ({
   const [members, setMembers] = useState([]);
   const [contextMenu, setContextMenu] = useState(null);
   const [selectedMember, setSelectedMember] = useState(null);
+  const [inviteUserListModal, setInviteUserListModal] = useState(false);
+  const [inviteUserList, setInviteUserList] = useState([]);
 
   const userEmail = localStorage.getItem("userEmail");
 
@@ -114,7 +116,6 @@ const ChatRoomList = ({
 
       try {
         const res = await axiosInstance.put(
-
           `${process.env.REACT_APP_API_BASE_URL}/server/channels`,
           data,
           {
@@ -461,6 +462,49 @@ const ChatRoomList = ({
     }
   };
 
+  const handleInviteList = () => {
+    console.log("asdasdas");
+
+    fetchInviteUser();
+    setInviteUserListModal(true);
+  };
+
+  const fetchInviteUser = async () => {
+    const res = await axiosInstance.get(
+      `${process.env.REACT_APP_API_BASE_URL}/server/inviteUserList`,
+      {
+        params: {
+          serverId,
+        },
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    console.log(res);
+    setInviteUserList(res.data.result);
+  };
+
+  const cancleInviteHandler = async (email) => {
+    const res = await axiosInstance.delete(
+      `${process.env.REACT_APP_API_BASE_URL}/server/cancelInvite?serverId=${serverId}&email=${email}`,
+      {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("token")}`,
+        },
+      }
+    );
+
+    if (res.data.statusCode === 200) {
+      Swal.fire(res.data.statusMessage);
+      fetchInviteUser();
+    } else {
+      Swal.fire(res.data.statusMessage);
+      fetchInviteUser();
+    }
+  };
+
   return (
     <div className="channel-list">
       <div className="channel-header">{serverName || "채널 목록"}</div>
@@ -468,9 +512,15 @@ const ChatRoomList = ({
 
       {serverType !== 0 && (
         <div className="member-btn-div">
-          <button className="member-list-btn" onClick={handleShowMembers}>
+          <button
+            className="member-list-btn"
+            onClick={() => handleShowMembers()}
+          >
             멤버 리스트
           </button>
+          {serverRole === "OWNER" && (
+            <button onClick={() => handleInviteList()}>초대목록</button>
+          )}
         </div>
       )}
       <div
@@ -748,6 +798,32 @@ const ChatRoomList = ({
 
             <div className="modal-buttons">
               <button onClick={() => setShowMemberModal(false)}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {inviteUserListModal && (
+        <div className="modal-overlay">
+          <div className="modal">
+            <ul style={{ listStyleType: "none", padding: 0 }}>
+              {inviteUserList.map((member) => (
+                <li key={member.id} s className="member-item">
+                  {member.profileimage ? (
+                    <img src={member.profileimage} alt="업따" />
+                  ) : (
+                    <ImEllo />
+                  )}
+                  {member.nickname}
+                  <button onClick={() => cancleInviteHandler(member.email)}>
+                    취소
+                  </button>
+                </li>
+              ))}
+            </ul>
+            <div className="modal-buttons">
+              <button onClick={() => setInviteUserListModal(false)}>
+                닫기
+              </button>
             </div>
           </div>
         </div>
