@@ -64,6 +64,8 @@ export const useServerList = (
       localStorage.removeItem("userName");
       localStorage.removeItem("userId");
       localStorage.removeItem("userRole");
+      localStorage.removeItem("ACCESS_TOKEN");
+      localStorage.removeItem("userInfo");
 
       await onLogout();
       navigate("/");

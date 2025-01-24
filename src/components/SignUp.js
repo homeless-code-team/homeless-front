@@ -14,7 +14,7 @@ const SignUp = () => {
   const [isNicknameValid, setIsNicknameValid] = useState(false);
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [isAuthCodeValid, setIsAuthCodeValid] = useState(false);
-  const [authCodeSent, setAuthCodeSent] = useState(false);
+  const [authCodeSent, setAuthCodeSent] = useState(true);
   const [isEmailAvailable, setIsEmailAvailable] = useState(false);
   const [isNicknameAvailable, setIsNicknameAvailable] = useState(false);
   const [emailFeedback, setEmailFeedback] = useState("");
@@ -22,7 +22,6 @@ const SignUp = () => {
   const [nicknameFeedback, setNicknameFeedback] = useState("");
   const [passwordFeedback, setPasswordFeedback] = useState("");
   const navigate = useNavigate();
-  const API_BASE_URL = "http://localhost:8181";
 
   useEffect(() => {
     let timer;
@@ -79,7 +78,7 @@ const SignUp = () => {
   const handleCheckDuplicate = async (type, value) => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/user-service/api/v1/users/duplicate`,
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/duplicate`,
         {
           params: { [type]: value },
         }
@@ -114,7 +113,7 @@ const SignUp = () => {
     if (isEmailAvailable) {
       try {
         const response = await axios.post(
-          `${API_BASE_URL}/user-service/api/v1/users/confirm`,
+          `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/confirm`,
           { email }
         );
         if (response.data.code === 200) {
@@ -131,7 +130,7 @@ const SignUp = () => {
   const handleVerifyAuthCode = async () => {
     try {
       const response = await axios.get(
-        `${API_BASE_URL}/user-service/api/v1/users/confirm`,
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/confirm`,
         {
           params: { email, token: authCode },
         }
@@ -162,7 +161,7 @@ const SignUp = () => {
         formData.append("password", password);
 
         const response = await axios.post(
-          `${API_BASE_URL}/user-service/api/v1/users/sign-up`,
+          `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/sign-up`,
           formData,
           { headers: { "Content-Type": "multipart/form-data" } }
         );

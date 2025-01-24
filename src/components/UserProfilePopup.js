@@ -1,8 +1,19 @@
 import React from "react";
 import "./UserProfilePopup.css";
+import axiosInstansce from "../configs/axios-config";
 
 const UserProfilePopup = ({ user, onClose }) => {
   if (!user) return null;
+
+  const joinhandler = () => {
+    const res = axiosInstansce.get(
+      `${process.env.REACT_APP_API_BASE_URL}/api/v1/users}`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        withCredentials: true,
+      }
+    );
+  };
 
   return (
     <div className="profile-popup-overlay" onClick={onClose}>

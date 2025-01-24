@@ -22,8 +22,8 @@ const Profile = () => {
 
   const handleContentUpdate = async () => {
     try {
-      const res = await axios.patch(
-        `${API_BASE_URL}/api/v1/users`,
+      const res = await axiosInstance.patch(
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users`,
         { content },
         {
           headers: {
@@ -40,7 +40,7 @@ const Profile = () => {
 
         // 닉네임 변경 성공 시 상태 업데이트
         setUserName(res.data.data.nickname || userName);
-        localStorage.setNickname(res.data.dat.nickname);
+        localStorage.setNickname(res.data.data.nickname);
       } else {
         console.log("소개글수정 실패:", res.status);
         alert("닉네임 소게글이 실패하였습니다!");
@@ -54,7 +54,7 @@ const Profile = () => {
   const handleNicknameUpdate = async () => {
     try {
       const res = await axiosInstance.patch(
-        `${API_BASE_URL}/api/v1/users`,
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users`,
         { nickname: userName },
         {
           headers: {
@@ -93,7 +93,7 @@ const Profile = () => {
 
       try {
         const res = await axiosInstance.patch(
-          `${API_BASE_URL}/api/v1/users`,
+          `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users`,
           formData,
           {
             headers: {
@@ -131,17 +131,20 @@ const Profile = () => {
     try {
       let endpoint = "";
       if (section === "내 계정") {
-        endpoint = "/api/v1/users"; // 예: 계정 정보 API
+        endpoint = "/user-service/api/v1/users"; // 예: 계정 정보 API
       } else if (section === "프로필") {
-        endpoint = "/api/v1/users"; // 예: 프로필 정보 API
+        endpoint = "/user-service/api/v1/users"; // 예: 프로필 정보 API
       }
 
-      const res = await axiosInstance.get(`${API_BASE_URL}${endpoint}`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-        withCredentials: true,
-      });
+      const res = await axiosInstance.get(
+        `${process.env.REACT_APP_API_BASE_URL}${endpoint}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          withCredentials: true,
+        }
+      );
 
       if (res.data.code === 200) {
         console.log(`Fetched ${section} data:`, res.data);

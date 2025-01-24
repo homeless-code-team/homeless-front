@@ -26,13 +26,7 @@ const SignIn = () => {
     try {
       const res = await axios.post(
         `${API_BASE_URL}/user-service/api/v1/users/sign-in`,
-        { email, password },
-        {
-          headers: {
-            "Content-Type": "application/json",
-          },
-          withCredentials: true,
-        }
+        { email, password }
       );
 
       if (res.data.status === "OK") {
