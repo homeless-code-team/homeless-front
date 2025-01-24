@@ -114,6 +114,7 @@ const ChatRoomList = ({
 
       try {
         const res = await axiosInstance.put(
+
           `${process.env.REACT_APP_API_BASE_URL}/server/channels`,
           data,
           {

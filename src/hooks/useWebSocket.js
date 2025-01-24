@@ -46,9 +46,6 @@ const useWebSocket = (channelId, onMessageReceived) => {
               throw new Error("Authentication token is missing");
             }
           },
-          debug: (str) => {
-            console.log("STOMP Debug:", str);
-          },
           onConnect: () => {
             if (currentSubscription.current) {
               currentSubscription.current.unsubscribe();

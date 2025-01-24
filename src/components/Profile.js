@@ -4,6 +4,7 @@ import AuthContext from "../context/AuthContext.js";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import PasswordModal from "./PasswordModal.js"; // 비밀번호 변경 모달 컴포넌트 추가
+import axiosInstance from "../configs/axios-config.js";
 
 const Profile = () => {
   const { userName: initialUserName, userId } = useContext(AuthContext);
@@ -39,6 +40,7 @@ const Profile = () => {
 
         // 닉네임 변경 성공 시 상태 업데이트
         setUserName(res.data.data.nickname || userName);
+        localStorage.setNickname(res.data.dat.nickname);
       } else {
         console.log("소개글수정 실패:", res.status);
         alert("닉네임 소게글이 실패하였습니다!");
@@ -51,7 +53,7 @@ const Profile = () => {
 
   const handleNicknameUpdate = async () => {
     try {
-      const res = await axios.patch(
+      const res = await axiosInstance.patch(
         `${API_BASE_URL}/api/v1/users`,
         { nickname: userName },
         {
@@ -90,7 +92,7 @@ const Profile = () => {
       formData.append("profileImage", file);
 
       try {
-        const res = await axios.patch(
+        const res = await axiosInstance.patch(
           `${API_BASE_URL}/api/v1/users`,
           formData,
           {
@@ -134,7 +136,7 @@ const Profile = () => {
         endpoint = "/api/v1/users"; // 예: 프로필 정보 API
       }
 
-      const res = await axios.get(`${API_BASE_URL}${endpoint}`, {
+      const res = await axiosInstance.get(`${API_BASE_URL}${endpoint}`, {
         headers: {
           Authorization: `Bearer ${token}`,
         },

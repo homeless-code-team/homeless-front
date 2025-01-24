@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { jwtDecode } from "jwt-decode";
 import AuthContext from "../context/AuthContext.js";
+import axiosInstance from "../configs/axios-config.js";
 
 const API_BASE_URL =
   process.env.REACT_APP_API_BASE_URL || "http://localhost:8181";
@@ -27,7 +28,7 @@ const OAuthRedirectHandler = () => {
 
       if (code) {
         try {
-          const tokenResponse = await axios.post(
+          const tokenResponse = await axiosInstance.post(
             `${API_BASE_URL}/user-service/api/v1/users/callback`, // API 엔드포인트
             { code, provider }, // provider를 동적으로 전달
             {

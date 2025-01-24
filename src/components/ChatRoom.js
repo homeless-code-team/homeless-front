@@ -11,6 +11,7 @@ import useWebSocket from "../hooks/useWebSocket.js";
 import UserProfilePopup from "./UserProfilePopup.js";
 import Swal from "sweetalert2";
 import axios from "axios";
+import axiosInstance from "../configs/axios-config.js";
 
 const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const { userName, userEmail } = useContext(AuthContext);
@@ -171,46 +172,58 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
         ? ["jpg", "jpeg", "png", "gif", "bmp", "webp"].includes(fileExtension)
         : false;
 
-      const content = message.fileUrl ? (
+      const content = (
         <div style={{ position: "relative" }}>
-          {isImage ? (
-            <a href={message.fileUrl} target="_blank" rel="noopener noreferrer">
-              <img
-                src={message.fileUrl}
-                alt="파일 미리보기"
+          {message.fileUrl ? (
+            <div>
+              {isImage ? (
+                <a
+                  href={message.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <img
+                    src={message.fileUrl}
+                    alt="파일 미리보기"
+                    style={{
+                      maxWidth: "200px",
+                      maxHeight: "200px",
+                      cursor: "pointer",
+                    }}
+                  />
+                </a>
+              ) : (
+                <a
+                  href={message.fileUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <button className="download-button">
+                    <i className="fa fa-file-download"></i>
+                    💽 {message.fileName}
+                  </button>
+                </a>
+              )}
+              {/* 다운로드 아이콘 추가 */}
+              <a
+                href={message.fileUrl}
+                target="_blank"
+                rel="noopener noreferrer"
                 style={{
-                  maxWidth: "200px",
-                  maxHeight: "200px",
-                  cursor: "pointer",
+                  position: "absolute",
+                  bottom: "5px",
+                  right: "5px",
+                  textDecoration: "none",
+                  color: "black",
                 }}
-              />
-            </a>
-          ) : (
-            <a href={message.fileUrl} target="_blank" rel="noopener noreferrer">
-              <button className="download-button">
-                <i className="fa fa-file-download"></i>
-                💽 {message.fileName}
-              </button>
-            </a>
-          )}
-          {/* 다운로드 아이콘 추가 */}
-          <a
-            href={message.fileUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              position: "absolute",
-              bottom: "5px",
-              right: "5px",
-              textDecoration: "none",
-              color: "black",
-            }}
-          >
-            <i className="fa fa-download" style={{ fontSize: "16px" }}></i>
-          </a>
+              >
+                <i className="fa fa-download" style={{ fontSize: "16px" }}></i>
+              </a>
+            </div>
+          ) : null}
+          <p>{message.content || "내용 없음"}</p>{" "}
+          {/* 파일 아래에 메시지 내용 표시 */}
         </div>
-      ) : (
-        message.content || "내용 없음" // 파일 URL이 없을 경우 기본 내용
       );
 
       const messageWithMeta = {
@@ -240,7 +253,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       // Update latestMessage with the newly received message
       setLatestMessage(message);
     },
-    [setMessages, scrollToBottom, setLatestMessage]
+    [setMessages, scrollToBottom, setLatestMessage, isScrolledToBottom]
   );
 
   const { sendMessage, deleteMessage, updateMessage } = useWebSocket(
@@ -360,6 +373,16 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
               },
             }));
 
+            // 첫 페이지 로드 완료 후 스크롤 맨 아래로 이동
+            if (page === 0) {
+              requestAnimationFrame(() => {
+                if (messageListRef.current) {
+                  messageListRef.current.scrollTop =
+                    messageListRef.current.scrollHeight;
+                }
+              });
+            }
+
             return updatedMessages;
           });
 
@@ -411,23 +434,30 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     }
   }, [channelId, hasNextPage, isLoading, loadMoreMessages]);
 
+  // 검색 상태 초기화 함수
+  const resetSearchState = useCallback(() => {
+    setSearchQuery(""); // 검색어 초기화
+    setShowSearchResults(false); // 검색 결과 창 숨기기
+    setSearchResults([]); // 검색 결과 초기화
+    setCurrentSearchIndex(-1); // 검색 인덱스 초기화
+  }, []);
+
+  // useEffect에서 채널 변경 시 검색 상태 초기화
   useEffect(() => {
     if (channelId) {
       setMessages([]);
       setCurrentPage(0);
       setHasNextPage(true);
-      fetchChatHistory(0);
-
-      setTimeout(() => {
-        if (messageListRef.current) {
-          const savedScrollTop = scrollPositionsRef.current[channelId];
-          if (savedScrollTop !== undefined) {
-            messageListRef.current.scrollTop = savedScrollTop;
-          }
-        }
-      }, 100);
+      fetchChatHistory(0, false);
+      resetSearchState(); // 채널 변경 시 검색 상태 초기화
     }
-  }, [channelId, fetchChatHistory]);
+  }, [channelId, fetchChatHistory, resetSearchState]);
+
+  // 검색 카테고리 변경 핸들러 수정
+  const handleSearchCategoryChange = (category) => {
+    setSearchCategory(category);
+    resetSearchState(); // 카테고리 변경 시 검색 상태 초기화
+  };
 
   // 메시지 전송 핸들러
   const handleSubmit = async (e) => {
@@ -664,7 +694,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     formData.append("file", file);
 
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/file/chats/upload`,
         formData,
         {
@@ -688,7 +718,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const handleFileDelete = async () => {
     if (uploadedFileUrl) {
       try {
-        const response = await axios.delete(
+        const response = await axiosInstance.delete(
           `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/file/chats/delete`,
           {
             params: { fileUrl: uploadedFileUrl },
@@ -755,7 +785,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                     className={`toggle-button ${
                       searchCategory === "content" ? "active" : ""
                     }`}
-                    onClick={() => setSearchCategory("content")}
+                    onClick={() => handleSearchCategoryChange("content")}
                     title="메시지 검색"
                   >
                     💬
@@ -764,7 +794,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
                     className={`toggle-button ${
                       searchCategory === "nickname" ? "active" : ""
                     }`}
-                    onClick={() => setSearchCategory("nickname")}
+                    onClick={() => handleSearchCategoryChange("nickname")}
                     title="닉네임 검색"
                   >
                     🤷‍♂️
