@@ -3,6 +3,7 @@ import { useState, useCallback, useEffect } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import { useNavigate } from "react-router-dom";
+import axiosInstance from "../configs/axios-config";
 
 export const useServerList = (
   onLogout,
@@ -38,7 +39,7 @@ export const useServerList = (
   const handleLogoutBack = async () => {
     const token = localStorage.getItem("token");
     try {
-      const res = await axios.delete(
+      const res = await axiosInstance.delete(
         `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/sign-out`,
         {
           headers: {
@@ -119,7 +120,7 @@ export const useServerList = (
         formData.append("serverImg", serverImage);
       }
 
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         "http://localhost:8181/server/servers",
         formData,
         {
@@ -176,7 +177,7 @@ export const useServerList = (
         formData.append("serverImg", serverImage);
       }
 
-      const response = await axios.put(
+      const response = await axiosInstance.put(
         "http://localhost:8181/server/servers",
         formData,
         {
@@ -249,7 +250,7 @@ export const useServerList = (
       });
 
       if (result.isConfirmed) {
-        const response = await axios.delete(
+        const response = await axiosInstance.delete(
           `http://localhost:8181/server/servers?id=${serverId}`,
           {
             headers: {
@@ -299,7 +300,7 @@ export const useServerList = (
       });
 
       if (result.isConfirmed) {
-        const response = await axios.delete(
+        const response = await axiosInstance.delete(
           `http://localhost:8181/server/serverList?id=${serverId}`,
           {
             headers: {

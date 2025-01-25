@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from "react";
 import "./FriendList.css";
-import axios from "axios";
 import axiosInstance from "../configs/axios-config";
 
 const FriendList = ({ onSelectChannel }) => {
@@ -22,20 +21,30 @@ const FriendList = ({ onSelectChannel }) => {
   const fetchFriends = async () => {
     setIsLoading(true);
     setError(null);
+
     try {
       const res = await axiosInstance.get(
         `${process.env.REACT_APP_API_BASE_URL}/friends-service/api/v1/friends`
       );
+
       if (res.data.code === 200) {
         const friendsData = res.data.data;
+
+        // 백엔드에서 반환된 친구 목록을 기반으로 데이터를 변환
         const friends = friendsData.map(
-          ({ receiverNickname, profileImage }) => ({
-            id: receiverNickname,
-            name: receiverNickname,
-            profileImage: profileImage || null,
+          ({ id, email, nickname, profileImage }) => ({
+            id: id,
+            nickname: nickname,
+            email: email, // 이메일을 닉네임으로 표시하도록 변경
+            profileImage: profileImage || null, // profileImage 필드는 백엔드에서 제공되지 않으므로 null 처리
+            // 친구 상태 정보 추가
           })
         );
-        setFriends(friends);
+
+        // 모든 친구 목록을 로그에 찍기
+        console.log("친구 목록:", friends);
+
+        setFriends(friends); // 친구 목록 상태 업데이트
       } else {
         setError("친구 목록을 가져오지 못했습니다.");
       }
@@ -274,25 +283,25 @@ const FriendList = ({ onSelectChannel }) => {
             <div
               key={friend.id}
               className="friend-item"
-              onClick={() => onSelectChannel(friend.id, friend.name)}
+              onClick={() => onSelectChannel(friend.id, friend.nickname)}
             >
               <div className="friend-avatar">
                 {friend.profileImage ? (
                   <img src={friend.profileImage} alt="프로필 이미지" />
                 ) : (
-                  friend.name.charAt(0).toUpperCase()
+                  friend.nickname.charAt(0).toUpperCase() || "?"
                 )}
               </div>
               <div className="friend-info">
-                <span className="friend-name">{friend.name}</span>
+                <span className="friend-name">{friend.nickname}</span>
                 <button
                   onClick={() => {
                     if (
                       window.confirm(
-                        `정말 ${friend.name}친구를 삭제하시겠습니까?`
+                        `정말 ${friend.nickname}친구를 삭제하시겠습니까?`
                       )
                     ) {
-                      handleDeleteFriend(friend.name);
+                      handleDeleteFriend(friend.nickname);
                     }
                   }}
                 >
@@ -395,7 +404,7 @@ const FriendList = ({ onSelectChannel }) => {
                         fontWeight: "bold",
                       }}
                     >
-                      {user.nickname.charAt(0).toUpperCase()}
+                      {user.nickname.charAt(0).toUpperCase() || "?"}
                     </div>
                   )}
                 </div>
