@@ -1,6 +1,7 @@
 const { app, BrowserWindow, ipcMain, globalShortcut } = require("electron");
 const path = require("path");
 const axios = require("axios");
+const { default: axiosInstance } = require("./configs/axios-configure");
 
 let mainWindow = null;
 let authWindow = null;
@@ -79,7 +80,7 @@ function createWindow() {
   });
   ipcMain.handle("window:logout", async () => {
     try {
-      const response = await axios.post(
+      const response = await axiosInstance.post(
         `${API_BASE_URL}/user-service/api/v1/users/sign-out`,
         {},
         {
@@ -102,7 +103,7 @@ function createWindow() {
 ipcMain.handle("oauth:login", async (event, provider) => {
   try {
     const response = await axios.get(
-      `${API_BASE_URL}/user-service/api/v1/users/o-auth`,
+      `${API_BASE_URL}/user-service/oauth2/authorization/${provider}`,
       {
         params: { provider },
         withCredentials: true,
