@@ -119,7 +119,7 @@ export const useServerList = (
       }
 
       const response = await axiosInstance.post(
-        "http://localhost:8181/server/servers",
+        `${process.env.REACT_APP_API_BASE_URL}/server/servers`,
         formData,
         {
           headers: {
@@ -176,7 +176,7 @@ export const useServerList = (
       }
 
       const response = await axiosInstance.put(
-        "http://localhost:8181/server/servers",
+        `${process.env.REACT_APP_API_BASE_URL}/server/servers`,
         formData,
         {
           headers: {
@@ -249,7 +249,7 @@ export const useServerList = (
 
       if (result.isConfirmed) {
         const response = await axiosInstance.delete(
-          `http://localhost:8181/server/servers?id=${serverId}`,
+          `${process.env.REACT_APP_API_BASE_URL}/server/servers?id=${serverId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -299,7 +299,7 @@ export const useServerList = (
 
       if (result.isConfirmed) {
         const response = await axiosInstance.delete(
-          `http://localhost:8181/server/serverList?id=${serverId}`,
+          `${process.env.REACT_APP_API_BASE_URL}/server/serverList?id=${serverId}`,
           {
             headers: {
               Authorization: `Bearer ${localStorage.getItem("token")}`,
