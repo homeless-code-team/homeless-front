@@ -3,9 +3,6 @@ import "./ServerList.css";
 import { FaUserFriends, FaSignOutAlt, FaUserCircle } from "react-icons/fa";
 import { useNavigate } from "react-router-dom";
 import AuthContext from "../context/AuthContext.js";
-import axios from "axios";
-import { use } from "react";
-import Swal from "sweetalert2";
 import { useServerList } from "../hooks/useServerList.js";
 
 const ServerList = React.memo(
@@ -15,7 +12,6 @@ const ServerList = React.memo(
     selectedServer,
     onOpenDM,
     onRefreshServers,
-    userList,
     setPosts,
     setPage,
   }) => {
@@ -27,7 +23,6 @@ const ServerList = React.memo(
       previewImage,
       serverName,
       serverTag,
-      serverImage,
       contextMenu,
       handleSubmit,
       handleImageChange,
