@@ -57,6 +57,7 @@ function createWindow() {
     mainWindow.loadURL("http://localhost:3000");
     mainWindow.webContents.openDevTools();
   } else {
+    //mainWindow.loadURL(process.env.FRONT_APP_BASE_URL);
     mainWindow.loadFile(path.join(__dirname, "../build/index.html"));
     mainWindow.webContents.openDevTools();
   }

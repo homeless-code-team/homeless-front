@@ -1,89 +1,54 @@
-import React, { createContext, useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { createContext, useState, useCallback } from "react";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [token, setToken] = useState(null);
-  const [userId, setUserId] = useState(null);
-  const [userRole, setUserRole] = useState(null);
-  const [userName, setUserName] = useState(null);
-  const [userEmail, setUserEmail] = useState(null);
-  const navigate = useNavigate();
+  const [isAuthenticated, setIsAuthenticated] = useState({
+    token: localStorage.getItem("token"),
+    userId: localStorage.getItem("userId"),
+    userEmail: localStorage.getItem("userEmail"),
+    userRole: localStorage.getItem("userRole"),
+    userName: localStorage.getItem("userName"),
+    isAuthenticated: !!localStorage.getItem("token"),
+  });
 
-  const onLogin = (token, email, id, role, name) => {
-    try {
-      localStorage.setItem("token", token);
-      localStorage.setItem("userEmail", email);
-      localStorage.setItem("userRole", role);
-      localStorage.setItem("userName", name);
-      localStorage.setItem("userId", userId);
+  const onLogin = useCallback((token, email, role, name, userId) => {
+    localStorage.setItem("token", token);
+    localStorage.setItem("userEmail", email);
+    localStorage.setItem("userRole", role);
+    localStorage.setItem("userName", name);
+    localStorage.setItem("userId", userId);
 
-      setIsLoggedIn(true);
-      setToken(token);
-      setUserId(id);
-      setUserEmail(email);
-      setUserRole(role);
-      setUserName(name);
-    } catch (error) {
-      console.error("로그인 처리 중 오류:", error);
-    }
-  };
+    setIsAuthenticated({
+      token,
+      userId,
+      userEmail: email,
+      userRole: role,
+      userName: name,
+      isAuthenticated: true,
+    });
+  }, []);
 
-  const onLogout = () => {
-    setIsLoggedIn(false);
-    setToken(null);
-    setUserId(null);
-    setUserEmail(null);
-    setUserRole(null);
-    setUserName(null);
-
+  const onLogout = useCallback(() => {
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
     localStorage.removeItem("userEmail");
     localStorage.removeItem("userRole");
     localStorage.removeItem("userName");
 
-    navigate("/");
-  };
-
-  useEffect(() => {
-    const savedToken = localStorage.getItem("token");
-    const savedUserId = localStorage.getItem("userId");
-    const savedUserEmail = localStorage.getItem("userEmail");
-    const savedUserRole = localStorage.getItem("userRole");
-    const savedUserName = localStorage.getItem("userName");
-
-    if (
-      savedToken &&
-      savedUserEmail &&
-      savedUserId &&
-      savedUserRole &&
-      savedUserName
-    ) {
-      setIsLoggedIn(true);
-      setToken(savedToken);
-      setUserEmail(savedUserEmail);
-      setUserId(savedUserId);
-      setUserRole(savedUserRole);
-      setUserName(savedUserName);
-    }
+    setIsAuthenticated({
+      token: null,
+      userId: null,
+      userEmail: null,
+      userRole: null,
+      userName: null,
+      isAuthenticated: false,
+    });
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{
-        isLoggedIn,
-        token,
-        userEmail,
-        userId,
-        userRole,
-        userName,
-        setUserName,
-        onLogin,
-        onLogout,
-      }}
+      value={{ ...isAuthenticated, setIsAuthenticated, onLogin, onLogout }}
     >
       {children}
     </AuthContext.Provider>

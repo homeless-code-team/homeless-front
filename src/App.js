@@ -12,10 +12,22 @@ import DirectMessage from "./components/DirectMessage.js";
 import Profile from "./components/Profile.js";
 import axios from "axios";
 import OAuthRedirectHandler from "./components/OAuthRedirectHandler.js";
+import PasswordModal from "./components/PasswordModal.js";
 import Board from "./components/Board.js";
 
+// ProtectedRoute Component
+const ProtectedRoute = ({ element }) => {
+  const { isAuthenticated } = useContext(AuthContext);
+
+  if (!isAuthenticated) {
+    return <Navigate to="/" replace />;
+  }
+
+  return element;
+};
+
 function App() {
-  const { isLoggedIn, setIsLoggedIn } = useContext(AuthContext);
+  const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
   const [selectedServer, setSelectedServer] = useState(null);
   const [selectedChannel, setSelectedChannel] = useState(null);
   const [serverName, setServerName] = useState(null);
@@ -30,18 +42,17 @@ function App() {
   const [page, setPage] = useState(0);
   const [searchValue, setSearchValue] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [serverType, setServerType] = useState(""); //ok
+  const [serverType, setServerType] = useState("");
+  const [selectedBoardId, setSelectedBoardId] = useState(null);
+  const [currentView, setCurrentView] = useState("chatRoom");
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-  };
-
+  // 창 닫힐 때 로그아웃 처리
   useEffect(() => {
     const handleBeforeUnload = async () => {
       console.log("창이 닫히기 전에 로그아웃 처리");
-      if (isLoggedIn) {
+      if (isAuthenticated) {
         await window.electronAPI.logout(); // Electron API를 통해 로그아웃 호출
-        setIsLoggedIn(false); // 로그아웃 상태로 설정
+        setIsAuthenticated(false); // 로그아웃 상태로 설정
       }
     };
 
@@ -52,12 +63,11 @@ function App() {
       // 이벤트 정리
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
-  }, [isLoggedIn, setIsLoggedIn]);
+  }, [isAuthenticated, setIsAuthenticated]);
 
   // 로그인 상태가 변경될 때 초기화
   useEffect(() => {
-    // ok
-    if (isLoggedIn) {
+    if (!isAuthenticated) {
       setSelectedServer(null);
       setSelectedChannel(null);
       setServerName(null);
@@ -69,22 +79,21 @@ function App() {
       setPosts([]);
       setPage(0);
     }
-  }, [isLoggedIn]);
+  }, [isAuthenticated]);
 
+  // 서버별 채널 목록 정의
   useEffect(() => {
-    //
     const token = localStorage.getItem("token");
-    if (isLoggedIn && token) {
+    if (isAuthenticated && token) {
       console.log("ASdasdasdasd");
 
       getServerList();
     }
-  }, [isLoggedIn]);
+  }, [isAuthenticated]);
 
   const getServerList = async () => {
-    // ok
     const token = localStorage.getItem("token");
-    if (!isLoggedIn || !token) {
+    if (!isAuthenticated || !token) {
       return;
     }
     const res = await axios.get(
@@ -99,7 +108,6 @@ function App() {
   };
 
   const handleSelectServer = async (
-    // ok
     serverId,
     title,
     userRole,
@@ -154,8 +162,8 @@ function App() {
       setBoardList(res.data.result);
     }
   };
+
   const handleSelectChannel = (channelId, channelName) => {
-    // ok
     setSelectedChannel({
       id: channelId,
       name: channelName,
@@ -164,7 +172,6 @@ function App() {
   };
 
   const handleSelectBoard = (boardId, boardTitle) => {
-    // ok
     setSelectedBoard({
       id: boardId,
       boardTitle: boardTitle,
@@ -175,8 +182,8 @@ function App() {
     setSearchValue("");
   };
 
+  // 게시글 채팅방 입장을 위한 새로운 함수 추가
   const handleEnterPostChat = (postId, postTitle) => {
-    // ok
     setSelectedChannel({
       id: postId,
       name: postTitle,
@@ -185,96 +192,122 @@ function App() {
   };
 
   const onOpenDM = () => {
-    // ok
     console.log("Direct Message opened");
     setIsDMOpen(true);
   };
 
-  if (!isLoggedIn) {
-    return (
-      <div className="login-container">
-        <MenuBar />
-        <SignIn onLogin={handleLogin} />
-      </div>
-    );
-  }
-
   return (
     <div className="app-container">
       <MenuBar />
-      <div className="server-channel-container">
-        {/* 서버 리스트 */}
-        <ServerList
-          serverList={serverList}
-          setServerList={setServerList}
-          onSelectServer={handleSelectServer}
-          selectedServer={selectedServer}
-          onOpenDM={onOpenDM}
-          onRefreshServers={getServerList}
-          setPosts={setPosts}
-          setPage={setPage}
-        />
+      <Routes>
+        <Route path="/oauth2/redirect" element={<OAuthRedirectHandler />} />
+        <Route path="/oauth/callback" element={<OAuthRedirectHandler />} />
 
-        {/* 선택된 서버의 채널 리스트 (오른쪽에 배치) */}
-        {selectedServer && (
-          <div className="channel-container">
-            <ChatRoomList
-              serverId={selectedServer}
-              serverName={serverName}
-              onSelectChannel={handleSelectChannel}
-              selectedChannel={selectedChannel?.id}
-              channels={channelList}
-              handleSelectServer={handleSelectServer}
-              serverRole={serverRole}
-              serverTag={serverTag}
-              boardList={boardList}
-              handleSelectBoard={handleSelectBoard}
-              selectedBoard={selectedBoard?.id}
-              serverType={serverType}
-              setShowMemberModal={setShowModal}
-              showMemberModal={showModal}
-              getServerList={getServerList}
+        {!isAuthenticated ? (
+          <>
+            <Route path="/" element={<SignIn />} />
+            <Route path="/sign-up" element={<SignUp />} />
+          </>
+        ) : (
+          <>
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute
+                  element={
+                    <>
+                      <ServerList
+                        serverList={serverList}
+                        setServerList={setServerList}
+                        onSelectServer={handleSelectServer}
+                        selectedServer={selectedServer}
+                        onOpenDM={onOpenDM}
+                        onRefreshServers={getServerList}
+                        setPosts={setPosts}
+                        setPage={setPage}
+                      />
+                      <div className="app-content">
+                        <div className="content-wrapper">
+                          {isDMOpen ? (
+                            <DirectMessage
+                              onSelectChannel={handleSelectChannel}
+                              getServerList={getServerList}
+                            />
+                          ) : (
+                            <ChatRoomList
+                              serverId={selectedServer}
+                              serverName={serverName}
+                              onSelectChannel={handleSelectChannel}
+                              selectedChannel={selectedChannel?.id}
+                              channels={channelList}
+                              handleSelectServer={handleSelectServer}
+                              serverRole={serverRole}
+                              serverTag={serverTag}
+                              boardList={boardList}
+                              handleSelectBoard={handleSelectBoard}
+                              selectedBoard={selectedBoard?.id}
+                              serverType={serverType}
+                              setShowMemberModal={setShowModal}
+                              showMemberModal={showModal}
+                              getServerList={getServerList}
+                            />
+                          )}
+                          <div className="main-content">
+                            {selectedBoard ? (
+                              <Board
+                                serverId={selectedServer}
+                                boardId={selectedBoard?.id}
+                                boardTitle={selectedBoard?.boardTitle}
+                                posts={posts}
+                                setPosts={setPosts}
+                                page={page}
+                                setPage={setPage}
+                                searchValue={searchValue}
+                                setSearchValue={setSearchValue}
+                                handleSelectBoard={handleSelectBoard}
+                                handleEnterPostChat={handleEnterPostChat}
+                                getServerList={getServerList}
+                                handleSelectServer={handleSelectServer}
+                                serverName={serverName}
+                                serverRole={serverRole}
+                                serverTag={serverTag}
+                                serverType={serverType}
+                              />
+                            ) : (
+                              <ChatRoom
+                                serverId={selectedServer}
+                                channelId={selectedChannel?.id}
+                                channelName={selectedChannel?.name}
+                                isDirectMessage={isDMOpen}
+                                serverRole={serverRole}
+                              />
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  }
+                />
+              }
             />
-          </div>
+            <Route
+              path="/profile"
+              element={
+                <ProtectedRoute
+                  element={
+                    <div className="full-page">
+                      <Profile />
+                    </div>
+                  }
+                />
+              }
+            />
+          </>
         )}
-      </div>
 
-      {/* 메인 컨텐츠 영역 */}
-      <div className="app-content">
-        <div className="content-wrapper">
-          <div className="main-content">
-            {selectedBoard ? (
-              <Board
-                serverId={selectedServer}
-                boardId={selectedBoard?.id}
-                boardTitle={selectedBoard?.boardTitle}
-                posts={posts}
-                setPosts={setPosts}
-                page={page}
-                setPage={setPage}
-                searchValue={searchValue}
-                setSearchValue={setSearchValue}
-                handleSelectBoard={handleSelectBoard}
-                handleEnterPostChat={handleEnterPostChat}
-                getServerList={getServerList}
-                handleSelectServer={handleSelectServer}
-                serverName={serverName}
-                serverRole={serverRole}
-                serverTag={serverTag}
-                serverType={serverType}
-              />
-            ) : (
-              <ChatRoom
-                serverId={selectedServer}
-                channelId={selectedChannel?.id}
-                channelName={selectedChannel?.name}
-                isDirectMessage={isDMOpen}
-                serverRole={serverRole}
-              />
-            )}
-          </div>
-        </div>
-      </div>
+        {/* 예외 처리 */}
+        <Route path="*" element={<Navigate to="/" replace />} />
+      </Routes>
     </div>
   );
 }
