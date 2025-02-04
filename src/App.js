@@ -76,6 +76,7 @@ function App() {
     const token = localStorage.getItem("token");
     if (isLoggedIn && token) {
       console.log("ASdasdasdasd");
+
       getServerList();
     }
   }, [isLoggedIn]);
@@ -201,35 +202,46 @@ function App() {
   return (
     <div className="app-container">
       <MenuBar />
-      <ServerList
-        serverList={serverList}
-        setServerList={setServerList}
-        onSelectServer={handleSelectServer}
-        selectedServer={selectedServer}
-        onOpenDM={onOpenDM}
-        onRefreshServers={getServerList}
-        setPosts={setPosts}
-        setPage={setPage}
-      />
+      <div className="server-channel-container">
+        {/* 서버 리스트 */}
+        <ServerList
+          serverList={serverList}
+          setServerList={setServerList}
+          onSelectServer={handleSelectServer}
+          selectedServer={selectedServer}
+          onOpenDM={onOpenDM}
+          onRefreshServers={getServerList}
+          setPosts={setPosts}
+          setPage={setPage}
+        />
+
+        {/* 선택된 서버의 채널 리스트 (오른쪽에 배치) */}
+        {selectedServer && (
+          <div className="channel-container">
+            <ChatRoomList
+              serverId={selectedServer}
+              serverName={serverName}
+              onSelectChannel={handleSelectChannel}
+              selectedChannel={selectedChannel?.id}
+              channels={channelList}
+              handleSelectServer={handleSelectServer}
+              serverRole={serverRole}
+              serverTag={serverTag}
+              boardList={boardList}
+              handleSelectBoard={handleSelectBoard}
+              selectedBoard={selectedBoard?.id}
+              serverType={serverType}
+              setShowMemberModal={setShowModal}
+              showMemberModal={showModal}
+              getServerList={getServerList}
+            />
+          </div>
+        )}
+      </div>
+
+      {/* 메인 컨텐츠 영역 */}
       <div className="app-content">
         <div className="content-wrapper">
-          <ChatRoomList
-            serverId={selectedServer}
-            serverName={serverName}
-            onSelectChannel={handleSelectChannel}
-            selectedChannel={selectedChannel?.id}
-            channels={channelList}
-            handleSelectServer={handleSelectServer}
-            serverRole={serverRole}
-            serverTag={serverTag}
-            boardList={boardList}
-            handleSelectBoard={handleSelectBoard}
-            selectedBoard={selectedBoard?.id}
-            serverType={serverType}
-            setShowMemberModal={setShowModal}
-            showMemberModal={showModal}
-            getServerList={getServerList}
-          />
           <div className="main-content">
             {selectedBoard ? (
               <Board
