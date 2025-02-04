@@ -1,0 +1,399 @@
+.profile-layout {
+  display: flex;
+  min-height: 100vh;
+  background-color: #313338;
+}
+
+.profile-sidebar {
+  width: 280px;
+  background-color: #2b2d31;
+  padding: 60px 6px 60px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.sidebar-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.profile-sidebar h2 {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  padding: 0 10px;
+  margin-bottom: 20px;
+}
+
+.back-button {
+  margin: 0 10px;
+  padding: 10px 16px;
+  border-radius: 4px;
+  border: none;
+  background-color: #da7272;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.back-button:hover {
+  background-color: #c46565;
+}
+
+.profile-menu {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.menu-item {
+  padding: 8px 10px;
+  border-radius: 4px;
+  background: none;
+  border: none;
+  color: #b5bac1;
+  font-size: 16px;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.menu-item:hover {
+  background-color: #36393f;
+  color: #dcddde;
+}
+
+.menu-item.active {
+  background-color: #404249;
+  color: #fff;
+}
+
+.profile-container {
+  flex: 1;
+  padding: 60px 40px;
+  background-color: #313338;
+}
+
+.profile-content {
+  max-width: 740px;
+  margin: 0 auto;
+}
+
+.profile-section {
+  background-color: #2b2d31;
+  border-radius: 8px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.profile-header-section {
+  margin-bottom: 24px;
+}
+
+.profile-header-section h3 {
+  color: #fff;
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.profile-subtitle {
+  color: #b5bac1;
+  font-size: 14px;
+}
+
+.profile-avatar-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.avatar-circle {
+  width: 80px;
+  /* 원의 너비 */
+  height: 80px;
+  /* 원의 높이 */
+  border-radius: 50%;
+  /* 원형 */
+  background-color: #7289da;
+  /* 배경색 */
+  color: white;
+  /* 텍스트 색상 */
+  display: flex;
+  /* 내용 중앙 정렬 */
+  align-items: center;
+  /* 세로 중앙 정렬 */
+  justify-content: center;
+  /* 가로 중앙 정렬 */
+  font-size: 32px;
+  /* 텍스트 크기 */
+  font-weight: 600;
+  /* 텍스트 굵기 */
+  overflow: hidden;
+  /* 원 밖으로 삐져나온 이미지 숨기기 */
+
+  position: relative;
+  overflow: hidden;
+}
+
+.avatar-circle .image-overlay {
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+}
+
+.avatar-circle:hover .image-overlay {
+  opacity: 1;
+}
+
+.avatar-circle .profile-image-placeholder {
+  background-color: #7289da;
+  color: white;
+  font-size: 32px;
+  font-weight: 600;
+}
+
+.avatar-circle img {
+  width: 100%;
+  /* 원 크기에 맞게 조정 */
+  height: 100%;
+  /* 원 크기에 맞게 조정 */
+  object-fit: cover;
+  /* 이미지 비율 유지하며 원에 꽉 채우기 */
+  border-radius: 50%;
+  /* 이미지도 원형으로 만들기 */
+}
+
+.profile-info {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.profile-name {
+  font-size: 20px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.profile-tag {
+  color: #b5bac1;
+  font-size: 16px;
+}
+
+.section-title {
+  color: #b5bac1;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.profile-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.profile-field label {
+  color: #b5bac1;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.field-value {
+  color: #dcddde;
+  font-size: 16px;
+}
+
+.profile-buttons {
+  display: flex;
+  gap: 16px;
+}
+
+.profile-button {
+  padding: 10px 16px;
+  border-radius: 4px;
+  border: none;
+  background-color: #4752c4;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.profile-button:hover {
+  background-color: #5865f2;
+}
+
+.profile-description {
+  width: 100%;
+  min-height: 120px;
+  padding: 12px;
+  background-color: #1f2023;
+  border: none;
+  border-radius: 4px;
+  color: #dcddde;
+  font-size: 14px;
+  line-height: 1.4;
+  resize: vertical;
+  margin-bottom: 8px;
+}
+
+.profile-description:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px #5865f2;
+}
+
+.description-length {
+  color: #b5bac1;
+  font-size: 12px;
+  text-align: right;
+}
+
+.settings-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.settings-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+}
+
+.settings-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.settings-label {
+  color: #dcddde;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.settings-value {
+  color: #b5bac1;
+  font-size: 14px;
+}
+
+.profile-button {
+  padding: 8px 16px;
+  border-radius: 4px;
+  border: none;
+  background-color: #4752c4;
+  color: white;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  min-width: 60px;
+}
+
+.profile-button:hover {
+  background-color: #5865f2;
+}
+
+.connection-info {
+  padding: 16px;
+  background-color: #1f2023;
+  border-radius: 4px;
+}
+
+.connection-text {
+  color: #b5bac1;
+  font-size: 14px;
+  text-align: center;
+}
+
+.connection-section {
+  margin-top: 24px;
+}
+
+.connection-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  background-color: #1f2023;
+  border-radius: 4px;
+}
+
+.connection-name {
+  color: #dcddde;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.connection-button {
+  background: none;
+  border: none;
+  color: #b5bac1;
+  cursor: pointer;
+  padding: 8px;
+  transition: color 0.2s;
+}
+
+.connection-button:hover {
+  color: #fff;
+}
+
+.profile-image-section {
+  display: flex;
+  justify-content: center;
+  margin: 20px 0;
+}
+
+.profile-image-container {
+  position: relative;
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  overflow: hidden;
+  background-color: #f0f0f0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.profile-image-placeholder {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2em;
+  color: #666;
+  background-color: #e0e0e0;
+}
+
+.image-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s;
+}
+
+.profile-image-container:hover .image-overlay {
+  opacity: 1;
+}
+
+.image-overlay span {
+  color: white;
+  font-size: 0.9em;
+}

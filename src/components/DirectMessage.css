@@ -1,0 +1,73 @@
+.direct-message-container {
+  padding: 0;
+  color: #96989d;
+  width: 240px;
+  background-color: #2b2d31;
+  display: flex;
+  flex-direction: column;
+}
+
+.dm-header {
+  padding: 12px 8px;
+  border-bottom: 1px solid #202225;
+}
+
+.friend-list-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 8px 12px;
+  background-color: transparent;
+  border: none;
+  color: #96989d;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: all 0.2s;
+}
+
+.friend-list-button:hover {
+  background-color: #36393f;
+  color: #dcddde;
+}
+
+.dm-title {
+  padding: 16px 12px 8px;
+  font-size: 14px;
+  font-weight: 500;
+  text-transform: uppercase;
+  color: #96989d;
+}
+
+.user-list {
+  list-style: none;
+  padding: 0 8px;
+  margin: 0;
+}
+
+.user-list li {
+  padding: 8px 12px;
+  margin: 2px 0;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  color: #96989d;
+}
+
+.user-list li:hover {
+  background-color: #36393f;
+  color: #dcddde;
+}
+
+.user-list li.selected {
+  background-color: #404249;
+  color: #ffffff;
+}
+
+.user-list li::before {
+  content: "#";
+  margin-right: 6px;
+  font-weight: 500;
+}

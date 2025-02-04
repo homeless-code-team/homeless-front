@@ -3,6 +3,9 @@
   color: #96989d;
   width: 230px;
   background-color: #292a2d;
+  height: 100vh;
+  overflow-y: auto;
+  padding-bottom: 20px;
 }
 
 .channel-header {
@@ -11,6 +14,7 @@
   font-size: 16px;
   font-weight: bold;
   color: #b5bac1;
+  padding: 16px 8px;
   text-transform: uppercase;
   letter-spacing: 0.02em;
   white-space: nowrap;
@@ -21,14 +25,11 @@
 }
 
 .channel-item {
-  padding: 6px 12px;
-  margin: 2px 0;
-  border-radius: 4px;
-  cursor: pointer;
-  font-size: 14px;
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  color: #96989d;
+  padding: 8px 12px;
+  margin-bottom: 5px;
 }
 
 .channel-item:hover {
@@ -39,10 +40,236 @@
 .channel-item.selected {
   background-color: #404249;
   color: #ffffff;
+  border-radius: 3px;
 }
 
 .channel-item::before {
   content: "#";
   margin-right: 6px;
   font-weight: 500;
+}
+
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background-color: #292a2d;
+  padding: 20px;
+  border-radius: 8px;
+  width: 350px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.modal h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+}
+
+.modal input {
+  width: 100%;
+  padding: 8px;
+  margin-bottom: 15px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.modal-buttons {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.modal-buttons button {
+  padding: 8px 16px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.modal-buttons button:first-child {
+  background-color: #007bff;
+  color: white;
+}
+
+.modal-buttons button:last-child {
+  background-color: #6c757d;
+  color: white;
+}
+
+.channel-settings {
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.channel-settings:hover {
+  opacity: 1;
+}
+
+.channel-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+
+.channel-name {
+  flex-grow: 1;
+}
+
+.channel-settings {
+  margin-left: 8px;
+}
+
+.create-channel {
+  padding: 8px 12px;
+  margin-bottom: 10px;
+}
+
+.channel-settings,
+.channel-delete {
+  cursor: pointer;
+  margin-left: 5px;
+}
+
+.channel-delete:hover {
+  color: #ff4444;
+}
+
+.server-tag {
+  margin-bottom: 10px;
+  margin-left: 10px;
+  font-size: 12px;
+}
+.create-channel {
+  margin-bottom: 15px;
+  margin-left: 10px;
+}
+
+.divider {
+  display: flex;
+  align-items: center;
+  margin: 10px 0;
+}
+
+.divider small {
+  font-size: 0.8em;
+  color: #666;
+  margin-right: 8px;
+}
+
+.divider::after {
+  content: "";
+  flex-grow: 1;
+  height: 1px;
+  background-color: #ccc;
+  margin-left: 8px;
+}
+
+.board-list {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 12px;
+  margin-bottom: 5px;
+}
+
+.create-channel {
+  margin-top: 5px;
+}
+.create-channel:hover {
+  background-color: #36393f;
+  color: #dcddde;
+  border-radius: 5px;
+}
+
+.board-list.selected {
+  background-color: #404249;
+  color: #ffffff;
+  border-radius: 3px;
+}
+.board-list:hover {
+  background-color: #36393f;
+  color: #dcddde;
+  border-radius: 5px;
+}
+.board-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+}
+.board-name {
+  align-content: left;
+}
+.member-btn-div {
+  margin-top: 10px;
+}
+.member-item {
+  border: 1px solid #36393f;
+  border-radius: 5px;
+  padding: 10px;
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: white;
+}
+.member-list-btn {
+  background-color: transparent;
+  border: none;
+  font-size: 15px; /* 버튼 크기 조정 */
+  cursor: pointer;
+  color: white;
+  padding: 8px 12px;
+}
+
+.member-list-btn:hover {
+  background-color: #36393f;
+  color: #dcddde;
+  border-radius: 5px;
+}
+.role-box {
+  border-radius: 5px;
+  position: absolute;
+  background-color: #292a2d;
+  box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.5);
+  list-style-type: none;
+  padding: 10px;
+  z-index: 1000;
+  color: white;
+}
+
+.member-list {
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.resign-btn {
+  padding: 5px 5px 5px 5px;
+}
+.resign-btn:hover {
+  background-color: #36393f;
+}
+.manager-btn {
+  padding: 5px 5px 5px 5px;
+}
+.manager-btn:hover {
+  background-color: #36393f;
+}
+.general-btn {
+  padding: 5px 5px 5px 5px;
+}
+.general-btn:hover {
+  background-color: #36393f;
 }

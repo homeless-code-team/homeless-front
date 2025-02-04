@@ -2,30 +2,61 @@ import { useEffect, useRef, useCallback } from "react";
 import { Client } from "@stomp/stompjs";
 import SockJS from "sockjs-client";
 
-const useWebSocket = (serverId, channelId, onMessageReceived) => {
+const useWebSocket = (channelId, onMessageReceived) => {
   const client = useRef(null);
   const currentSubscription = useRef(null);
 
-  const handleMessage = useCallback((message) => {
-    const receivedMessage = JSON.parse(message.body);
-    onMessageReceived(receivedMessage);
-  }, [onMessageReceived]);
+  const handleMessage = useCallback(
+    (message) => {
+      const receivedMessage = JSON.parse(message.body);
+      onMessageReceived(receivedMessage);
+    },
+    [onMessageReceived]
+  );
 
   useEffect(() => {
-    if (!serverId || !channelId) return;
+    if (!channelId) return;
+
+    const token = localStorage.getItem("token");
+    if (!token) return;
 
     const connect = () => {
       if (!client.current) {
+        const sockJSOptions = {
+          transports: ["websocket", "xhr-streaming", "xhr-polling"],
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        };
+
+        const socket = new SockJS(
+          `${process.env.REACT_APP_API_BASE_URL}/chat-service/ws`,
+          null,
+          sockJSOptions
+        );
+
         client.current = new Client({
-          webSocketFactory: () => new SockJS("http://localhost:8181/ws"),
+          webSocketFactory: () => socket,
+          connectHeaders: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+          beforeConnect: () => {
+            if (!token) {
+              throw new Error("Authentication token is missing");
+            }
+          },
           onConnect: () => {
             if (currentSubscription.current) {
               currentSubscription.current.unsubscribe();
             }
 
             currentSubscription.current = client.current.subscribe(
-              `/topic/${serverId}/${channelId}`,
-              handleMessage
+              `/exchange/chat.exchange/chat.channel.${channelId}`,
+              handleMessage,
+              {
+                Authorization: `Bearer ${token}`,
+              }
             );
           },
           reconnectDelay: 5000,
@@ -34,14 +65,6 @@ const useWebSocket = (serverId, channelId, onMessageReceived) => {
         });
 
         client.current.activate();
-      } else if (client.current.connected) {
-        if (currentSubscription.current) {
-          currentSubscription.current.unsubscribe();
-        }
-        currentSubscription.current = client.current.subscribe(
-          `/topic/${serverId}/${channelId}`,
-          handleMessage
-        );
       }
     };
 
@@ -51,28 +74,42 @@ const useWebSocket = (serverId, channelId, onMessageReceived) => {
       if (currentSubscription.current) {
         currentSubscription.current.unsubscribe();
       }
-    };
-  }, [serverId, channelId, handleMessage]);
-
-  useEffect(() => {
-    return () => {
       if (client.current) {
         client.current.deactivate();
         client.current = null;
       }
     };
-  }, []);
+  }, [channelId, handleMessage]);
 
   const sendMessage = (message) => {
     if (client.current?.connected) {
+      const token = localStorage.getItem("token");
       client.current.publish({
-        destination: `/app/${serverId}/${channelId}/send`,
-        body: JSON.stringify(message)
+        destination: `/pub/chat.message.${channelId}`,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(message),
       });
     }
   };
 
-  return { sendMessage };
+  const deleteMessage = (chatId) => {
+    if (client.current?.connected) {
+      const token = localStorage.getItem("token");
+      client.current.publish({
+        destination: `/pub/chat.message.delete.${channelId}`,
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+        body: chatId,
+      });
+    } else {
+      console.error("WebSocket이 연결되어 있지 않습니다.");
+    }
+  };
+
+  return { sendMessage, deleteMessage };
 };
 
 export default useWebSocket;
