@@ -460,6 +460,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!newMessage.trim() && !uploadedFileUrl) return; // 메시지와 파일 URL이 모두 없을 경우 전송하지 않음
+    console.log("username:", userName);
 
     const messageData = {
       serverId: serverId,
@@ -471,7 +472,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       fileUrl: uploadedFileUrl || null, // 업로드된 파일 URL 포함, 없으면 null
       fileName: uploadedFileName || null, // 업로드된 파일 이름 포함
     };
-
+    console.log("username:", userName);
     console.log("전송할 메시지 데이터:", messageData); // 전송할 메시지 데이터 로그 추가
 
     try {
