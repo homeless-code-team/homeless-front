@@ -9,20 +9,23 @@ export const AuthProvider = ({ children }) => {
   const [userId, setUserId] = useState(null);
   const [userRole, setUserRole] = useState(null);
   const [userName, setUserName] = useState(null);
+  const [userEmail, setUserEmail] = useState(null);
   const navigate = useNavigate();
 
-  const onLogin = (token, id, role, name) => {
+  const onLogin = (token, email, id, role, name) => {
     try {
+      localStorage.setItem("token", token);
+      localStorage.setItem("userEmail", email);
+      localStorage.setItem("userRole", role);
+      localStorage.setItem("userName", name);
+      localStorage.setItem("userId", userId);
+
       setIsLoggedIn(true);
       setToken(token);
       setUserId(id);
+      setUserEmail(email);
       setUserRole(role);
       setUserName(name);
-
-      localStorage.setItem("token", token);
-      localStorage.setItem("userId", id);
-      localStorage.setItem("userRole", role);
-      localStorage.setItem("userName", name);
     } catch (error) {
       console.error("로그인 처리 중 오류:", error);
     }
@@ -32,11 +35,13 @@ export const AuthProvider = ({ children }) => {
     setIsLoggedIn(false);
     setToken(null);
     setUserId(null);
+    setUserEmail(null);
     setUserRole(null);
     setUserName(null);
 
     localStorage.removeItem("token");
     localStorage.removeItem("userId");
+    localStorage.removeItem("userEmail");
     localStorage.removeItem("userRole");
     localStorage.removeItem("userName");
 
@@ -46,12 +51,20 @@ export const AuthProvider = ({ children }) => {
   useEffect(() => {
     const savedToken = localStorage.getItem("token");
     const savedUserId = localStorage.getItem("userId");
+    const savedUserEmail = localStorage.getItem("userEmail");
     const savedUserRole = localStorage.getItem("userRole");
     const savedUserName = localStorage.getItem("userName");
 
-    if (savedToken && savedUserId && savedUserRole && savedUserName) {
+    if (
+      savedToken &&
+      savedUserEmail &&
+      savedUserId &&
+      savedUserRole &&
+      savedUserName
+    ) {
       setIsLoggedIn(true);
       setToken(savedToken);
+      setUserEmail(savedUserEmail);
       setUserId(savedUserId);
       setUserRole(savedUserRole);
       setUserName(savedUserName);
@@ -63,6 +76,7 @@ export const AuthProvider = ({ children }) => {
       value={{
         isLoggedIn,
         token,
+        userEmail,
         userId,
         userRole,
         userName,

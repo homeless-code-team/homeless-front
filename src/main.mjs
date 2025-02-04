@@ -1,4 +1,10 @@
-import { app, BrowserWindow, ipcMain, globalShortcut } from "electron";
+import {
+  app,
+  BrowserWindow,
+  ipcMain,
+  globalShortcut,
+  protocol,
+} from "electron";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -24,17 +30,23 @@ function createWindow() {
     },
   });
 
+  protocol.registerFileProtocol("static", (request, callback) => {
+    const url = request.url.replace("static://", "");
+    const filePath = path.join(__dirname, "public", url);
+    callback({ path: filePath });
+  });
+
   mainWindow.webContents.session.webRequest.onHeadersReceived(
     (details, callback) => {
       callback({
         responseHeaders: {
           ...details.responseHeaders,
           "Content-Security-Policy": [
-            "default-src 'self' http://localhost:* ws://localhost:*; " +
+            "default-src 'self' http://localhost:* ws://localhost:* ws: wss: http: https:; " +
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
               "style-src 'self' 'unsafe-inline'; " +
               "img-src 'self' data: https:; " +
-              "connect-src 'self' http://localhost:* ws://localhost:*;",
+              "connect-src 'self' http://localhost:* ws://localhost:* ws: wss: http: https:;",
           ],
         },
       });

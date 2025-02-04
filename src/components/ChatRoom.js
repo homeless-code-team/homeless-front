@@ -11,6 +11,7 @@ import useWebSocket from "../hooks/useWebSocket.js";
 import UserProfilePopup from "./UserProfilePopup.js";
 import Swal from "sweetalert2";
 import axiosInstance from "../configs/axios-config.js";
+import axios from "axios";
 
 const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const { userName, userEmail } = useContext(AuthContext);
@@ -41,11 +42,8 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
 
   const messageListRef = useRef(null);
   const inputRef = useRef(null);
-  const [hasMore, setHasMore] = useState(true);
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(30);
-  const [lastMessageId, setLastMessageId] = useState(null);
-  const [showLoadMoreButton, setShowLoadMoreButton] = useState(false);
   const [contextMenu, setContextMenu] = useState({
     visible: false,
     x: 0,
@@ -688,12 +686,14 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
       setUploadedFileName(file.name);
     }
   };
+
   const handleFileUpload = async (file) => {
+    if (!file) return;
     const formData = new FormData();
     formData.append("file", file);
 
     try {
-      const response = await axiosInstance.post(
+      const response = await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/file/chats/upload`,
         formData,
         {
@@ -702,6 +702,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
           },
         }
       );
+      console.log("서버 응답: ", response);
 
       if (response.data && response.data.result) {
         console.log("파일 전송 API 응답:", response.data);
