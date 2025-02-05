@@ -54,11 +54,12 @@ function createWindow() {
   );
 
   if (isDev) {
-    mainWindow.loadURL("http://localhost:3000");
+    //mainWindow.loadURL("http://localhost:3000");
+    mainWindow.loadURL("https://homelesscode.shop");
     mainWindow.webContents.openDevTools();
   } else {
-    //mainWindow.loadURL(process.env.FRONT_APP_BASE_URL);
-    mainWindow.loadFile(path.join(__dirname, "../build/index.html"));
+    mainWindow.loadURL(process.env.FRONT_APP_BASE_URL);
+    //mainWindow.loadFile(path.join(__dirname, "../build/index.html"));
     mainWindow.webContents.openDevTools();
   }
 
