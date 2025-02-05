@@ -13,8 +13,13 @@ const SignIn = () => {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
   const { onLogin } = useContext(AuthContext);
+
+  const togglePasswordVisibility = () => {
+    setShowPassword((prevState) => !prevState);
+  };
 
   // ✅ 일반 로그인 처리
   const handleLogin = async (e) => {
@@ -29,7 +34,6 @@ const SignIn = () => {
 
       if (res.data.status === "OK") {
         const token = res.data.data;
-        localStorage.setItem("token", token); // JWT 저장
         onLogin(token); // 로그인 상태 업데이트
         navigate("/", { replace: true }); // 메인 페이지로 이동
       } else {
@@ -57,6 +61,7 @@ const SignIn = () => {
 
   return (
     <div className="signin-container">
+      {isLoading && <div className="spinner">로딩 중...</div>}
       <div className="signin-box">
         <div className="signin-header">
           <h2>Welcome back!</h2>
@@ -71,6 +76,8 @@ const SignIn = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="signin-input"
+              placeholder="이메일을 입력하세요"
+              autoComplete="off"
               required
             />
           </div>
@@ -78,12 +85,17 @@ const SignIn = () => {
             <label htmlFor="password">비밀번호</label>
             <input
               id="password"
-              type="password"
+              type={showPassword ? "text" : "password"}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="signin-input"
+              placeholder="비밀번호를 입력하세요"
+              autoComplete="off"
               required
             />
+            <button type="button" onClick={togglePasswordVisibility}>
+              {showPassword ? "숨기기" : "표시"}
+            </button>
             {loginError && <div className="error-message">{loginError}</div>}
           </div>
           <button type="submit" className="signin-button" disabled={isLoading}>

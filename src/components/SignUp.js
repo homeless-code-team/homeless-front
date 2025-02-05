@@ -23,6 +23,8 @@ const SignUp = () => {
   const [nicknameFeedback, setNicknameFeedback] = useState("");
   const [passwordFeedback, setPasswordFeedback] = useState("");
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     let timer;
@@ -62,13 +64,21 @@ const SignUp = () => {
     }
   };
 
+  const checkPasswordRequirements = (password) => {
+    return {
+      length: password.length >= 8 && password.length <= 16,
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      specialChar: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?~]/.test(password),
+    };
+  };
+
+  const passwordRequirements = checkPasswordRequirements(password);
+
   useEffect(() => {
-    if (password === confirmPassword && password.length >= 6) {
+    if (password === confirmPassword) {
       setPasswordFeedback("");
       setIsPasswordValid(true);
-    } else if (password.length < 6) {
-      setPasswordFeedback("비밀번호는 최소 6자 이상이어야 합니다.");
-      setIsPasswordValid(false);
     } else {
       setPasswordFeedback("비밀번호가 일치하지 않습니다.");
       setIsPasswordValid(false);
@@ -77,6 +87,10 @@ const SignUp = () => {
 
   // 유효성 및 중복성 검사
   const handleCheckDuplicate = async (type, value) => {
+    if (type === "email" && !isEmailValid) {
+      alert("유효하지 않은 이메일입니다.");
+      return;
+    }
     try {
       const response = await axios.get(
         `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/duplicate`,
@@ -98,7 +112,7 @@ const SignUp = () => {
           setEmailFeedback("이미 사용 중인 이메일입니다.");
           setIsEmailAvailable(false);
         } else if (type === "nickname") {
-          setNicknameFeedback("이미 사용 중인 닉네임입니다.");
+          setNicknameFeedback("이미 사용 중인 닉네임입니다. 다른 닉네임을 선택하세요.");
           setIsNicknameAvailable(false);
         }
       }
@@ -117,11 +131,12 @@ const SignUp = () => {
           `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/confirm`,
           { email }
         );
-        if (response.data.code === 200) {
+        if (response.status === 200) {
           setAuthCodeSent(true);
           setAuthCodeFeedback("인증 코드가 이메일로 전송되었습니다.");
           setCountdown(600);
         }
+
       } catch {
         setAuthCodeFeedback("이메일 전송에 실패했습니다. 다시 시도해주세요.");
       }
@@ -155,6 +170,7 @@ const SignUp = () => {
       isEmailAvailable &&
       isNicknameAvailable
     ) {
+      setLoading(true);
       try {
         const formData = new FormData();
         formData.append("email", email);
@@ -170,8 +186,11 @@ const SignUp = () => {
           alert("회원가입이 성공적으로 완료되었습니다!");
           navigate("/");
         }
-      } catch {
+      } catch (error) {
+        console.error("회원가입 중 오류:", error);
         alert("회원가입 중 오류가 발생했습니다. 다시 시도해주세요.");
+      } finally {
+        setLoading(false);
       }
     } else {
       alert("모든 필드를 올바르게 입력했는지 확인하세요.");
@@ -182,8 +201,13 @@ const SignUp = () => {
     navigate("/");
   };
 
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
+
   return (
     <div className={styles.container}>
+      {loading && <div className={styles.spinner}>로딩 중...</div>}
       <div className={styles.signupBox}>
         <h2 className={styles.title}>회원가입</h2>
         <form onSubmit={handleSubmit}>
@@ -195,6 +219,7 @@ const SignUp = () => {
               value={email}
               onChange={handleEmailChange}
               placeholder="이메일을 입력하세요"
+              autoComplete="off"
             />
             <button
               type="button"
@@ -243,6 +268,7 @@ const SignUp = () => {
               id="nickname"
               value={nickname}
               onChange={handleNicknameChange}
+              autoComplete="off"
             />
             <button
               type="button"
@@ -255,12 +281,31 @@ const SignUp = () => {
           <div className={styles.formGroup}>
             <label htmlFor="password">비밀번호</label>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            <button type="button" onClick={togglePasswordVisibility}>
+              {showPassword ? "숨기기" : "표시"}
+            </button>
             <div>{passwordFeedback}</div>
+            <div>
+              <ul>
+                <li style={{ color: passwordRequirements.length ? "green" : "red" }}>
+                  8~16자 길이
+                </li>
+                <li style={{ color: passwordRequirements.lowercase ? "green" : "red" }}>
+                  소문자 포함
+                </li>
+                <li style={{ color: passwordRequirements.number ? "green" : "red" }}>
+                  숫자 포함
+                </li>
+                <li style={{ color: passwordRequirements.specialChar ? "green" : "red" }}>
+                  특수문자 포함
+                </li>
+              </ul>
+            </div>
           </div>
           <div className={styles.formGroup}>
             <label htmlFor="confirmPassword">비밀번호 확인</label>
