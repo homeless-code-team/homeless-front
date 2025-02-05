@@ -12,6 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow;
+let authWindow;
 
 // 개발 환경인지 확인
 const isDev = process.env.NODE_ENV === "development";
@@ -42,11 +43,11 @@ function createWindow() {
         responseHeaders: {
           ...details.responseHeaders,
           "Content-Security-Policy": [
-            "default-src 'self' http://localhost:* ws://localhost:* ws: wss: http: https:; " +
+            "default-src 'self' https://homelesscode.shop ws: wss: http: https:; " +
               "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
               "style-src 'self' 'unsafe-inline'; " +
               "img-src 'self' data: https:; " +
-              "connect-src 'self' http://localhost:* ws://localhost:* ws: wss: http: https:;",
+              "connect-src 'self' https://homelesscode.shop ws: wss: http: https:;",
           ],
         },
       });
@@ -54,13 +55,10 @@ function createWindow() {
   );
 
   if (isDev) {
-    //mainWindow.loadURL("http://localhost:3000");
-    mainWindow.loadURL("https://homelesscode.shop");
+    mainWindow.loadURL("http://localhost:3000");
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadURL(process.env.FRONT_APP_BASE_URL);
-    //mainWindow.loadFile(path.join(__dirname, "../build/index.html"));
-    mainWindow.webContents.openDevTools();
+    mainWindow.loadURL("https://homelesscode.shop");
   }
 
   // F12 단축키 등록
@@ -73,7 +71,7 @@ function createWindow() {
     globalShortcut.unregister("F12");
   });
 
-  // IPC 핸들러
+  // 윈도우 컨트롤 핸들러
   ipcMain.handle("window:close", () => {
     mainWindow.close();
     return true;
@@ -97,7 +95,49 @@ function createWindow() {
   ipcMain.handle("window:isMaximized", () => {
     return mainWindow.isMaximized();
   });
+
+  // 🔹 OAuth 로그인 처리 (Google, GitHub 등)
+  ipcMain.on("open-oauth-window", (event, provider) => {
+    mainWindow.setEnabled(false); // 메인 창 비활성화
+
+    authWindow = new BrowserWindow({
+      width: 500,
+      height: 600,
+      parent: mainWindow,
+      modal: true,
+      show: true,
+      webPreferences: { nodeIntegration: false },
+    });
+
+    const authUrl = `${process.env.REACT_APP_API_BASE_URL}/user-service/oauth2/authorization/${provider}`;
+    authWindow.loadURL(authUrl);
+
+    authWindow.webContents.on("will-redirect", (event, url) => {
+      if (url.startsWith("https://homelesscode.shop/callback")) {
+        handleOAuthCallback(url);
+        event.preventDefault();
+        authWindow.close();
+      }
+    });
+
+    authWindow.on("closed", () => {
+      authWindow = null;
+      mainWindow.setEnabled(true); // OAuth 창 닫히면 메인 창 활성화
+    });
+  });
 }
+
+// 🔹 OAuth 로그인 후 JWT 처리
+const handleOAuthCallback = async (url) => {
+  const params = new URL(url).searchParams;
+  const token = params.get("token");
+
+  if (token) {
+    mainWindow.webContents.send("oauth-success", token);
+  } else {
+    mainWindow.webContents.send("oauth-success", "EMAIL_EXISTS");
+  }
+};
 
 app.whenReady().then(createWindow);
 

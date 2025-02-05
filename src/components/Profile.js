@@ -18,7 +18,6 @@ const Profile = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false); // 비밀번호 변경 모달 상태 추가
   const navigate = useNavigate();
   const token = localStorage.getItem("token"); // 저장된 토큰 키 확인 필요
-  const API_BASE_URL = "http://localhost:8181/user-service";
 
   const handleContentUpdate = async () => {
     try {

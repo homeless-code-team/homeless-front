@@ -1,54 +1,55 @@
 import React, { createContext, useState, useCallback } from "react";
+import jwtDecode from "jwt-decode";
 
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState({
-    token: localStorage.getItem("token"),
-    userId: localStorage.getItem("userId"),
-    userEmail: localStorage.getItem("userEmail"),
-    userRole: localStorage.getItem("userRole"),
-    userName: localStorage.getItem("userName"),
-    isAuthenticated: !!localStorage.getItem("token"),
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userInfo, setUserInfo] = useState({
+    userId: null,
+    userEmail: null,
+    userRole: null,
+    userNickname: null,
   });
 
-  const onLogin = useCallback((token, email, role, name, userId) => {
-    localStorage.setItem("token", token);
-    localStorage.setItem("userEmail", email);
-    localStorage.setItem("userRole", role);
-    localStorage.setItem("userName", name);
-    localStorage.setItem("userId", userId);
+  const onLogin = useCallback((token) => {
+    try {
+      const decodedToken = jwtDecode(token);
+      const { userId, userEmail, userRole, userNickname } = decodedToken;
 
-    setIsAuthenticated({
-      token,
-      userId,
-      userEmail: email,
-      userRole: role,
-      userName: name,
-      isAuthenticated: true,
-    });
+      localStorage.setItem("token", token);
+      localStorage.setItem("userId", userId);
+      localStorage.setItem("userEmail", userEmail);
+      localStorage.setItem("userRole", userRole);
+      localStorage.setItem("userNickname", userNickname);
+
+      setUserInfo({
+        userId,
+        userEmail,
+        userRole,
+        userNickname,
+      });
+      setIsAuthenticated(true);
+    } catch (error) {
+      console.error("토큰 디코딩 실패:", error);
+      setIsAuthenticated(false);
+    }
   }, []);
 
   const onLogout = useCallback(() => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("userId");
-    localStorage.removeItem("userEmail");
-    localStorage.removeItem("userRole");
-    localStorage.removeItem("userName");
-
-    setIsAuthenticated({
-      token: null,
+    localStorage.clear();
+    setUserInfo({
       userId: null,
       userEmail: null,
       userRole: null,
-      userName: null,
-      isAuthenticated: false,
+      userNickname: null,
     });
+    setIsAuthenticated(false);
   }, []);
 
   return (
     <AuthContext.Provider
-      value={{ ...isAuthenticated, setIsAuthenticated, onLogin, onLogout }}
+      value={{ isAuthenticated, userInfo, onLogin, onLogout }}
     >
       {children}
     </AuthContext.Provider>
