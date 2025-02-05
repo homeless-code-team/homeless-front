@@ -8,7 +8,7 @@ const PasswordModal = ({ onClose }) => {
   const [authCode, setAuthCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const API_BASE_URL = "http://localhost:8181/user-service";
+
   const email = localStorage.getItem("userId");
   const token = localStorage.getItem("token");
   if (email) {
@@ -42,7 +42,7 @@ const PasswordModal = ({ onClose }) => {
   const handleVerifyAuthCode = async () => {
     try {
       const res = await axiosInstance.get(
-        `${API_BASE_URL}/api/v1/users/confirm`,
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/confirm`,
         {
           params: { email, token: authCode },
         }
@@ -66,7 +66,7 @@ const PasswordModal = ({ onClose }) => {
     }
     try {
       const res = await axios.patch(
-        `${API_BASE_URL}/api/v1/users`,
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users`,
         {
           password: password,
         },
