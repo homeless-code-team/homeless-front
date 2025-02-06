@@ -5,7 +5,7 @@
 
 const axios = require("axios");
 
-const API_BASE_URL = "http://localhost:8181";
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 // Axios 인스턴스 생성
 const axiosInstance = axios.create({
   headers: {
