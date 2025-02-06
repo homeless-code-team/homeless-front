@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import styles from "./SignUp.module.css";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 
 const SignUp = () => {
   const [email, setEmail] = useState("");
@@ -22,6 +23,7 @@ const SignUp = () => {
   const [authCodeFeedback, setAuthCodeFeedback] = useState("");
   const [nicknameFeedback, setNicknameFeedback] = useState("");
   const [passwordFeedback, setPasswordFeedback] = useState("");
+  const [formProgress, setFormProgress] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -62,16 +64,28 @@ const SignUp = () => {
     }
   };
 
+  const checkPasswordRequirements = (password) => {
+    return {
+      length: password.length >= 8 && password.length <= 16,
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      specialChar: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?~]/.test(password),
+    };
+  };
+
   useEffect(() => {
-    if (password === confirmPassword && password.length >= 6) {
-      setPasswordFeedback("");
-      setIsPasswordValid(true);
-    } else if (password.length < 6) {
-      setPasswordFeedback("비밀번호는 최소 6자 이상이어야 합니다.");
+    const requirements = checkPasswordRequirements(password);
+    const isValidPassword = Object.values(requirements).every(Boolean);
+
+    if (!isValidPassword) {
+      setPasswordFeedback("비밀번호 요구사항을 모두 충족해야 합니다.");
       setIsPasswordValid(false);
-    } else {
+    } else if (password !== confirmPassword) {
       setPasswordFeedback("비밀번호가 일치하지 않습니다.");
       setIsPasswordValid(false);
+    } else {
+      setPasswordFeedback("");
+      setIsPasswordValid(true);
     }
   }, [password, confirmPassword]);
 
@@ -167,14 +181,26 @@ const SignUp = () => {
           { headers: { "Content-Type": "multipart/form-data" } }
         );
         if (response.status === 200) {
-          alert("회원가입이 성공적으로 완료되었습니다!");
+          await Swal.fire(
+            "성공",
+            "회원가입이 성공적으로 완료되었습니다!",
+            "success"
+          );
           navigate("/");
         }
       } catch {
-        alert("회원가입 중 오류가 발생했습니다. 다시 시도해주세요.");
+        Swal.fire(
+          "실패",
+          "회원가입 중 오류가 발생했습니다. 다시 시도해주세요.",
+          "error"
+        );
       }
     } else {
-      alert("모든 필드를 올바르게 입력했는지 확인하세요.");
+      Swal.fire(
+        "알림",
+        "모든 필드를 올바르게 입력했는지 확인하세요.",
+        "warning"
+      );
     }
   };
 
@@ -182,13 +208,77 @@ const SignUp = () => {
     navigate("/");
   };
 
+  // 비밀번호 강도 표시 컴포넌트
+  const PasswordStrengthBar = ({ requirements }) => {
+    const strength = Object.values(requirements).filter(Boolean).length;
+    const percentage = (strength / 4) * 100;
+
+    return (
+      <div className={styles.strengthBar}>
+        <div
+          className={styles.strengthFill}
+          style={{
+            width: `${percentage}%`,
+            backgroundColor:
+              percentage <= 25
+                ? "red"
+                : percentage <= 50
+                ? "orange"
+                : percentage <= 75
+                ? "yellow"
+                : "green",
+          }}
+        />
+      </div>
+    );
+  };
+
+  // 입력 필드 상태 아이콘
+  const StatusIcon = ({ isValid, isAvailable }) => {
+    if (isValid && isAvailable)
+      return <span className={styles.successIcon}>✓</span>;
+    if (!isValid) return <span className={styles.errorIcon}>✗</span>;
+    return null;
+  };
+
+  // 폼 진행률 업데이트
+  useEffect(() => {
+    const completedSteps = [
+      isEmailValid && isEmailAvailable,
+      isAuthCodeValid,
+      isNicknameValid && isNicknameAvailable,
+      isPasswordValid,
+    ].filter(Boolean).length;
+
+    setFormProgress((completedSteps / 4) * 100);
+  }, [
+    isEmailValid,
+    isEmailAvailable,
+    isAuthCodeValid,
+    isNicknameValid,
+    isNicknameAvailable,
+    isPasswordValid,
+  ]);
+
   return (
     <div className={styles.container}>
+      <div className={styles.progressBar}>
+        <div
+          className={styles.progressFill}
+          style={{ width: `${formProgress}%` }}
+        />
+      </div>
       <div className={styles.signupBox}>
         <h2 className={styles.title}>회원가입</h2>
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
-            <label htmlFor="email">이메일</label>
+            <label htmlFor="email">
+              이메일
+              <StatusIcon
+                isValid={isEmailValid}
+                isAvailable={isEmailAvailable}
+              />
+            </label>
             <input
               type="email"
               id="email"
@@ -215,7 +305,10 @@ const SignUp = () => {
           </div>
           {authCodeSent && countdown > 0 && (
             <div className={styles.formGroup}>
-              <label htmlFor="authCode">인증 코드</label>
+              <label htmlFor="authCode">
+                인증 코드
+                <StatusIcon isValid={isAuthCodeValid} />
+              </label>
               <input
                 type="text"
                 id="authCode"
@@ -230,9 +323,23 @@ const SignUp = () => {
               >
                 인증 확인
               </button>
-              <span>
-                남은 시간: {Math.floor(countdown / 60)}분 {countdown % 60}초
-              </span>
+              <div className={styles.countdown}>
+                <svg viewBox="0 0 36 36">
+                  <path
+                    d="M18 2.0845
+                      a 15.9155 15.9155 0 0 1 0 31.831
+                      a 15.9155 15.9155 0 0 1 0 -31.831"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="3"
+                    strokeDasharray={`${(countdown / 600) * 100}, 100`}
+                  />
+                </svg>
+                <span>
+                  {Math.floor(countdown / 60)}:
+                  {(countdown % 60).toString().padStart(2, "0")}
+                </span>
+              </div>
               <div>{authCodeFeedback}</div>
             </div>
           )}
@@ -253,14 +360,31 @@ const SignUp = () => {
             <div>{nicknameFeedback}</div>
           </div>
           <div className={styles.formGroup}>
-            <label htmlFor="password">비밀번호</label>
+            <label htmlFor="password">
+              비밀번호
+              <StatusIcon isValid={isPasswordValid} />
+            </label>
             <input
               type="password"
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
-            <div>{passwordFeedback}</div>
+            <PasswordStrengthBar
+              requirements={checkPasswordRequirements(password)}
+            />
+            <div className={styles.requirements}>
+              {Object.entries(checkPasswordRequirements(password)).map(
+                ([key, met]) => (
+                  <div key={key} className={met ? styles.met : styles.unmet}>
+                    {key === "length" && "8~16자 길이"}
+                    {key === "lowercase" && "소문자 포함"}
+                    {key === "number" && "숫자 포함"}
+                    {key === "specialChar" && "특수문자 포함"}
+                  </div>
+                )
+              )}
+            </div>
           </div>
           <div className={styles.formGroup}>
             <label htmlFor="confirmPassword">비밀번호 확인</label>

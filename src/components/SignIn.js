@@ -6,9 +6,7 @@ import axios from "axios";
 import "./SignIn.css";
 import googleImage from "../asset/google.png";
 import githubImage from "../asset/github.png";
-
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:8181";
+import Swal from "sweetalert2";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -23,9 +21,10 @@ const SignIn = () => {
     e.preventDefault();
     setIsLoading(true);
     setLoginError("");
+
     try {
       const res = await axios.post(
-        `${API_BASE_URL}/user-service/api/v1/users/sign-in`,
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/sign-in`,
         { email, password }
       );
 
@@ -46,89 +45,24 @@ const SignIn = () => {
         onLogin(token, userInfo.email, userInfo.role, userInfo.nickname);
         navigate("/");
       } else {
-        setLoginError(res.data.message || "로그인에 실패했습니다.");
+        Swal.fire("실패", "이메일 또는 비밀번호가 올바르지 않습니다.", "error");
       }
     } catch (error) {
-      setLoginError(error.response?.data?.message || "로그인에 실패했습니다.");
+      Swal.fire("실패", "이메일 또는 비밀번호가 올바르지 않습니다.", "error");
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleOAuthLogin = (provider) => {
+    const authEndpoint = `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/oauth2/authorization/${provider}`;
+    const redirectUri = `${window.location.origin}/user-service/login/oauth2/code/${provider}`;
 
-// OAuth 로그인 처리
-const oauthLogin = async (provider) => {
-  console.log(`OAuth 로그인 시도 - 제공자: ${provider}`);
-  console.log('window.electron:', window.electron);
-  console.log('window.electronAPI:', window.electronAPI);
-  
-  if (!window.electron) {  // window.electronAPI 대신 window.electron으로 수정
-    // 웹 환경 처리
-    try {
-      const redirectUrl = `${API_BASE_URL}/user-service/oauth2/authorization/${provider}`;
-      console.log(`리다이렉트 URL: ${redirectUrl}`);
-      
-      // 리다이렉트 전에 현재 URL을 state로 저장
-      sessionStorage.setItem('oauth2_state', window.location.href);
-      
-      window.location.href = redirectUrl;
-    } catch (error) {
-      console.error("OAuth 로그인 요청 실패:", error);
-      setLoginError(`OAuth 로그인 실패: ${error.message}`);
-    }
-  } else {
-    // Electron 환경 처리
-    try {
-      setIsLoading(true);
-      console.log(`Electron OAuth 처리 시작 - 제공자: ${provider}`);
+    window.location.href = `${authEndpoint}?redirect_uri=${encodeURIComponent(
+      redirectUri
+    )}`;
+  };
 
-      const result = await window.electron.ipcRenderer.invoke('oauth-login', provider);  // electronAPI 대신 electron 사용
-      console.log('OAuth 결과:', result);
-
-      if (result?.token) {
-        console.log('토큰 수신 성공');
-        await handleTokenAndUserInfo(result.token);
-        navigate('/dashboard');
-      } else {
-        console.error('토큰이 없는 응답:', result);
-        setLoginError('인증에 실패했습니다. 다시 시도해주세요.');
-      }
-    } catch (error) {
-      console.error("Electron OAuth 처리 실패:", error);
-      setLoginError(`OAuth 처리 중 오류: ${error.message}`);
-    } finally {
-      setIsLoading(false);
-    }
-  }
-};
-
-// JWT 토큰 처리 함수
-const handleTokenAndUserInfo = async (token) => {
-  try {
-    const decoded = jwtDecode(token);
-
-    // 사용자 정보 추출
-    const userInfo = {
-      token,
-      email: decoded.sub,
-      userId: decoded.user_id,
-      role: decoded.role,
-      nickname: decoded.nickname,
-    };
-
-    // 로컬 스토리지에 사용자 정보 저장
-    localStorage.setItem("userInfo", JSON.stringify(userInfo));
-    localStorage.setItem("token", token);
-
-    // 상태 업데이트 및 페이지 이동
-    onLogin(token, userInfo.email, userInfo.role, userInfo.nickname);
-    navigate("/", { replace: true });
-  } catch (error) {
-    console.error("JWT 디코딩 실패:", error);
-    setLoginError("로그인 데이터 처리 중 오류가 발생했습니다.");
-  }
-};
-  
   return (
     <div className="signin-container">
       <div className="signin-box">
@@ -167,7 +101,7 @@ const handleTokenAndUserInfo = async (token) => {
 
         <div className="oauth-buttons">
           <button
-            onClick={() => oauthLogin("google")}
+            onClick={() => handleOAuthLogin("google")}
             className="oauth-button"
             disabled={isLoading}
             style={{
@@ -181,7 +115,7 @@ const handleTokenAndUserInfo = async (token) => {
             <span style={{ visibility: "hidden" }}>Google Login</span>
           </button>
           <button
-            onClick={() => oauthLogin("github")}
+            onClick={() => handleOAuthLogin("github")}
             className="oauth-button"
             disabled={isLoading}
             style={{

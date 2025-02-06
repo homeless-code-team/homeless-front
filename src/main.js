@@ -1,8 +1,5 @@
 const { app, BrowserWindow, ipcMain, globalShortcut } = require("electron");
 const path = require("path");
-const axios = require("axios");
-const { default: axiosInstance } = require("./configs/axios-configure");
-
 let mainWindow = null;
 let authWindow = null;
 
@@ -78,106 +75,6 @@ function createWindow() {
   ipcMain.handle("window:isMaximized", () => {
     return mainWindow.isMaximized();
   });
-  ipcMain.handle("window:logout", async () => {
-    try {
-      const response = await axiosInstance.post(
-        `${API_BASE_URL}/user-service/api/v1/users/sign-out`,
-        {},
-        {
-          headers: {
-            Authorization: `Bearer ${localStorage.getItem("ACCESS_TOKEN")}`,
-          },
-        }
-      );
-      console.log("로그아웃 성공:", response.data);
-    } catch (error) {
-      console.error("로그아웃 실패:", error);
-    } finally {
-      // Access Token 삭제
-      localStorage.removeItem("ACCESS_TOKEN");
-    }
-  });
-}
-
-// OAuth 로그인 처리
-ipcMain.handle("oauth:login", async (event, provider) => {
-  try {
-    const response = await axios.get(
-      `${API_BASE_URL}/user-service/oauth2/authorization/${provider}`,
-      {
-        params: { provider },
-        withCredentials: true,
-        headers: {
-          Accept: "application/json",
-          "Content-Type": "application/json",
-        },
-      }
-    );
-
-    if (response.data) {
-      // OAuth 창 생성
-      authWindow = new BrowserWindow({
-        width: 600,
-        height: 800,
-        webPreferences: {
-          nodeIntegration: false,
-          contextIsolation: true,
-        },
-      });
-
-      // OAuth URL로 이동
-      authWindow.loadURL(response.data);
-
-      // URL 변경 감지
-      authWindow.webContents.on("did-navigate", async (event, url) => {
-        if (url.startsWith("http://homelesscode.shop/oauth")) {
-          const urlObj = new URL(url);
-          const code = urlObj.searchParams.get("code");
-
-          if (code) {
-            try {
-              // 토큰 요청 - GET 메서드로 변경
-              const tokenResponse = await axios.post(
-                `${API_BASE_URL}/user-service/api/v1/users/callback`,
-                { code },
-                {
-                  params: {
-                    code,
-                    provider,
-                    redirect_uri: "http://homelesscode.shop/oauth/callback",
-                  },
-                  withCredentials: true,
-                  headers: {
-                    Accept: "application/json",
-                    "Content-Type": "application/json",
-                  },
-                }
-              );
-
-              // 메인 윈도우로 결과 전송
-              mainWindow.webContents.send("oauth:callback", tokenResponse.data);
-
-              // OAuth 창 닫기
-              authWindow.close();
-              authWindow = null;
-            } catch (error) {
-              console.error("Token request failed:", error);
-              if (error.response) {
-                console.error("Error response:", error.response.data);
-              }
-              mainWindow.webContents.send("oauth:callback", {
-                error: error.response?.data?.message || error.message,
-              });
-            }
-          }
-        }
-      });
-    }
-  } catch (error) {
-    console.error("OAuth request failed:", error);
-    return { error: error.response?.data?.message || error.message };
-  }
-});
 
 app.whenReady().then(createWindow);
 
