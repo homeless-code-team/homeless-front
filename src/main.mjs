@@ -29,7 +29,7 @@ function createWindow() {
 
   // 개발/프로덕션 환경에 따라 다른 URL 로드
   if (isDev) {
-    mainWindow.loadURL("http://localhost:3000");
+    mainWindow.loadURL("https://homelesscode.shop"); 
     // 개발자 도구 열기
     mainWindow.webContents.openDevTools();
   } else {

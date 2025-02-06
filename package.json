@@ -31,6 +31,7 @@
     "start": "react-scripts start",
     "electron": "cross-env NODE_ENV=development electron .",
     "dev": "concurrently \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000 && npm run electron\"",
+    "newbuild": "react-scripts build",
     "build": "npm run copy-preload && electron-forge make",
     "copy-preload": "copyfiles -f src/preload.js .",
     "cleanup": "node ./scripts/cleanup.mjs",
