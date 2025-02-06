@@ -9,7 +9,7 @@ import githubImage from "../asset/github.png";
 import Swal from "sweetalert2";
 import { oauthLogin } from "./oauthLogin.js";
 import PasswordModal from "./PasswordModalFind";
-import styles from "./SignIn.module.css";
+import styles from "./SignIn.css";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
