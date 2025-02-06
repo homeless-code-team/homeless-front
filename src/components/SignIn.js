@@ -9,7 +9,6 @@ import githubImage from "../asset/github.png";
 import Swal from "sweetalert2";
 import { oauthLogin } from "./oauthLogin.js";
 import PasswordModal from "./PasswordModalFind";
-import styles from "./SignIn.css";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -100,25 +99,25 @@ const SignIn = () => {
   const handlePasswordModalClose = () => setShowPasswordModal(false);
 
   return (
-    <div className={styles.container}>
-      <div className={styles.signinBox}>
-        <div className={styles.signinHeader}>
+    <div className="signin-container">
+      <div className="signin-box">
+        <div className="signin-header">
           <h2>Welcome back!</h2>
           <p>Homeless Code에서 다시 만나 반가워요</p>
         </div>
-        <form onSubmit={handleLogin} className={styles.signinForm}>
-          <div className={styles.formGroup}>
+        <form onSubmit={handleLogin} className="signin-form">
+          <div className="form-group">
             <label htmlFor="email">이메일</label>
             <input
               id="email"
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className={styles.signinInput}
+              className="signin-input"
               required
             />
           </div>
-          <div className={styles.formGroup}>
+          <div className="form-group">
             <label htmlFor="password">비밀번호</label>
             <input
               id="password"
@@ -128,41 +127,41 @@ const SignIn = () => {
               className={styles.signinInput}
               required
             />
-            {loginError && <div className={styles.errorMessage}>{loginError}</div>}
+            {loginError && <div className="error-message">{loginError}</div>}
           </div>
           <button
             type="button"
-            className={styles.signupLinks}
+            className="signup-links"
             onClick={handlePasswordModalOpen}
           >
             비밀번호 재발급
           </button>
-          <button type="submit" className={styles.signinButton} disabled={isLoading}>
+          <button type="submit" className="signin-button" disabled={isLoading}>
             {isLoading ? "로그인 중..." : "로그인"}
           </button>
         </form>
-        <div className={styles.oauthButtons}>
+        <div className="oauth-buttons">
           <button
             onClick={() => handleOAuthLogin("google")}
-            className={styles.oauthButton}
+            className="oauth-button"
             disabled={isLoading}
           >
-            <img src={googleImage} alt="Google Login" className={styles.oauthLogo} />
+            <img src={googleImage} alt="Google Login" className="oauth-logo" />
           </button>
           <button
             onClick={() => handleOAuthLogin("github")}
-            className={styles.oauthButton}
+            className="oauth-button"
             disabled={isLoading}
           >
-            <img src={githubImage} alt="Github Login" className={styles.oauthLogo} />
+            <img src={githubImage} alt="Github Login" className="oauth-logo" />
           </button>
         </div>
 
-        <div className={styles.signinFooter}>
+        <div className="signin-footer">
           <span>계정이 필요한가요?</span>
           <button
             type="button"
-            className={styles.signupLink}
+            className="signup-link"
             onClick={() => navigate("/sign-up")}
           >
             가입하기
@@ -170,9 +169,7 @@ const SignIn = () => {
         </div>
       </div>
 
-      {showPasswordModal && (
-        <PasswordModal onClose={handlePasswordModalClose} />
-      )}
+      {showPasswordModal && <PasswordModal onClose={handlePasswordModalClose} />}
     </div>
   );
 };
