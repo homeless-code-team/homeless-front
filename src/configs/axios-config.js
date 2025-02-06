@@ -6,7 +6,6 @@
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
-const API_BASE_URL = "http://localhost:8181";
 // Axios 인스턴스 생성
 const axiosInstance = axios.create({
   headers: {
@@ -79,7 +78,7 @@ axiosInstance.interceptors.response.use(
         console.log(id);
 
         const res = await axios.post(
-          `${API_BASE_URL}/user-service/api/v1/users/refresh-token`,
+          `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/refresh-token`,
           { id }
         );
 
