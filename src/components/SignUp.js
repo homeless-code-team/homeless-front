@@ -85,12 +85,12 @@ const SignUp = () => {
     }
   }, [password, confirmPassword]);
 
-  // 유효성 및 중복성 검사
   const handleCheckDuplicate = async (type, value) => {
     if (type === "email" && !isEmailValid) {
       alert("유효하지 않은 이메일입니다.");
       return;
     }
+
     try {
       const response = await axios.get(
         `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/duplicate`,
@@ -101,25 +101,33 @@ const SignUp = () => {
 
       if (response.status === 200 && response.data.code === 200) {
         if (type === "email") {
-          setEmailFeedback("사용 가능한 이메일입니다.");
+          setEmailFeedback("✅ 사용 가능한 이메일입니다.");
           setIsEmailAvailable(true);
         } else if (type === "nickname") {
-          setNicknameFeedback("사용 가능한 닉네임입니다.");
+          setNicknameFeedback("✅ 사용 가능한 닉네임입니다.");
           setIsNicknameAvailable(true);
         }
-      } else if (response.data.code === 401) {
-        if (type === "email") {
-          setEmailFeedback("이미 사용 중인 이메일입니다.");
-          setIsEmailAvailable(false);
-        } else if (type === "nickname") {
-          setNicknameFeedback("이미 사용 중인 닉네임입니다. 다른 닉네임을 선택하세요.");
-          setIsNicknameAvailable(false);
-        }
       }
-    } catch {
-      const genericError = "중복 확인 중 알 수 없는 오류가 발생했습니다.";
-      if (type === "email") setEmailFeedback(genericError);
-      if (type === "nickname") setNicknameFeedback(genericError);
+    } catch (error) {
+      // 서버 응답 오류 처리
+      if (error.response) {
+        const { status, data } = error.response;
+
+        if (status === 409) {
+          // 이메일 중복 처리
+          if (type === "email") {
+            setEmailFeedback(`❌ ${data.message}`);
+            setIsEmailAvailable(false);
+          } else if (type === "nickname") {
+            setNicknameFeedback(`❌ ${data.message}`);
+            setIsNicknameAvailable(false);
+          }
+        } else {
+          alert(`오류 발생: ${data.message || "서버 오류"}`);
+        }
+      } else {
+        alert("네트워크 오류가 발생했습니다. 다시 시도해주세요.");
+      }
     }
   };
 
@@ -136,7 +144,6 @@ const SignUp = () => {
           setAuthCodeFeedback("인증 코드가 이메일로 전송되었습니다.");
           setCountdown(600);
         }
-
       } catch {
         setAuthCodeFeedback("이메일 전송에 실패했습니다. 다시 시도해주세요.");
       }
@@ -292,16 +299,32 @@ const SignUp = () => {
             <div>{passwordFeedback}</div>
             <div>
               <ul>
-                <li style={{ color: passwordRequirements.length ? "green" : "red" }}>
+                <li
+                  style={{
+                    color: passwordRequirements.length ? "green" : "red",
+                  }}
+                >
                   8~16자 길이
                 </li>
-                <li style={{ color: passwordRequirements.lowercase ? "green" : "red" }}>
+                <li
+                  style={{
+                    color: passwordRequirements.lowercase ? "green" : "red",
+                  }}
+                >
                   소문자 포함
                 </li>
-                <li style={{ color: passwordRequirements.number ? "green" : "red" }}>
+                <li
+                  style={{
+                    color: passwordRequirements.number ? "green" : "red",
+                  }}
+                >
                   숫자 포함
                 </li>
-                <li style={{ color: passwordRequirements.specialChar ? "green" : "red" }}>
+                <li
+                  style={{
+                    color: passwordRequirements.specialChar ? "green" : "red",
+                  }}
+                >
                   특수문자 포함
                 </li>
               </ul>
