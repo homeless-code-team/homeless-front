@@ -8,12 +8,14 @@ import googleImage from "../asset/google.png";
 import githubImage from "../asset/github.png";
 import Swal from "sweetalert2";
 import { oauthLogin } from "./oauthLogin.js";
+import PasswordModal from "./PasswordModalFind";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [loginError, setLoginError] = useState("");
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
   const navigate = useNavigate();
   const { onLogin } = useContext(AuthContext);
 
@@ -59,7 +61,6 @@ const SignIn = () => {
     try {
       const token = await oauthLogin(provider);
       if (token) {
-
         localStorage.setItem("accessToken", token);
         window.location.reload(); // 로그인 후 페이지 새로고침
       }
@@ -67,6 +68,9 @@ const SignIn = () => {
       console.error("OAuth 로그인 실패:", error);
     }
   }
+
+  const handlePasswordModalOpen = () => setShowPasswordModal(true);
+  const handlePasswordModalClose = () => setShowPasswordModal(false);
 
   return (
     <div className="signin-container">
@@ -102,8 +106,14 @@ const SignIn = () => {
           <button type="submit" className="signin-button" disabled={isLoading}>
             {isLoading ? "로그인 중..." : "로그인"}
           </button>
+          <button
+          type="button"
+          className="password-reset-link"
+          onClick={handlePasswordModalOpen}
+        >
+          비밀번호 재발급
+        </button>
         </form>
-
         <div className="oauth-buttons">
           <button
             onClick={() => handleOAuthLogin("google")}
@@ -132,6 +142,10 @@ const SignIn = () => {
           </button>
         </div>
       </div>
+
+      {showPasswordModal && (
+        <PasswordModal onClose={handlePasswordModalClose} />
+      )}
     </div>
   );
 };

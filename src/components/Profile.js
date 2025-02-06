@@ -37,8 +37,7 @@ const Profile = () => {
           "소개글이 성공적으로 변경되었습니다!",
           "success"
         );
-        setUserName(res.data.data.nickname || userName);
-        localStorage.setNickname(res.data.data.nickname);
+        setContent(res.data.data.content || "");
       } else if (res.data.code === 400) {
         Swal.fire("실패", res.data.message, "error");
       } else {
@@ -278,10 +277,10 @@ const Profile = () => {
                 value={content || ""}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={content ? "" : "자신을 소개해보세요"}
-                maxLength={190}
+                maxLength={500}
               />
               <div className="description-length">
-                {(content || "").length}/190
+                {(content || "").length}/500
               </div>
               <button className="profile-button" onClick={handleContentUpdate}>
                 ✎

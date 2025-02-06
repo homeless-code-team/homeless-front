@@ -185,3 +185,21 @@
   width: 150px; /* 깃허브 로고 크기 조정 */
   height: 33px;
 }
+
+.password-reset-link {
+  width: 100%;
+  padding: 12px;
+  background-color: #4752c4;
+  color: white;
+  border: none;
+  border-radius: 3px;
+  font-size: 16px;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 8px;
+  transition: background-color 0.2s;
+}
+
+.password-reset-link:hover {
+  background-color: #5865f2;
+}

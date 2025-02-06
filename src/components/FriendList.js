@@ -132,8 +132,8 @@ const FriendList = ({ onSelectChannel }) => {
       if (res.data.code === 200) {
         alert(`${nickname}님에게 친구 요청을 보냈습니다.`);
         fetchSentRequests();
-      }else if(res.data.code === 400){
-        alert(res.data.message)
+      } else if (res.data.code === 400) {
+        alert(res.data.message);
       } else {
         alert("친구 요청을 보내는 데 실패했습니다.");
       }
@@ -147,7 +147,8 @@ const FriendList = ({ onSelectChannel }) => {
     setError(null);
     try {
       const res = await axiosInstance.post(
-        `${process.env.REACT_APP_API_BASE_URL}/friends-service/api/v1/friends/response`,{
+        `${process.env.REACT_APP_API_BASE_URL}/friends-service/api/v1/friends/response`,
+        {
           receiverNickname,
           addStatus: "ACCEPT",
         }
@@ -345,7 +346,15 @@ const FriendList = ({ onSelectChannel }) => {
           />
           {filteredReceivedRequests.map((request) => (
             <div key={request.receiverNickname} className="friend-item">
+              <div className="friend-avatar">
+                {request.profileImage ? (
+                  <img src={request.profileImage} alt="프로필 이미지" />
+                ) : (
+                  request.receiverNickname.charAt(0).toUpperCase() || "?"
+                )}
+              </div>
               <span>{request.receiverNickname}</span>
+              <span>{request.email}</span>
               <button onClick={() => handleAccept(request.receiverNickname)}>
                 수락
               </button>
