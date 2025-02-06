@@ -11,6 +11,7 @@ import useWebSocket from "../hooks/useWebSocket.js";
 import UserProfilePopup from "./UserProfilePopup.js";
 import Swal from "sweetalert2";
 import axiosInstance from "../configs/axios-config.js";
+import axios from "axios";
 
 const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
   const { userName, userEmail } = useContext(AuthContext);
@@ -693,7 +694,7 @@ const ChatRoom = ({ serverId, channelName, channelId, isDirectMessage }) => {
     formData.append("file", file);
 
     try {
-      const response = await axiosInstance.post(
+      const response = await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/chat-service/api/v1/file/chats/upload`,
         formData,
         {
