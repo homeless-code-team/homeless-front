@@ -1,16 +1,12 @@
 import { app, BrowserWindow, ipcMain, globalShortcut } from "electron";
 import path from "path";
-import { fileURLToPath } from "url";
-import axios from "axios";
+import { fileURLToPath } from 'url';
 
+// ES 모듈에서 __dirname 대체
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 let mainWindow = null;
-let authWindow = null;
-
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:8181";
 
 // 개발 환경인지 확인
 const isDev = process.env.NODE_ENV === "development";
@@ -23,39 +19,32 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js"),
+      preload: isDev 
+        ? path.join(__dirname, "preload.js")
+        : path.join(process.resourcesPath, "preload.js"),
       webSecurity: true,
       additionalArguments: [`--js-flags=--max-old-space-size=4096`],
     },
   });
 
-  mainWindow.webContents.session.webRequest.onHeadersReceived(
-    (details, callback) => {
-      callback({
-        responseHeaders: {
-          ...details.responseHeaders,
-          "Content-Security-Policy": [
-            "default-src 'self' http://localhost:* ws://localhost:*; " +
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-              "style-src 'self' 'unsafe-inline'; " +
-              "img-src 'self' data: https:; " +
-              "connect-src 'self' http://localhost:* ws://localhost:*;",
-          ],
-        },
-      });
-    }
-  );
-
+  // 개발/프로덕션 환경에 따라 다른 URL 로드
   if (isDev) {
     mainWindow.loadURL("http://localhost:3000");
+    // 개발자 도구 열기
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, "../build/index.html"));
+    mainWindow.loadURL("https://homelesscode.shop"); // https 사용
   }
 
-  // F12 단축키 등록
-  globalShortcut.register("F12", () => {
-    mainWindow.webContents.toggleDevTools();
+  // 윈도우가 닫히기 전에 이벤트 발생
+  mainWindow.on("close", (e) => {
+    if (mainWindow) {
+      e.preventDefault();
+      mainWindow.webContents.send("window:before-close");
+      setTimeout(() => {
+        mainWindow.destroy();
+      }, 100);
+    }
   });
 
   // 윈도우가 닫힐 때 단축키 해제
@@ -91,84 +80,82 @@ function createWindow() {
     return mainWindow.isMaximized();
   });
 
-  // 윈도우 생성 후 네비게이션 제어
-  mainWindow.webContents.on("will-navigate", (event, url) => {
-    // 개발 환경에서는 localhost:3000 허용
-    if (isDev && url.startsWith("http://localhost:3000")) {
-      return;
-    }
-
-    // 프로덕션 환경에서는 로컬 파일만 허용
-    if (!url.startsWith("file://")) {
-      event.preventDefault();
+  // IPC 핸들러
+  ipcMain.on("window:close", (event) => {
+    const win = BrowserWindow.fromWebContents(event.sender);
+    if (win) {
+      win.close(); // 현재 창을 닫습니다.
     }
   });
-}
 
-// OAuth 로그인 처리
-ipcMain.handle("oauth:login", async (event, provider) => {
-  try {
-    const response = await axios.get(
-      `${API_BASE_URL}/user-service/api/v1/users/o-auth`,
-      { params: { provider } }
-    );
-
-    if (response.data) {
-      // OAuth 창 생성
-      authWindow = new BrowserWindow({
+  // OAuth 로그인 요청 처리
+  ipcMain.handle("oauth-login", async (event, provider) => {
+    return new Promise((resolve, reject) => {
+      let authWindow = new BrowserWindow({
         width: 600,
-        height: 800,
+        height: 700,
+        show: true,
         webPreferences: {
           nodeIntegration: false,
           contextIsolation: true,
         },
       });
 
-      // OAuth URL로 이동
-      authWindow.loadURL(response.data);
+      const authUrl = `https://homelesscode.shop/user-service/oauth2/authorize/${provider}`;
+      authWindow.loadURL(authUrl);
 
-      // URL 변경 감지
-      authWindow.webContents.on("did-navigate", async (event, url) => {
-        if (url.startsWith("http://localhost:3000/oauth")) {
-          const urlObj = new URL(url);
-          const code = urlObj.searchParams.get("code");
-
-          if (code) {
-            try {
-              // 토큰 요청
-              const tokenResponse = await axios.post(
-                `${API_BASE_URL}/user-service/api/v1/users/callback`,
-                { code, provider },
-                {
-                  headers: {
-                    "Content-Type": "application/json",
-                  },
-                }
-              );
-
-              // 메인 윈도우로 결과 전송
-              mainWindow.webContents.send("oauth:callback", tokenResponse.data);
-
-              // OAuth 창 닫기
-              authWindow.close();
-              authWindow = null;
-            } catch (error) {
-              console.error("Token request failed:", error);
-              mainWindow.webContents.send("oauth:callback", {
-                error: error.message,
-              });
-            }
+      // OAuth 리다이렉트 후 accessToken 전달받기
+      authWindow.webContents.on("did-navigate", (event, url) => {
+        try {
+          const params = new URL(url).searchParams;
+          const accessToken = params.get("accessToken");
+          if (accessToken) {
+            resolve(accessToken);
+            authWindow.close();
           }
-        }
+        } catch (error) {}
       });
+
+      authWindow.on("closed", () => {
+        reject(new Error("OAuth 창이 닫혔습니다."));
+      });
+    });
+  });
+
+  // 윈도우 크기 변경 이벤트 처리 수정
+  mainWindow.on('resize', () => {
+    if (mainWindow) {
+      const [width, height] = mainWindow.getSize();
+      mainWindow.webContents.send('window:resize', { width, height });
+      // 디버깅용 로그
+      console.log('Window resized:', { width, height });
     }
-  } catch (error) {
-    console.error("OAuth request failed:", error);
-    return { error: error.message };
-  }
+  });
+
+  // 윈도우 크기 조회 핸들러 수정
+  ipcMain.handle('window:getSize', () => {
+    if (mainWindow) {
+      const [width, height] = mainWindow.getSize();
+      console.log('Current window size:', { width, height });
+      return [width, height];
+    }
+    return [1200, 800]; // 기본값
+  });
+}
+
+// createWindow 함수를 앱이 준비되었을 때 실행
+app.whenReady().then(createWindow).catch(error => {
+  console.error('앱 시작 오류:', error);
 });
 
-app.whenReady().then(createWindow);
+// 에러 핸들링 추가
+process.on('uncaughtException', (error) => {
+  console.error('처리되지 않은 예외:', error);
+});
+
+process.on('unhandledRejection', (error) => {
+  console.error('처리되지 않은 프로미스 거부:', error);
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {

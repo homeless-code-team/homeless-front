@@ -147,3 +147,41 @@
 .temp-login-button:hover {
   background-color: #2f3136;
 }
+
+.oauth-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 25px;
+  margin-top: 16px;
+}
+
+.oauth-button {
+  width: 140px;
+  height: 48px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  padding: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: transparent;
+}
+
+.oauth-button:hover {
+  transform: scale(1.1);
+  background-color: transparent;
+}
+
+
+.google-logo {
+  width: 130px;
+  height: 30px;
+ 
+}
+
+.github-logo {
+  width: 150px; /* 깃허브 로고 크기 조정 */
+  height: 33px;
+}

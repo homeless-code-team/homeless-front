@@ -15,7 +15,7 @@ const SignUp = () => {
   const [isNicknameValid, setIsNicknameValid] = useState(false);
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [isAuthCodeValid, setIsAuthCodeValid] = useState(false);
-  const [authCodeSent, setAuthCodeSent] = useState(false);
+  const [authCodeSent, setAuthCodeSent] = useState(true);
   const [isEmailAvailable, setIsEmailAvailable] = useState(false);
 
   const [isNicknameAvailable, setIsNicknameAvailable] = useState(false);
@@ -26,6 +26,17 @@ const SignUp = () => {
   const [formProgress, setFormProgress] = useState(0);
   const navigate = useNavigate();
 
+  const [uiScale, setUiScale] = useState({
+    container: { maxWidth: 480 },
+    title: { fontSize: 24 },
+    timer: { width: 12, fontSize: 10 },
+    form: { fontSize: 14, padding: 32 },
+    input: { height: 40, fontSize: 14, padding: 10 },
+    button: { height: 36, fontSize: 14, padding: '8px 16px' },
+    feedback: { fontSize: 12, marginTop: 4 },
+    progressBar: { height: 4 }
+  });
+
   useEffect(() => {
     let timer;
     if (countdown > 0) {
@@ -34,18 +45,106 @@ const SignUp = () => {
     return () => clearTimeout(timer);
   }, [countdown]);
 
+  // 윈도우 크기에 따른 UI 크기 조정
+  useEffect(() => {
+    const updateUIScale = async () => {
+      try {
+        const [width] = await window.WindowControls.getWindowSize();
+        const scale = Math.min(Math.max(width / 1200, 0.8), 1.2);
+
+        setUiScale({
+          container: {
+            maxWidth: Math.round(480 * scale)
+          },
+          title: {
+            fontSize: Math.round(24 * scale)
+          },
+          timer: {
+            width: Math.round(12 * scale),
+            fontSize: Math.round(10 * scale)
+          },
+          form: {
+            fontSize: Math.round(14 * scale),
+            padding: Math.round(32 * scale)
+          },
+          input: {
+            height: Math.round(40 * scale),
+            fontSize: Math.round(14 * scale),
+            padding: Math.round(10 * scale)
+          },
+          button: {
+            height: Math.round(36 * scale),
+            fontSize: Math.round(14 * scale),
+            padding: `${Math.round(8 * scale)}px ${Math.round(16 * scale)}px`
+          },
+          feedback: {
+            fontSize: Math.round(12 * scale),
+            marginTop: Math.round(4 * scale)
+          },
+          progressBar: {
+            height: Math.round(4 * scale)
+          }
+        });
+      } catch (error) {
+        console.error('윈도우 크기 조회 실패:', error);
+      }
+    };
+
+    updateUIScale();
+    window.WindowControls.onWindowResize((event, size) => {
+      const scale = Math.min(Math.max(size.width / 1200, 0.8), 1.2);
+      updateUIScale();
+    });
+  }, []);
+
+  // 스타일 객체들
+  const containerStyles = {
+    maxWidth: `${uiScale.container.maxWidth}px`
+  };
+
+  const titleStyles = {
+    fontSize: `${uiScale.title.fontSize}px`
+  };
+
+  const formStyles = {
+    fontSize: `${uiScale.form.fontSize}px`,
+    padding: `${uiScale.form.padding}px`
+  };
+
+  const inputStyles = {
+    height: `${uiScale.input.height}px`,
+    fontSize: `${uiScale.input.fontSize}px`,
+    padding: `${uiScale.input.padding}px`
+  };
+
+  const buttonStyles = {
+    height: `${uiScale.button.height}px`,
+    fontSize: `${uiScale.button.fontSize}px`,
+    padding: uiScale.button.padding
+  };
+
+  const feedbackStyles = {
+    fontSize: `${uiScale.feedback.fontSize}px`,
+    marginTop: `${uiScale.feedback.marginTop}px`
+  };
+
+  const progressBarStyles = {
+    height: `${uiScale.progressBar.height}px`
+  };
+
   const handleEmailChange = (e) => {
     const emailValue = e.target.value;
     setEmail(emailValue);
+    setIsEmailAvailable(false);
+    setAuthCodeSent(false);
 
     const emailPattern = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
     if (emailPattern.test(emailValue)) {
-      setEmailFeedback("이메일이 유효합니다.");
+      setEmailFeedback("이메일이 유효합니다. 중복 확인을 해주세요.");
       setIsEmailValid(true);
     } else {
       setEmailFeedback("올바른 이메일 형식이 아닙니다.");
       setIsEmailValid(false);
-      setIsEmailAvailable(false);
     }
   };
 
@@ -53,14 +152,14 @@ const SignUp = () => {
   const handleNicknameChange = (e) => {
     const nicknameValue = e.target.value;
     setNickname(nicknameValue);
+    setIsNicknameAvailable(false);
 
     if (nicknameValue.length >= 2 && nicknameValue.length <= 8) {
-      setNicknameFeedback("");
+      setNicknameFeedback("닉네임 중복 확인을 해주세요.");
       setIsNicknameValid(true);
     } else {
       setNicknameFeedback("닉네임은 2~8자 사이여야 합니다.");
       setIsNicknameValid(false);
-      setIsNicknameAvailable(false);
     }
   };
 
@@ -103,6 +202,7 @@ const SignUp = () => {
         if (type === "email") {
           setEmailFeedback("사용 가능한 이메일입니다.");
           setIsEmailAvailable(true);
+          setAuthCodeSent(false);
         } else if (type === "nickname") {
           setNicknameFeedback("사용 가능한 닉네임입니다.");
           setIsNicknameAvailable(true);
@@ -153,6 +253,7 @@ const SignUp = () => {
       if (response.status === 200) {
         setIsAuthCodeValid(true);
         setAuthCodeFeedback("인증 성공!");
+        setCountdown(0);
       }
     } catch {
       setAuthCodeFeedback("인증 코드 확인에 실패했습니다.");
@@ -262,14 +363,14 @@ const SignUp = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.progressBar}>
+      <div className={styles.progressBar} style={progressBarStyles}>
         <div
           className={styles.progressFill}
-          style={{ width: `${formProgress}%` }}
+          style={{ width: `${formProgress}%`, height: '100%' }}
         />
       </div>
-      <div className={styles.signupBox}>
-        <h2 className={styles.title}>회원가입</h2>
+      <div className={styles.signupBox} style={{ ...formStyles, ...containerStyles }}>
+        <h2 className={styles.title} style={titleStyles}>회원가입</h2>
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
             <label htmlFor="email">
@@ -285,77 +386,108 @@ const SignUp = () => {
               value={email}
               onChange={handleEmailChange}
               placeholder="이메일을 입력하세요"
+              style={inputStyles}
             />
             <button
               type="button"
               onClick={() => handleCheckDuplicate("email", email)}
+              disabled={!isEmailValid || !email || isEmailAvailable}
+              style={buttonStyles}
             >
-              중복 확인
+              {isEmailAvailable ? "확인 완료" : "중복 확인"}
             </button>
-            <div>{emailFeedback}</div>
+            <div style={feedbackStyles}>{emailFeedback}</div>
             {isEmailAvailable && (
               <button
                 type="button"
                 onClick={handleSendAuthCode}
                 className={styles.mainButton}
+                disabled={authCodeSent || !isEmailValid}
+                style={buttonStyles}
               >
-                인증코드 발송
+                {authCodeSent ? "인증코드 발송됨" : "인증코드 발송"}
               </button>
             )}
           </div>
-          {authCodeSent && countdown > 0 && (
+          {authCodeSent && (
             <div className={styles.formGroup}>
               <label htmlFor="authCode">
                 인증 코드
                 <StatusIcon isValid={isAuthCodeValid} />
               </label>
-              <input
-                type="text"
-                id="authCode"
-                value={authCode}
-                onChange={(e) => setAuthCode(e.target.value)}
-                placeholder="인증 코드를 입력하세요"
-              />
-              <button
-                type="button"
-                onClick={handleVerifyAuthCode}
-                disabled={!authCode}
-              >
-                인증 확인
-              </button>
-              <div className={styles.countdown}>
-                <svg viewBox="0 0 36 36">
-                  <path
-                    d="M18 2.0845
-                      a 15.9155 15.9155 0 0 1 0 31.831
-                      a 15.9155 15.9155 0 0 1 0 -31.831"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="3"
-                    strokeDasharray={`${(countdown / 600) * 100}, 100`}
+              {!isAuthCodeValid ? (
+                <>
+                  <input
+                    type="text"
+                    id="authCode"
+                    value={authCode}
+                    onChange={(e) => setAuthCode(e.target.value)}
+                    placeholder="인증 코드를 입력하세요"
+                    style={inputStyles}
                   />
-                </svg>
-                <span>
-                  {Math.floor(countdown / 60)}:
-                  {(countdown % 60).toString().padStart(2, "0")}
-                </span>
-              </div>
+                  <button
+                    type="button"
+                    onClick={handleVerifyAuthCode}
+                    disabled={!authCode}
+                    style={buttonStyles}
+                  >
+                    인증 확인
+                  </button>
+                  {countdown > 0 && (
+                    <div className={styles.countdown}>
+                      <svg viewBox="0 0 36 36">
+                        <path
+                          d="M18 2.0845
+                            a 15.9155 15.9155 0 0 1 0 31.831
+                            a 15.9155 15.9155 0 0 1 0 -31.831"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="3"
+                          strokeDasharray={`${(countdown / 600) * 100}, 100`}
+                        />
+                      </svg>
+                      <span>
+                        {Math.floor(countdown / 60)}:
+                        {(countdown % 60).toString().padStart(2, "0")}
+                      </span>
+                    </div>
+                  )}
+                </>
+              ) : (
+                <button
+                  type="button"
+                  disabled
+                  className={styles.successButton}
+                >
+                  인증 완료 ✓
+                </button>
+              )}
               <div>{authCodeFeedback}</div>
             </div>
           )}
           <div className={styles.formGroup}>
-            <label htmlFor="nickname">닉네임</label>
+            <label htmlFor="nickname">
+              닉네임
+              <StatusIcon
+                isValid={isNicknameValid}
+                isAvailable={isNicknameAvailable}
+              />
+            </label>
             <input
               type="text"
               id="nickname"
               value={nickname}
               onChange={handleNicknameChange}
+              placeholder="닉네임을 입력하세요"
+              style={inputStyles}
             />
             <button
               type="button"
               onClick={() => handleCheckDuplicate("nickname", nickname)}
+              disabled={!isNicknameValid || !nickname || isNicknameAvailable}
+              style={buttonStyles}
             >
-              중복 확인
+              {isNicknameAvailable ? "확인 완료" : "중복 확인"}
             </button>
             <div>{nicknameFeedback}</div>
           </div>
@@ -369,6 +501,7 @@ const SignUp = () => {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
+              style={inputStyles}
             />
             <PasswordStrengthBar
               requirements={checkPasswordRequirements(password)}
@@ -393,6 +526,7 @@ const SignUp = () => {
               id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
+              style={inputStyles}
             />
           </div>
           <button
@@ -403,13 +537,14 @@ const SignUp = () => {
               !isPasswordValid ||
               !isAuthCodeValid
             }
+            style={buttonStyles}
           >
             회원가입
           </button>
         </form>
         <div className={styles.loginLink}>
           <span>이미 계정이 있으신가요?</span>
-          <button type="button" onClick={handleGoToLogin}>
+          <button type="button" onClick={handleGoToLogin} style={buttonStyles}>
             로그인하기
           </button>
         </div>

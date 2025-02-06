@@ -1,24 +1,4 @@
-**단위 테스트 결과서**
-
-**1. 기본 정보**
-- 프로젝트명: Homeless Code
-- 모듈명/기능명: ServerService
-- 테스트 작성자: 
-- 테스트 날짜: 
-
-**2. 테스트 환경**
-- OS 및 버전: 
-- 개발 언어 및 버전: Java 11
-- 테스트 프레임워크 및 버전: JUnit 5, Mockito
-- 기타 테스트 도구: AssertJ, RedisTemplate
-
-**3. 테스트 항목 및 결과**
-| 테스트 케이스 ID | 테스트 항목 | 입력 값 | 예상 결과 | 실제 결과 | 테스트 상태 (성공/실패) |
-|-----------------|------------|---------|---------|---------|------------------|
-| TC-001 | 서버 생성 | ServerCreateDto("Test Server", "Test Tag", null) | Server 객체 반환 | Server 객체 반환 | 성공 |
-| TC-002 | 서버 삭제 | 서버 ID ("test-server-id") | 서버 삭제 확인 | 서버 삭제 확인 | 성공 |
-| TC-003 | 서버 요청 추가 | ServerDto("test-server-id", "test@example.com") | 성공 응답 (HttpStatus.OK) | 성공 응답 (HttpStatus.import React, { useState, useEffect, useRef, useCallback } from "react";
-import axios from "axios";
+import { useState, useRef, useCallback, useEffect } from "react";
 import "./Board.css";
 import Swal from "sweetalert2";
 import { IoSearch } from "react-icons/io5";

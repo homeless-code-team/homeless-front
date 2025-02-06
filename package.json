@@ -10,7 +10,7 @@
     "type": "git",
     "url": "https://github.com/homeless-code-team/homeless-front.git"
   },
-  "main": "src/main.js",
+  "main": "src/main.mjs",
   "dependencies": {
     "@emotion/react": "^11.13.5",
     "@emotion/styled": "^11.13.5",
@@ -31,7 +31,8 @@
     "start": "react-scripts start",
     "electron": "cross-env NODE_ENV=development electron .",
     "dev": "concurrently \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000 && npm run electron\"",
-    "build": "cross-env GENERATE_SOURCEMAP=false NODE_ENV=production react-scripts build && npm run cleanup",
+    "build": "npm run copy-preload && electron-forge make",
+    "copy-preload": "copyfiles -f src/preload.js .",
     "cleanup": "node ./scripts/cleanup.mjs",
     "clean-out": "node ./scripts/clean-out.mjs",
     "test": "react-scripts test",
@@ -52,6 +53,7 @@
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
     "concurrently": "^9.1.0",
+    "copyfiles": "^2.4.1",
     "cross-env": "^7.0.3",
     "electron": "^33.3.1",
     "eslint": "^8.57.1",

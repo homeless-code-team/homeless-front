@@ -16,6 +16,8 @@ contextBridge.exposeInMainWorld("WindowControls", {
   onBeforeClose: (callback) => {
     closeCallback = callback;
   },
+  getWindowSize: () => ipcRenderer.invoke("window:getSize"),
+  onWindowResize: (callback) => ipcRenderer.on("window:resize", callback),
 });
 contextBridge.exposeInMainWorld("electronAPI", {
   logout: () => ipcRenderer.invoke("window:logout"),

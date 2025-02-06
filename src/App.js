@@ -11,7 +11,7 @@ import AuthContext from "./context/AuthContext.js";
 import DirectMessage from "./components/DirectMessage.js";
 import Profile from "./components/Profile.js";
 import axios from "axios";
-import Callback from "./components/Callback.js";
+import OAuthCallback from "./components/OAuthCallback.js";
 import Board from "./components/Board.js";
 
 // ProtectedRoute Component
@@ -199,10 +199,7 @@ function App() {
     <div className="app-container">
       <MenuBar />
       <Routes>
-        <Route
-          path="/user-service/login/oauth2/code/:provider"
-          element={<Callback />}
-        />
+      <Route path="/oauth/callback" element={<OAuthCallback />} />
 
         {!isAuthenticated ? (
           <>

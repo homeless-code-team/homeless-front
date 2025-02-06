@@ -7,6 +7,7 @@ import "./SignIn.css";
 import googleImage from "../asset/google.png";
 import githubImage from "../asset/github.png";
 import Swal from "sweetalert2";
+import { oauthLogin } from "./oauthLogin.js";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -54,14 +55,18 @@ const SignIn = () => {
     }
   };
 
-  const handleOAuthLogin = (provider) => {
-    const authEndpoint = `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/oauth2/authorization/${provider}`;
-    const redirectUri = `${window.location.origin}/user-service/login/oauth2/code/${provider}`;
+  const handleOAuthLogin = async (provider) => {
+    try {
+      const token = await oauthLogin(provider);
+      if (token) {
 
-    window.location.href = `${authEndpoint}?redirect_uri=${encodeURIComponent(
-      redirectUri
-    )}`;
-  };
+        localStorage.setItem("accessToken", token);
+        window.location.reload(); // 로그인 후 페이지 새로고침
+      }
+    } catch (error) {
+      console.error("OAuth 로그인 실패:", error);
+    }
+  }
 
   return (
     <div className="signin-container">
@@ -104,29 +109,15 @@ const SignIn = () => {
             onClick={() => handleOAuthLogin("google")}
             className="oauth-button"
             disabled={isLoading}
-            style={{
-              backgroundImage: `url(${googleImage})`,
-              backgroundSize: "contain",
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "center",
-              opacity: isLoading ? 0.7 : 1,
-            }}
           >
-            <span style={{ visibility: "hidden" }}>Google Login</span>
+            <img src={googleImage} alt="Google Login" className="oauth-logo google-logo" />
           </button>
           <button
             onClick={() => handleOAuthLogin("github")}
             className="oauth-button"
             disabled={isLoading}
-            style={{
-              backgroundImage: `url(${githubImage})`,
-              backgroundSize: "contain",
-              backgroundRepeat: "no-repeat",
-              backgroundPosition: "center",
-              opacity: isLoading ? 0.7 : 1,
-            }}
           >
-            <span style={{ visibility: "hidden" }}>Github Login</span>
+            <img src={githubImage} alt="Github Login" className="oauth-logo github-logo" />
           </button>
         </div>
 
