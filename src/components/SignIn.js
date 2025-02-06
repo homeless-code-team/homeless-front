@@ -9,6 +9,7 @@ import githubImage from "../asset/github.png";
 import Swal from "sweetalert2";
 import { oauthLogin } from "./oauthLogin.js";
 import PasswordModal from "./PasswordModalFind";
+import styles from "./SignIn.css";
 
 const SignIn = () => {
   const [email, setEmail] = useState("");
@@ -124,7 +125,7 @@ const SignIn = () => {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className={styles.signinInput}
+              className="signin-input"
               required
             />
             {loginError && <div className="error-message">{loginError}</div>}
@@ -146,14 +147,16 @@ const SignIn = () => {
             className="oauth-button"
             disabled={isLoading}
           >
-            <img src={googleImage} alt="Google Login" className="oauth-logo" />
+            <img src={googleImage} alt="Google Login" className="google-logo" />
+            <span>SIGN IN WITH GOOGLE</span>
           </button>
           <button
             onClick={() => handleOAuthLogin("github")}
             className="oauth-button"
             disabled={isLoading}
           >
-            <img src={githubImage} alt="Github Login" className="oauth-logo" />
+            <img src={githubImage} alt="Github Login" className="github-logo" />
+            <span>SIGN IN WITH GITHUB</span>
           </button>
         </div>
 
