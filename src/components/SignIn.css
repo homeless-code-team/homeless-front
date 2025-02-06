@@ -110,6 +110,21 @@
   padding: 0;
 }
 
+.signup-links {
+  background: none;
+  border: none;
+  color: #00a8fc;
+  cursor: pointer;
+  font-size: 14px;
+  margin-left: auto;
+  padding: 0;
+  text-decoration: none;
+}
+
+.signup-links:hover {
+  text-decoration: underline;
+}
+
 .signup-link:hover {
   text-decoration: underline;
 }
@@ -174,11 +189,9 @@
   background-color: transparent;
 }
 
-
 .google-logo {
   width: 130px;
   height: 30px;
- 
 }
 
 .github-logo {

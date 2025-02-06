@@ -103,11 +103,9 @@ const SignIn = () => {
             />
             {loginError && <div className="error-message">{loginError}</div>}
           </div>
-
-          <span>비밀번호를 재발급</span>
           <button
             type="button"
-            className="signup-link"
+            className="signup-links"
             onClick={handlePasswordModalOpen}
           >
            비밀번호 재발급
