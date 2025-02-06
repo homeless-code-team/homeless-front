@@ -34,6 +34,7 @@ function createWindow() {
     mainWindow.webContents.openDevTools();
   } else {
     mainWindow.loadURL("https://homelesscode.shop"); 
+    
   }
 
   // 윈도우가 닫히기 전에 이벤트 발생
