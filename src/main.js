@@ -6,8 +6,7 @@ const { default: axiosInstance } = require("./configs/axios-configure");
 let mainWindow = null;
 let authWindow = null;
 
-const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:8181";
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL;
 
 // 개발 환경인지 확인
 const isDev = process.env.NODE_ENV === "development";
@@ -28,11 +27,12 @@ function createWindow() {
 
   // 개발/프로덕션 환경에 따라 다른 URL 로드
   if (process.env.NODE_ENV === "development") {
-    mainWindow.loadURL("http://localhost:3000");
+    mainWindow.loadURL("http://homelesscode.shop");
     // 개발자 도구 열기
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadFile(path.join(__dirname, "../build/index.html"));
+    mainWindow.loadURL("http://homelesscode.shop");
+    //mainWindow.loadFile(path.join(__dirname, "../build/index.html"));
   }
 
   // 윈도우가 닫히기 전에 이벤트 발생
@@ -130,7 +130,7 @@ ipcMain.handle("oauth:login", async (event, provider) => {
 
       // URL 변경 감지
       authWindow.webContents.on("did-navigate", async (event, url) => {
-        if (url.startsWith("http://localhost:3000/oauth")) {
+        if (url.startsWith("http://homelesscode.shop/oauth")) {
           const urlObj = new URL(url);
           const code = urlObj.searchParams.get("code");
 
@@ -144,7 +144,7 @@ ipcMain.handle("oauth:login", async (event, provider) => {
                   params: {
                     code,
                     provider,
-                    redirect_uri: "http://localhost:3000/oauth/callback",
+                    redirect_uri: "http://homelesscode.shop/oauth/callback",
                   },
                   withCredentials: true,
                   headers: {

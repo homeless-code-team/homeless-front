@@ -5,7 +5,7 @@
   "author": "Homeless Code",
   "private": true,
   "homepage": "./",
-  "proxy": "http://localhost:8181",
+  "proxy": "https://api.homelesscode.shop",
   "repository": {
     "type": "git",
     "url": "https://github.com/homeless-code-team/homeless-front.git"
@@ -32,8 +32,8 @@
     "electron": "cross-env NODE_ENV=development electron .",
     "dev": "concurrently \"cross-env BROWSER=none npm start\" \"wait-on http://localhost:3000 && npm run electron\"",
     "build": "cross-env GENERATE_SOURCEMAP=false NODE_ENV=production react-scripts build && npm run cleanup",
-    "cleanup": "node ./scripts/cleanup.js",
-    "clean-out": "node ./scripts/clean-out.js",
+    "cleanup": "node ./scripts/cleanup.mjs",
+    "clean-out": "node ./scripts/clean-out.mjs",
     "test": "react-scripts test",
     "eject": "react-scripts eject",
     "package": "npm run clean-out && electron-forge package",

@@ -18,7 +18,6 @@ const Profile = () => {
   const [showPasswordModal, setShowPasswordModal] = useState(false); // 비밀번호 변경 모달 상태 추가
   const navigate = useNavigate();
   const token = localStorage.getItem("token"); // 저장된 토큰 키 확인 필요
-  const API_BASE_URL = "http://localhost:8181/user-service";
 
   const handleContentUpdate = async () => {
     try {
@@ -41,9 +40,9 @@ const Profile = () => {
         // 닉네임 변경 성공 시 상태 업데이트
         setUserName(res.data.data.nickname || userName);
         localStorage.setNickname(res.data.data.nickname);
-      } else if(res.data.code === 400){
-        alert(res.data.message)}
-        else {
+      } else if (res.data.code === 400) {
+        alert(res.data.message);
+      } else {
         console.log("소개글수정 실패:", res.status);
         alert("닉네임 소게글이 실패하였습니다!");
       }
@@ -73,8 +72,9 @@ const Profile = () => {
 
         // 닉네임 변경 성공 시 상태 업데이트
         setUserName(res.data.data.nickname || userName);
-      } else if(res.data.code === 400){
-        alert(res.data.message)} else {
+      } else if (res.data.code === 400) {
+        alert(res.data.message);
+      } else {
         console.log("닉네임 수정 실패:", res.status);
         alert("닉네임 변경이 실패하였습니다!");
       }
@@ -113,8 +113,9 @@ const Profile = () => {
           setProfileImage(`${profileImageUrl}?t=${timestamp}`); // 캐시 무효화 URL 적용
           alert("프로필 이미지가 성공적으로 변경되었습니다!");
           fetchData("내 계정");
-        } else if(res.data.code === 400){
-          alert(res.data.message)} else {
+        } else if (res.data.code === 400) {
+          alert(res.data.message);
+        } else {
           alert("이미지 업로드에 실패했습니다.");
         }
       } catch (error) {
