@@ -20,7 +20,7 @@ const PasswordModal = ({ onClose }) => {
   const handleEmailVerification = async () => {
     try {
       const res = await axiosInstance.post(
-        `${API_BASE_URL}/api/v1/users/confirm`,
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/confirm`,
         {
           email: email,
         }
