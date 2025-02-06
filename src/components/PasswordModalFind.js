@@ -11,7 +11,7 @@ const PasswordModal = ({ onClose }) => {
   const [authCode, setAuthCode] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [countdown, setCountdown] = useState(600); // 10분 제한
+  const [countdown, setCountdown] = useState(0);
 
   useEffect(() => {
     let timer;
@@ -25,13 +25,11 @@ const PasswordModal = ({ onClose }) => {
     try {
       const res = await axios.post(
         `${process.env.REACT_APP_API_BASE_URL}/api/v1/users/confirm`,
-        {
-          email: email,
-        }
+        { email }
       );
       if (res.data.code === 200) {
         Swal.fire("인증 코드가 전송되었습니다!", "", "success");
-        setCountdown(600); // 타이머 초기화
+        setCountdown(600);
       } else {
         Swal.fire("이메일 인증 실패!", "", "error");
       }
@@ -103,6 +101,12 @@ const PasswordModal = ({ onClose }) => {
               />
               <button onClick={handleEmailVerification}>이메일 인증하기</button>
             </div>
+            {countdown > 0 && (
+              <div className="countdown">
+                남은 시간: {Math.floor(countdown / 60)}:
+                {(countdown % 60).toString().padStart(2, "0")}
+              </div>
+            )}
             <div className="form-group">
               <label>인증번호</label>
               <input
@@ -119,10 +123,6 @@ const PasswordModal = ({ onClose }) => {
               >
                 인증코드 확인
               </button>
-              <div className="countdown">
-                남은 시간: {Math.floor(countdown / 60)}:
-                {(countdown % 60).toString().padStart(2, "0")}
-              </div>
             </div>
           </>
         ) : (
