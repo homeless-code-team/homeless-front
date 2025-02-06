@@ -17,7 +17,6 @@ const SignUp = () => {
   const [isAuthCodeValid, setIsAuthCodeValid] = useState(false);
   const [authCodeSent, setAuthCodeSent] = useState(true);
   const [isEmailAvailable, setIsEmailAvailable] = useState(false);
-
   const [isNicknameAvailable, setIsNicknameAvailable] = useState(false);
   const [emailFeedback, setEmailFeedback] = useState("");
   const [authCodeFeedback, setAuthCodeFeedback] = useState("");
@@ -26,17 +25,6 @@ const SignUp = () => {
   const [formProgress, setFormProgress] = useState(0);
   const navigate = useNavigate();
 
-  const [uiScale, setUiScale] = useState({
-    container: { maxWidth: 480 },
-    title: { fontSize: 24 },
-    timer: { width: 12, fontSize: 10 },
-    form: { fontSize: 14, padding: 32 },
-    input: { height: 40, fontSize: 14, padding: 10 },
-    button: { height: 36, fontSize: 14, padding: '8px 16px' },
-    feedback: { fontSize: 12, marginTop: 4 },
-    progressBar: { height: 4 }
-  });
-
   useEffect(() => {
     let timer;
     if (countdown > 0) {
@@ -44,93 +32,6 @@ const SignUp = () => {
     }
     return () => clearTimeout(timer);
   }, [countdown]);
-
-  // 윈도우 크기에 따른 UI 크기 조정
-  useEffect(() => {
-    const updateUIScale = async () => {
-      try {
-        const [width] = await window.WindowControls.getWindowSize();
-        const scale = Math.min(Math.max(width / 1200, 0.8), 1.2);
-
-        setUiScale({
-          container: {
-            maxWidth: Math.round(480 * scale)
-          },
-          title: {
-            fontSize: Math.round(24 * scale)
-          },
-          timer: {
-            width: Math.round(12 * scale),
-            fontSize: Math.round(10 * scale)
-          },
-          form: {
-            fontSize: Math.round(14 * scale),
-            padding: Math.round(32 * scale)
-          },
-          input: {
-            height: Math.round(40 * scale),
-            fontSize: Math.round(14 * scale),
-            padding: Math.round(10 * scale)
-          },
-          button: {
-            height: Math.round(36 * scale),
-            fontSize: Math.round(14 * scale),
-            padding: `${Math.round(8 * scale)}px ${Math.round(16 * scale)}px`
-          },
-          feedback: {
-            fontSize: Math.round(12 * scale),
-            marginTop: Math.round(4 * scale)
-          },
-          progressBar: {
-            height: Math.round(4 * scale)
-          }
-        });
-      } catch (error) {
-        console.error('윈도우 크기 조회 실패:', error);
-      }
-    };
-
-    updateUIScale();
-    window.WindowControls.onWindowResize((event, size) => {
-      const scale = Math.min(Math.max(size.width / 1200, 0.8), 1.2);
-      updateUIScale();
-    });
-  }, []);
-
-  // 스타일 객체들
-  const containerStyles = {
-    maxWidth: `${uiScale.container.maxWidth}px`
-  };
-
-  const titleStyles = {
-    fontSize: `${uiScale.title.fontSize}px`
-  };
-
-  const formStyles = {
-    fontSize: `${uiScale.form.fontSize}px`,
-    padding: `${uiScale.form.padding}px`
-  };
-
-  const inputStyles = {
-    height: `${uiScale.input.height}px`,
-    fontSize: `${uiScale.input.fontSize}px`,
-    padding: `${uiScale.input.padding}px`
-  };
-
-  const buttonStyles = {
-    height: `${uiScale.button.height}px`,
-    fontSize: `${uiScale.button.fontSize}px`,
-    padding: uiScale.button.padding
-  };
-
-  const feedbackStyles = {
-    fontSize: `${uiScale.feedback.fontSize}px`,
-    marginTop: `${uiScale.feedback.marginTop}px`
-  };
-
-  const progressBarStyles = {
-    height: `${uiScale.progressBar.height}px`
-  };
 
   const handleEmailChange = (e) => {
     const emailValue = e.target.value;
@@ -309,39 +210,6 @@ const SignUp = () => {
     navigate("/");
   };
 
-  // 비밀번호 강도 표시 컴포넌트
-  const PasswordStrengthBar = ({ requirements }) => {
-    const strength = Object.values(requirements).filter(Boolean).length;
-    const percentage = (strength / 4) * 100;
-
-    return (
-      <div className={styles.strengthBar}>
-        <div
-          className={styles.strengthFill}
-          style={{
-            width: `${percentage}%`,
-            backgroundColor:
-              percentage <= 25
-                ? "red"
-                : percentage <= 50
-                ? "orange"
-                : percentage <= 75
-                ? "yellow"
-                : "green",
-          }}
-        />
-      </div>
-    );
-  };
-
-  // 입력 필드 상태 아이콘
-  const StatusIcon = ({ isValid, isAvailable }) => {
-    if (isValid && isAvailable)
-      return <span className={styles.successIcon}>✓</span>;
-    if (!isValid) return <span className={styles.errorIcon}>✗</span>;
-    return null;
-  };
-
   // 폼 진행률 업데이트
   useEffect(() => {
     const completedSteps = [
@@ -361,16 +229,20 @@ const SignUp = () => {
     isPasswordValid,
   ]);
 
+  // 입력 필드 상태 아이콘
+  const StatusIcon = ({ isValid, isAvailable }) => {
+    if (isValid && isAvailable)
+      return <span className={styles.successIcon}>✓</span>;
+    if (!isValid) return <span className={styles.errorIcon}>✗</span>;
+    return null;
+  };
+
   return (
     <div className={styles.container}>
-      <div className={styles.progressBar} style={progressBarStyles}>
-        <div
-          className={styles.progressFill}
-          style={{ width: `${formProgress}%`, height: '100%' }}
-        />
+      <div className={styles.progressBar}>
       </div>
-      <div className={styles.signupBox} style={{ ...formStyles, ...containerStyles }}>
-        <h2 className={styles.title} style={titleStyles}>회원가입</h2>
+      <div className={styles.signupBox}>
+        <h2 className={styles.title}>회원가입</h2>
         <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
             <label htmlFor="email">
@@ -386,24 +258,21 @@ const SignUp = () => {
               value={email}
               onChange={handleEmailChange}
               placeholder="이메일을 입력하세요"
-              style={inputStyles}
             />
             <button
               type="button"
               onClick={() => handleCheckDuplicate("email", email)}
               disabled={!isEmailValid || !email || isEmailAvailable}
-              style={buttonStyles}
             >
               {isEmailAvailable ? "확인 완료" : "중복 확인"}
             </button>
-            <div style={feedbackStyles}>{emailFeedback}</div>
+            <div>{emailFeedback}</div>
             {isEmailAvailable && (
               <button
                 type="button"
                 onClick={handleSendAuthCode}
                 className={styles.mainButton}
                 disabled={authCodeSent || !isEmailValid}
-                style={buttonStyles}
               >
                 {authCodeSent ? "인증코드 발송됨" : "인증코드 발송"}
               </button>
@@ -416,51 +285,15 @@ const SignUp = () => {
                 <StatusIcon isValid={isAuthCodeValid} />
               </label>
               {!isAuthCodeValid ? (
-                <>
-                  <input
-                    type="text"
-                    id="authCode"
-                    value={authCode}
-                    onChange={(e) => setAuthCode(e.target.value)}
-                    placeholder="인증 코드를 입력하세요"
-                    style={inputStyles}
-                  />
-                  <button
-                    type="button"
-                    onClick={handleVerifyAuthCode}
-                    disabled={!authCode}
-                    style={buttonStyles}
-                  >
-                    인증 확인
-                  </button>
-                  {countdown > 0 && (
-                    <div className={styles.countdown}>
-                      <svg viewBox="0 0 36 36">
-                        <path
-                          d="M18 2.0845
-                            a 15.9155 15.9155 0 0 1 0 31.831
-                            a 15.9155 15.9155 0 0 1 0 -31.831"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="3"
-                          strokeDasharray={`${(countdown / 600) * 100}, 100`}
-                        />
-                      </svg>
-                      <span>
-                        {Math.floor(countdown / 60)}:
-                        {(countdown % 60).toString().padStart(2, "0")}
-                      </span>
-                    </div>
-                  )}
-                </>
+                <input
+                  type="text"
+                  id="authCode"
+                  value={authCode}
+                  onChange={handleVerifyAuthCode}
+                  placeholder="인증 코드를 입력하세요"
+                />
               ) : (
-                <button
-                  type="button"
-                  disabled
-                  className={styles.successButton}
-                >
-                  인증 완료 ✓
-                </button>
+                <div className={styles.authCodeValid}>인증 완료</div>
               )}
               <div>{authCodeFeedback}</div>
             </div>
@@ -479,13 +312,11 @@ const SignUp = () => {
               value={nickname}
               onChange={handleNicknameChange}
               placeholder="닉네임을 입력하세요"
-              style={inputStyles}
             />
             <button
               type="button"
               onClick={() => handleCheckDuplicate("nickname", nickname)}
               disabled={!isNicknameValid || !nickname || isNicknameAvailable}
-              style={buttonStyles}
             >
               {isNicknameAvailable ? "확인 완료" : "중복 확인"}
             </button>
@@ -501,23 +332,9 @@ const SignUp = () => {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              style={inputStyles}
+              placeholder="비밀번호를 입력하세요"
             />
-            <PasswordStrengthBar
-              requirements={checkPasswordRequirements(password)}
-            />
-            <div className={styles.requirements}>
-              {Object.entries(checkPasswordRequirements(password)).map(
-                ([key, met]) => (
-                  <div key={key} className={met ? styles.met : styles.unmet}>
-                    {key === "length" && "8~16자 길이"}
-                    {key === "lowercase" && "소문자 포함"}
-                    {key === "number" && "숫자 포함"}
-                    {key === "specialChar" && "특수문자 포함"}
-                  </div>
-                )
-              )}
-            </div>
+            <div>{passwordFeedback}</div>
           </div>
           <div className={styles.formGroup}>
             <label htmlFor="confirmPassword">비밀번호 확인</label>
@@ -526,25 +343,20 @@ const SignUp = () => {
               id="confirmPassword"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              style={inputStyles}
+              placeholder="비밀번호를 다시 입력하세요"
             />
           </div>
           <button
             type="submit"
-            disabled={
-              !isEmailValid ||
-              !isNicknameValid ||
-              !isPasswordValid ||
-              !isAuthCodeValid
-            }
-            style={buttonStyles}
+            className={styles.mainButton}
+            disabled={formProgress < 100}
           >
             회원가입
           </button>
         </form>
         <div className={styles.loginLink}>
           <span>이미 계정이 있으신가요?</span>
-          <button type="button" onClick={handleGoToLogin} style={buttonStyles}>
+          <button type="button" onClick={handleGoToLogin}>
             로그인하기
           </button>
         </div>

@@ -281,11 +281,7 @@ const FriendList = ({ onSelectChannel }) => {
       return (
         <div className="tab-content vertical-layout sidebar-aligned">
           {friends.map((friend) => (
-            <div
-              key={friend.id}
-              className="friend-item"
-              onClick={() => onSelectChannel(friend.id, friend.nickname)}
-            >
+            <div key={friend.id} className="friend-item">
               <div className="friend-avatar">
                 {friend.profileImage ? (
                   <img src={friend.profileImage} alt="프로필 이미지" />
@@ -295,21 +291,22 @@ const FriendList = ({ onSelectChannel }) => {
               </div>
               <div className="friend-info">
                 <span className="friend-name">{friend.nickname}</span>
-                <button
-                  onClick={() => {
-                    if (
-                      window.confirm(
-                        `정말 ${friend.nickname}친구를 삭제하시겠습니까?`
-                      )
-                    ) {
-                      handleDeleteFriend(friend.nickname);
-                    }
-                  }}
-                >
-                  {" "}
-                  삭제{" "}
-                </button>
+                <span className="friend-status">{friend.email}</span>
               </div>
+              <button
+                onClick={() => {
+                  if (
+                    window.confirm(
+                      `정말 ${friend.nickname}친구를 삭제하시겠습니까?`
+                    )
+                  ) {
+                    handleDeleteFriend(friend.nickname);
+                  }
+                }}
+              >
+                {" "}
+                삭제{" "}
+              </button>
             </div>
           ))}
         </div>
@@ -326,7 +323,17 @@ const FriendList = ({ onSelectChannel }) => {
           />
           {filteredSentRequests.map((request) => (
             <div key={request.receiverNickname} className="friend-item">
-              <span>{request.receiverNickname}</span>
+              <div className="friend-avatar">
+                {request.profileImage ? (
+                  <img src={request.profileImage} alt="프로필 이미지" />
+                ) : (
+                  request.receiverNickname.charAt(0).toUpperCase() || "?"
+                )}
+              </div>
+              <div className="friend-info">
+                <span className="friend-name">{request.receiverNickname}</span>
+                <span className="friend-status">{request.email}</span>
+              </div>
               <button onClick={() => handleCancel(request.receiverNickname)}>
                 요청 취소
               </button>
@@ -353,8 +360,10 @@ const FriendList = ({ onSelectChannel }) => {
                   request.receiverNickname.charAt(0).toUpperCase() || "?"
                 )}
               </div>
-              <span>{request.receiverNickname}</span>
-              <span>{request.email}</span>
+              <div className="friend-info">
+                <span className="friend-name">{request.receiverNickname}</span>
+                <span className="friend-status">{request.email}</span>
+              </div>
               <button onClick={() => handleAccept(request.receiverNickname)}>
                 수락
               </button>

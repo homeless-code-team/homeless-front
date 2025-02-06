@@ -103,16 +103,18 @@ const SignIn = () => {
             />
             {loginError && <div className="error-message">{loginError}</div>}
           </div>
+
+          <span>비밀번호를 재발급</span>
+          <button
+            type="button"
+            className="signup-link"
+            onClick={handlePasswordModalOpen}
+          >
+           비밀번호 재발급
+          </button>
           <button type="submit" className="signin-button" disabled={isLoading}>
             {isLoading ? "로그인 중..." : "로그인"}
           </button>
-          <button
-          type="button"
-          className="password-reset-link"
-          onClick={handlePasswordModalOpen}
-        >
-          비밀번호 재발급
-        </button>
         </form>
         <div className="oauth-buttons">
           <button
