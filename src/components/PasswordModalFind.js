@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import "./PasswordModule.css"; // 모달 스타일링 추가
 import axios from "axios";
 import axiosInstance from "../configs/axios-config";
-import "./PasswordModal.module.css";
+import "./PasswordModuleFind.css";
 import Swal from "sweetalert2";
 
 const PasswordModal = ({ onClose }) => {
@@ -67,17 +67,11 @@ const PasswordModal = ({ onClose }) => {
 
     try {
       const res = await axios.patch(
-        `${process.env.REACT_APP_API_BASE_URL}/api/v1/users`,
+        `${process.env.REACT_APP_API_BASE_URL}/api/v1/users/password`,
         {
+          email: email,
           password: password,
         },
-        {
-          headers: {
-            "Content-Type": "multipart/form-data",
-            Authorization: `Bearer ${token}`,
-          },
-          withCredentials: true, // 쿠키 포함
-        }
       );
       if (res.data.code === 200) {
         Swal.fire("비밀번호가 성공적으로 변경되었습니다!", "", "success");
