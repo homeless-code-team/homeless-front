@@ -219,7 +219,7 @@ const SignUp = () => {
       isPasswordValid,
     ].filter(Boolean).length;
 
-    setFormProgress((completedSteps / 4) * 100);
+    setFormProgress((completedSteps / 6) * 100);
   }, [
     isEmailValid,
     isEmailAvailable,
