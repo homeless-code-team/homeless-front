@@ -135,7 +135,7 @@ const SignUp = () => {
         if (type === "email") {
           setEmailFeedback("사용 가능한 이메일입니다.");
           setIsEmailAvailable(true);
-          setAuthCodeSent(false);
+          setAuthCodeSent(true);
         } else if (type === "nickname") {
           setNicknameFeedback("사용 가능한 닉네임입니다.");
           setIsNicknameAvailable(true);

@@ -24,7 +24,7 @@ const PasswordModal = ({ onClose }) => {
   const handleEmailVerification = async () => {
     try {
       const res = await axios.post(
-        `${process.env.REACT_APP_API_BASE_URL}/user- service/api/v1/users/confirm`,
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/confirm`,
         { email }
       );
       if (res.data.code === 200) {
@@ -65,7 +65,7 @@ const PasswordModal = ({ onClose }) => {
 
     try {
       const res = await axios.patch(
-        `${process.env.REACT_APP_API_BASE_URL}/api/v1/users/password`,
+        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/password`,
         {
           email: email,
           password: password,

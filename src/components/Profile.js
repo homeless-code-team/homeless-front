@@ -224,7 +224,6 @@ const Profile = () => {
               <div className="section-title">계정 정보</div>
               <div className="profile-field">
                 <label>{email}</label>
-                <div className="field-value">{userId}</div>
               </div>
             </div>
 
