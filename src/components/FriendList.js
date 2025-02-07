@@ -289,8 +289,10 @@ const FriendList = ({ onSelectChannel }) => {
                   friend.nickname.charAt(0).toUpperCase() || "?"
                 )}
               </div>
-              <div className="friend-info">
+              <div
+                className="friend-info"
                 onClick={() => onSelectChannel(friend.id, friend.nickname)}
+              >
                 <span className="friend-name">{friend.nickname}</span>
                 <span className="friend-status">{friend.email}</span>
               </div>
