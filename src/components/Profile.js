@@ -17,6 +17,7 @@ const Profile = () => {
   const [userName, setUserName] = useState("username");
   const [profileImage, setProfileImage] = useState("");
   const [content, setContent] = useState("");
+  const [email, setEmail] = useState("");
   const [showPasswordModal, setShowPasswordModal] = useState(false); // 비밀번호 변경 모달 상태 추가
   const navigate = useNavigate();
   const token = localStorage.getItem("token"); // 저장된 토큰 키 확인 필요
@@ -164,6 +165,7 @@ const Profile = () => {
         if (section === "내 계정") {
           setProfileImage(res.data.data.profileImage || "");
           setUserName(res.data.data.nickname || "");
+          setEmail(localStorage.getItem("userEmail"));
         } else if (section === "프로필") {
           setContent(res.data.data.content || "");
         }
@@ -221,7 +223,7 @@ const Profile = () => {
             <div className="profile-section">
               <div className="section-title">계정 정보</div>
               <div className="profile-field">
-                <label>이메일</label>
+                <label>{email}</label>
                 <div className="field-value">{userId}</div>
               </div>
             </div>
