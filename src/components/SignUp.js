@@ -4,17 +4,6 @@ import styles from "./SignUp.module.css";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
-const Timer = ({ seconds }) => {
-  const minutes = Math.floor(seconds / 60);
-  const remainingSeconds = seconds % 60;
-  return (
-    <span className={styles.timer}>
-      {String(minutes).padStart(2, "0")}:
-      {String(remainingSeconds).padStart(2, "0")}
-    </span>
-  );
-};
-
 const SignUp = () => {
   const [email, setEmail] = useState("");
   const [nickname, setNickname] = useState("");
@@ -34,7 +23,6 @@ const SignUp = () => {
   const [nicknameFeedback, setNicknameFeedback] = useState("");
   const [passwordFeedback, setPasswordFeedback] = useState("");
   const [formProgress, setFormProgress] = useState(0);
-  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -85,31 +73,12 @@ const SignUp = () => {
     };
   };
 
-  const PasswordFeedback = ({ requirements }) => {
-    return (
-      <ul>
-        <li style={{ color: requirements.length ? "green" : "red" }}>
-          8자 이상 16자 이하
-        </li>
-        <li style={{ color: requirements.lowercase ? "green" : "red" }}>
-          소문자 포함
-        </li>
-        <li style={{ color: requirements.number ? "green" : "red" }}>
-          숫자 포함
-        </li>
-        <li style={{ color: requirements.specialChar ? "green" : "red" }}>
-          특수 문자 포함
-        </li>
-      </ul>
-    );
-  };
-
   useEffect(() => {
     const requirements = checkPasswordRequirements(password);
     const isValidPassword = Object.values(requirements).every(Boolean);
 
     if (!isValidPassword) {
-      setPasswordFeedback(<PasswordFeedback requirements={requirements} />);
+      setPasswordFeedback("비밀번호 요구사항을 모두 충족해야 합니다.");
       setIsPasswordValid(false);
     } else if (password !== confirmPassword) {
       setPasswordFeedback("비밀번호가 일치하지 않습니다.");
@@ -122,7 +91,6 @@ const SignUp = () => {
 
   // 유효성 및 중복성 검사
   const handleCheckDuplicate = async (type, value) => {
-    setIsLoading(true);
     try {
       const response = await axios.get(
         `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/duplicate`,
@@ -135,7 +103,7 @@ const SignUp = () => {
         if (type === "email") {
           setEmailFeedback("사용 가능한 이메일입니다.");
           setIsEmailAvailable(true);
-          setAuthCodeSent(true);
+          setAuthCodeSent(false);
         } else if (type === "nickname") {
           setNicknameFeedback("사용 가능한 닉네임입니다.");
           setIsNicknameAvailable(true);
@@ -149,14 +117,10 @@ const SignUp = () => {
           setIsNicknameAvailable(false);
         }
       }
-    } catch (error) {
-      const errorMessage =
-        error.response?.data?.message || "알 수 없는 오류가 발생했습니다.";
-      if (type === "email") setEmailFeedback(errorMessage);
-      if (type === "nickname") setNicknameFeedback(errorMessage);
-      Swal.fire("오류", errorMessage, "error");
-    } finally {
-      setIsLoading(false);
+    } catch {
+      const genericError = "중복 확인 중 알 수 없는 오류가 발생했습니다.";
+      if (type === "email") setEmailFeedback(genericError);
+      if (type === "nickname") setNicknameFeedback(genericError);
     }
   };
 
@@ -255,7 +219,7 @@ const SignUp = () => {
       isPasswordValid,
     ].filter(Boolean).length;
 
-    setFormProgress((completedSteps / 6) * 100);
+    setFormProgress((completedSteps / 4) * 100);
   }, [
     isEmailValid,
     isEmailAvailable,
@@ -273,47 +237,12 @@ const SignUp = () => {
     return null;
   };
 
-  // 인증 코드 재전송 함수
-  const handleResendAuthCode = async () => {
-    if (!isEmailAvailable) return;
-    setIsLoading(true);
-    try {
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/confirm`,
-        { email }
-      );
-      if (response.data.code === 200) {
-        setAuthCodeSent(true);
-        setAuthCodeFeedback("인증 코드가 재전송되었습니다.");
-        setCountdown(600);
-        Swal.fire("성공", "인증 코드가 재전송되었습니다.", "success");
-      }
-    } catch (error) {
-      Swal.fire(
-        "실패",
-        "인증 코드 재전송에 실패했습니다. 다시 시도해주세요.",
-        "error"
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   return (
-    <div className={styles.container} role="main">
-      <div className={styles.progressBar}>
-        <div
-          className={styles.progressFill}
-          style={{ width: `${formProgress}%` }}
-          role="progressbar"
-          aria-valuenow={formProgress}
-          aria-valuemin="0"
-          aria-valuemax="100"
-        />
-      </div>
+    <div className={styles.container}>
+      <div className={styles.progressBar}></div>
       <div className={styles.signupBox}>
         <h2 className={styles.title}>회원가입</h2>
-        <form onSubmit={handleSubmit} noValidate>
+        <form onSubmit={handleSubmit}>
           <div className={styles.formGroup}>
             <label htmlFor="email">
               이메일
@@ -328,26 +257,25 @@ const SignUp = () => {
               value={email}
               onChange={handleEmailChange}
               placeholder="이메일을 입력하세요"
-              aria-describedby="email-feedback"
-              disabled={isLoading}
             />
             <button
               type="button"
               onClick={() => handleCheckDuplicate("email", email)}
-              disabled={
-                !isEmailValid || !email || isEmailAvailable || isLoading
-              }
-              aria-busy={isLoading}
+              disabled={!isEmailValid || !email || isEmailAvailable}
             >
-              {isLoading
-                ? "확인 중..."
-                : isEmailAvailable
-                ? "확인 완료"
-                : "중복 확인"}
+              {isEmailAvailable ? "확인 완료" : "중복 확인"}
             </button>
-            <div id="email-feedback" className={styles.feedback}>
-              {emailFeedback}
-            </div>
+            <div>{emailFeedback}</div>
+            {isEmailAvailable && (
+              <button
+                type="button"
+                onClick={handleSendAuthCode}
+                className={styles.mainButton}
+                disabled={authCodeSent || !isEmailValid}
+              >
+                {authCodeSent ? "인증코드 발송됨" : "인증코드 발송"}
+              </button>
+            )}
           </div>
           {authCodeSent && (
             <div className={styles.formGroup}>
@@ -355,38 +283,18 @@ const SignUp = () => {
                 인증 코드
                 <StatusIcon isValid={isAuthCodeValid} />
               </label>
-              <div className={styles.authCodeContainer}>
+              {!isAuthCodeValid ? (
                 <input
                   type="text"
                   id="authCode"
                   value={authCode}
-                  onChange={(e) => setAuthCode(e.target.value)}
+                  onChange={handleVerifyAuthCode}
                   placeholder="인증 코드를 입력하세요"
-                  disabled={isLoading || isAuthCodeValid}
-                  aria-describedby="authcode-feedback"
                 />
-                {countdown > 0 && <Timer seconds={countdown} />}
-              </div>
-              <div className={styles.authCodeActions}>
-                <button
-                  type="button"
-                  onClick={handleVerifyAuthCode}
-                  disabled={!authCode || isAuthCodeValid || isLoading}
-                >
-                  {isLoading ? "확인 중..." : "인증 코드 확인"}
-                </button>
-                <button
-                  type="button"
-                  onClick={handleResendAuthCode}
-                  disabled={isLoading || countdown > 0}
-                  className={styles.resendButton}
-                >
-                  재전송
-                </button>
-              </div>
-              <div id="authcode-feedback" className={styles.feedback}>
-                {authCodeFeedback}
-              </div>
+              ) : (
+                <div className={styles.authCodeValid}>인증 완료</div>
+              )}
+              <div>{authCodeFeedback}</div>
             </div>
           )}
           <div className={styles.formGroup}>
@@ -440,9 +348,9 @@ const SignUp = () => {
           <button
             type="submit"
             className={styles.mainButton}
-            disabled={isLoading}
+            disabled={formProgress < 100}
           >
-            {isLoading ? "처리 중..." : "회원가입"}
+            회원가입
           </button>
         </form>
         <div className={styles.loginLink}>
