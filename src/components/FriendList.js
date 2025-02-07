@@ -290,6 +290,7 @@ const FriendList = ({ onSelectChannel }) => {
                 )}
               </div>
               <div className="friend-info">
+                onClick={() => onSelectChannel(friend.id, friend.nickname)}
                 <span className="friend-name">{friend.nickname}</span>
                 <span className="friend-status">{friend.email}</span>
               </div>
