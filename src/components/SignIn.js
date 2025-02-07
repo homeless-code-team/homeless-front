@@ -67,17 +67,9 @@ const SignIn = () => {
     }
   };
 
-  const handleOAuthLogin = async (provider) => {
-    try {
-      const token = await oauthLogin(provider);
-      if (token) {
-        localStorage.setItem("accessToken", token);
-        window.location.reload(); // 로그인 후 페이지 새로고침
-      }
-    } catch (error) {
-      console.error("OAuth 로그인 실패:", error);
-    }
-  }
+  const handleOAuthLogin = (provider) => {
+    window.location.href = `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/oauth2/authorization/${provider}`;
+  };
 
   const handleSendAuthCode = async () => {
     try {
@@ -172,7 +164,9 @@ const SignIn = () => {
         </div>
       </div>
 
-      {showPasswordModal && <PasswordModal onClose={handlePasswordModalClose} />}
+      {showPasswordModal && (
+        <PasswordModal onClose={handlePasswordModalClose} />
+      )}
     </div>
   );
 };
