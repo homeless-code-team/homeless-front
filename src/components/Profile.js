@@ -7,7 +7,11 @@ import axiosInstance from "../configs/axios-config.js";
 import Swal from "sweetalert2";
 
 const Profile = () => {
-  const { userName: initialUserName, userId } = useContext(AuthContext);
+  const {
+    userName: initialUserName,
+    userId,
+    updateUserName,
+  } = useContext(AuthContext);
   const [description, setDescription] = useState("");
   const [activeSection, setActiveSection] = useState("내 계정");
   const [userName, setUserName] = useState("username");
@@ -70,7 +74,10 @@ const Profile = () => {
           "닉네임이 성공적으로 변경되었습니다!",
           "success"
         );
-        setUserName(res.data.data.nickname || userName);
+        updateUserName(res.data.data);
+        console.log("resdata", res.data);
+
+        localStorage.setItem("userName", userName);
       } else if (res.data.code === 400) {
         Swal.fire("실패", res.data.message, "error");
       } else {

@@ -7,10 +7,10 @@ const OAuthCallback = () => {
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const accessToken = params.get("accessToken");
+    const accessToken = params.get("token");
 
     if (accessToken) {
-      localStorage.setItem("accessToken", accessToken);
+      localStorage.setItem("token", accessToken);
       navigate("/");
     } else {
       navigate("/sign-in");

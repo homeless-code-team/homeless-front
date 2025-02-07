@@ -2,7 +2,7 @@
 // interceptor 기능을 활용하여, access token이 만료되었을 때 refresh token을 사용하여
 // 새로운 access token을 발급받는 비동기 방식의 요청을 모듈화. (fetch는 interceptor 기능 x)
 // axios 인스턴스는 token이 필요한 모든 요청에 활용 될 것입니다.
-
+import { jwtDecode } from "jwt-decode";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 
@@ -79,12 +79,23 @@ axiosInstance.interceptors.response.use(
         console.log(id);
 
         const res = await axios.post(
-          `${API_BASE_URL}/user-service/api/v1/users/refresh-token`,
+          `${process.env.REACT_APP_API_BASE_URL}/user-service/api/v1/users/refresh-token`,
           { id }
         );
 
         const token = res.data.data; // axios는 json() 안씁니다.
         localStorage.setItem("token", token); // 동일한 이름으로 토큰 담기 (덮어씀)
+        const decoded = jwtDecode(token);
+
+        const userInfos = {
+          token,
+          email: decoded.sub,
+          userId: decoded.user_id,
+          role: decoded.role,
+          nickname: decoded.nickname,
+        };
+
+        localStorage.setItem("userInfos", JSON.stringify(userInfos));
 
         // 실패한 원본 요청 정보에서 Authorization의 값을 새 토큰으로 바꿔놓자.
         originalRequest.headers.Authorization = `Bearer ${token}`;

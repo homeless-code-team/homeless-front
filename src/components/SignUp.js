@@ -219,7 +219,7 @@ const SignUp = () => {
       isPasswordValid,
     ].filter(Boolean).length;
 
-    setFormProgress((completedSteps / 4) * 100);
+    setFormProgress((completedSteps / 6) * 100);
   }, [
     isEmailValid,
     isEmailAvailable,
@@ -239,8 +239,7 @@ const SignUp = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.progressBar}>
-      </div>
+      <div className={styles.progressBar}></div>
       <div className={styles.signupBox}>
         <h2 className={styles.title}>회원가입</h2>
         <form onSubmit={handleSubmit}>
@@ -289,12 +288,19 @@ const SignUp = () => {
                   type="text"
                   id="authCode"
                   value={authCode}
-                  onChange={handleVerifyAuthCode}
+                  onChange={(e) => setAuthCode(e.target.value)}
                   placeholder="인증 코드를 입력하세요"
                 />
               ) : (
                 <div className={styles.authCodeValid}>인증 완료</div>
               )}
+              <button
+                type="button"
+                onClick={handleVerifyAuthCode}
+                disabled={!authCode || isAuthCodeValid}
+              >
+                인증 코드 확인
+              </button>
               <div>{authCodeFeedback}</div>
             </div>
           )}
