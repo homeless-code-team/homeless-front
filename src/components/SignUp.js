@@ -288,7 +288,6 @@ const SignUp = () => {
                   type="text"
                   id="authCode"
                   value={authCode}
-                  onChange={handleVerifyAuthCode}
                   placeholder="인증 코드를 입력하세요"
                 />
               ) : (
