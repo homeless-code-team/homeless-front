@@ -38,7 +38,7 @@ module.exports = {
       /\.git/,
       /\.github/,
       /\.vscode/,
-      /^\/src\/(?!main\.js|preload\.js)/,
+      /^\/src\/(?!main\.mjs|preload\.js)/,
       /^\/(?!build|src|package\.json)/,
       /^\/build\/static\/js\/.*\.txt$/,
       /^\/build\/static\/media/,
@@ -49,14 +49,19 @@ module.exports = {
     extraResource: [
       "build/index.html",
       ...findBuildFiles(/main\.[a-f0-9]+\.(js|css)$/),
-      'preload.js'
+      "preload.js",
+      "src/asset/icons/homelessCode.ico",
+      "src/asset/icons/favicon.ico",
     ],
   },
   rebuildConfig: {},
   makers: [
     {
       name: "@electron-forge/maker-squirrel",
-      config: {},
+      config: {
+        icon: path.join(__dirname, "src/asset/icons/homelessCode.ico"),
+        setupIcon: path.join(__dirname, "src/asset/icons/homelessCode.ico"),
+      },
     },
     {
       name: "@electron-forge/maker-zip",
@@ -66,7 +71,10 @@ module.exports = {
   plugins: [
     {
       name: "@electron-forge/plugin-auto-unpack-natives",
-      config: {},
+      config: {
+        icon: path.join(__dirname, "src/asset/icons/homelessCode.ico"),
+        setupIcon: path.join(__dirname, "src/asset/icons/homelessCode.ico"),
+      },
     },
     new FusesPlugin({
       version: FuseVersion.V1,

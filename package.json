@@ -6,6 +6,15 @@
   "private": true,
   "homepage": "./",
   "proxy": "https://api.homelesscode.shop",
+  "win": {
+    "icon": "src/asset/icons/favicon.ico"
+  },
+  "mac": {
+    "icon": "src/asset/icons/favicon.ico"
+  },
+  "linux": {
+    "icon": "src/asset/icons/favicon.ico"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/homeless-code-team/homeless-front.git"
