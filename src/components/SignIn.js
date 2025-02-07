@@ -133,24 +133,6 @@ const SignIn = () => {
             {isLoading ? "로그인 중..." : "로그인"}
           </button>
         </form>
-        <div className="oauth-buttons">
-          <button
-            onClick={() => handleOAuthLogin("google")}
-            className="oauth-button"
-            disabled={isLoading}
-          >
-            <img src={googleImage} alt="Google Login" className="google-logo" />
-            <span>SIGN IN WITH GOOGLE</span>
-          </button>
-          <button
-            onClick={() => handleOAuthLogin("github")}
-            className="oauth-button"
-            disabled={isLoading}
-          >
-            <img src={githubImage} alt="Github Login" className="github-logo" />
-            <span>SIGN IN WITH GITHUB</span>
-          </button>
-        </div>
 
         <div className="signin-footer">
           <span>계정이 필요한가요?</span>
