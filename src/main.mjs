@@ -1,6 +1,6 @@
 import { app, BrowserWindow, ipcMain, globalShortcut } from "electron";
 import path from "path";
-import { fileURLToPath } from 'url';
+import { fileURLToPath } from "url";
 
 // ES 모듈에서 __dirname 대체
 const __filename = fileURLToPath(import.meta.url);
@@ -13,13 +13,14 @@ const isDev = process.env.NODE_ENV === "development";
 
 function createWindow() {
   mainWindow = new BrowserWindow({
+    icon: path.join(__dirname, "/asset/icons/favicon.ico"),
     width: 1200,
     height: 800,
     frame: false,
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: isDev 
+      preload: isDev
         ? path.join(__dirname, "preload.js")
         : path.join(process.resourcesPath, "preload.js"),
       webSecurity: true,
@@ -29,12 +30,11 @@ function createWindow() {
 
   // 개발/프로덕션 환경에 따라 다른 URL 로드
   if (isDev) {
-    mainWindow.loadURL("https://homelesscode.shop"); 
+    mainWindow.loadURL("https://homelesscode.shop");
     // 개발자 도구 열기
     mainWindow.webContents.openDevTools();
   } else {
-    mainWindow.loadURL("https://homelesscode.shop"); 
-    
+    mainWindow.loadURL("https://homelesscode.shop");
   }
 
   // 윈도우가 닫히기 전에 이벤트 발생
@@ -124,20 +124,20 @@ function createWindow() {
   });
 
   // 윈도우 크기 변경 이벤트 처리 수정
-  mainWindow.on('resize', () => {
+  mainWindow.on("resize", () => {
     if (mainWindow) {
       const [width, height] = mainWindow.getSize();
-      mainWindow.webContents.send('window:resize', { width, height });
+      mainWindow.webContents.send("window:resize", { width, height });
       // 디버깅용 로그
-      console.log('Window resized:', { width, height });
+      console.log("Window resized:", { width, height });
     }
   });
 
   // 윈도우 크기 조회 핸들러 수정
-  ipcMain.handle('window:getSize', () => {
+  ipcMain.handle("window:getSize", () => {
     if (mainWindow) {
       const [width, height] = mainWindow.getSize();
-      console.log('Current window size:', { width, height });
+      console.log("Current window size:", { width, height });
       return [width, height];
     }
     return [1200, 800]; // 기본값
@@ -145,17 +145,20 @@ function createWindow() {
 }
 
 // createWindow 함수를 앱이 준비되었을 때 실행
-app.whenReady().then(createWindow).catch(error => {
-  console.error('앱 시작 오류:', error);
-});
+app
+  .whenReady()
+  .then(createWindow)
+  .catch((error) => {
+    console.error("앱 시작 오류:", error);
+  });
 
 // 에러 핸들링 추가
-process.on('uncaughtException', (error) => {
-  console.error('처리되지 않은 예외:', error);
+process.on("uncaughtException", (error) => {
+  console.error("처리되지 않은 예외:", error);
 });
 
-process.on('unhandledRejection', (error) => {
-  console.error('처리되지 않은 프로미스 거부:', error);
+process.on("unhandledRejection", (error) => {
+  console.error("처리되지 않은 프로미스 거부:", error);
 });
 
 app.on("window-all-closed", () => {
