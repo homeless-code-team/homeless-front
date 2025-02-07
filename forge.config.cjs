@@ -49,6 +49,7 @@ module.exports = {
     extraResource: [
       "build/index.html",
       ...findBuildFiles(/main\.[a-f0-9]+\.(js|css)$/),
+      'preload.js'
     ],
   },
   rebuildConfig: {},

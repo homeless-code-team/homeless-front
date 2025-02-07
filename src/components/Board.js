@@ -1,5 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import axios from "axios";
+import { useState, useRef, useCallback, useEffect } from "react";
 import "./Board.css";
 import Swal from "sweetalert2";
 import { IoSearch } from "react-icons/io5";
@@ -67,17 +66,10 @@ function Board({
     return () => document.removeEventListener("click", handleClick);
   }, []);
 
-  const email = localStorage.getItem("userEmail");
+  const nickname = localStorage.getItem("userName");
 
   const fetchPosts = async () => {
     console.log("페이지는 ? ", page);
-
-    // ?id=${boardId}&page=${page}&size=8
-    // const data = new FormData();
-    // data.append("id", boardId);
-    // data.append("page", page);
-    // data.append("size", 8);
-    // data.append("search", searchValue);
 
     const params = {
       id: boardId, // BoardSearchDto의 id 필드
@@ -116,6 +108,8 @@ function Board({
 
     formData.append("title", newBoardTitle);
     formData.append("boardListId", boardId);
+    formData.append("nickname", nickname);
+
     try {
       const res = await axiosInstance.post(
         `${process.env.REACT_APP_API_BASE_URL}/server/boards`,
@@ -327,7 +321,7 @@ function Board({
         </div>
       )}
       {contextMenu.visible &&
-        (contextMenu.writer === email ||
+        (contextMenu.writer === nickname ||
           serverRole === "OWNER" ||
           serverRole === "MANAGER") && (
           <div

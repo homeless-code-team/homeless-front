@@ -11,8 +11,7 @@ import AuthContext from "./context/AuthContext.js";
 import DirectMessage from "./components/DirectMessage.js";
 import Profile from "./components/Profile.js";
 import axios from "axios";
-import OAuthRedirectHandler from "./components/OAuthRedirectHandler.js";
-import PasswordModal from "./components/PasswordModal.js";
+import OAuthCallback from "./components/OAuthCallback.js";
 import Board from "./components/Board.js";
 
 // ProtectedRoute Component
@@ -200,8 +199,7 @@ function App() {
     <div className="app-container">
       <MenuBar />
       <Routes>
-        <Route path="/oauth2/redirect" element={<OAuthRedirectHandler />} />
-        <Route path="/oauth/callback" element={<OAuthRedirectHandler />} />
+      <Route path="/oauth/callback" element={<OAuthCallback />} />
 
         {!isAuthenticated ? (
           <>

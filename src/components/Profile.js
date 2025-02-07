@@ -2,9 +2,9 @@ import React, { useState, useContext, useEffect } from "react";
 import "./Profile.css";
 import AuthContext from "../context/AuthContext.js";
 import { useNavigate } from "react-router-dom";
-import axios from "axios";
 import PasswordModal from "./PasswordModal.js"; // 비밀번호 변경 모달 컴포넌트 추가
 import axiosInstance from "../configs/axios-config.js";
+import Swal from "sweetalert2";
 
 const Profile = () => {
   const { userName: initialUserName, userId } = useContext(AuthContext);
@@ -12,8 +12,6 @@ const Profile = () => {
   const [activeSection, setActiveSection] = useState("내 계정");
   const [userName, setUserName] = useState("username");
   const [profileImage, setProfileImage] = useState("");
-  const [password, setPassword] = useState("");
-  const [localProfileImage, setLocalProfileImage] = useState(profileImage);
   const [content, setContent] = useState("");
   const [showPasswordModal, setShowPasswordModal] = useState(false); // 비밀번호 변경 모달 상태 추가
   const navigate = useNavigate();
@@ -29,26 +27,26 @@ const Profile = () => {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
           },
-          withCredentials: true, // 쿠키 포함
         }
       );
 
       if (res.data.code === 200) {
         console.log("소개글이 수정 성공:", res.data);
-        alert("소개글이 성공적으로 변경되었습니다!");
-
-        // 닉네임 변경 성공 시 상태 업데이트
-        setUserName(res.data.data.nickname || userName);
-        localStorage.setNickname(res.data.data.nickname);
+        await Swal.fire(
+          "성공",
+          "소개글이 성공적으로 변경되었습니다!",
+          "success"
+        );
+        setContent(res.data.data.content || "");
       } else if (res.data.code === 400) {
-        alert(res.data.message);
+        Swal.fire("실패", res.data.message, "error");
       } else {
         console.log("소개글수정 실패:", res.status);
-        alert("닉네임 소게글이 실패하였습니다!");
+        Swal.fire("실패", "소개글 수정에 실패했습니다.", "error");
       }
     } catch (error) {
-      console.error("닉네임 변경 요청 실패:", error);
-      alert("닉네임 변경 중 문제가 발생했습니다.");
+      console.error("소개글 변경 요청 실패:", error);
+      Swal.fire("실패", "소개글 변경 중 문제가 발생했습니다.", "error");
     }
   };
 
@@ -62,25 +60,26 @@ const Profile = () => {
             "Content-Type": "multipart/form-data",
             Authorization: `Bearer ${token}`,
           },
-          withCredentials: true, // 쿠키 포함
         }
       );
 
       if (res.data.code === 200) {
         console.log("닉네임 수정 성공:", res.data);
-        alert("닉네임이 성공적으로 변경되었습니다!");
-
-        // 닉네임 변경 성공 시 상태 업데이트
+        await Swal.fire(
+          "성공",
+          "닉네임이 성공적으로 변경되었습니다!",
+          "success"
+        );
         setUserName(res.data.data.nickname || userName);
       } else if (res.data.code === 400) {
-        alert(res.data.message);
+        Swal.fire("실패", res.data.message, "error");
       } else {
         console.log("닉네임 수정 실패:", res.status);
-        alert("닉네임 변경이 실패하였습니다!");
+        Swal.fire("실패", "닉네임 변경에 실패했습니다.", "error");
       }
     } catch (error) {
       console.error("닉네임 변경 요청 실패:", error);
-      alert("닉네임 변경 중 문제가 발생했습니다.");
+      Swal.fire("실패", "닉네임 변경 중 문제가 발생했습니다.", "error");
     }
   };
 
@@ -89,7 +88,7 @@ const Profile = () => {
 
     if (file) {
       const previewUrl = URL.createObjectURL(file);
-      setProfileImage(previewUrl); // 로컬 미리보기 반영
+      setProfileImage(previewUrl);
 
       const formData = new FormData();
       formData.append("profileImage", file);
@@ -103,24 +102,27 @@ const Profile = () => {
               "Content-Type": "multipart/form-data",
               Authorization: `Bearer ${token}`,
             },
-            withCredentials: true,
           }
         );
 
         if (res.data.code === 200) {
           const profileImageUrl = res.data.data.profileImage;
           const timestamp = new Date().getTime();
-          setProfileImage(`${profileImageUrl}?t=${timestamp}`); // 캐시 무효화 URL 적용
-          alert("프로필 이미지가 성공적으로 변경되었습니다!");
+          setProfileImage(`${profileImageUrl}?t=${timestamp}`);
+          await Swal.fire(
+            "성공",
+            "프로필 이미지가 성공적으로 변경되었습니다!",
+            "success"
+          );
           fetchData("내 계정");
         } else if (res.data.code === 400) {
-          alert(res.data.message);
+          Swal.fire("실패", res.data.message, "error");
         } else {
-          alert("이미지 업로드에 실패했습니다.");
+          Swal.fire("실패", "이미지 업로드에 실패했습니다.", "error");
         }
       } catch (error) {
         console.error("이미지 업로드 실패:", error);
-        alert("이미지 업로드 중 문제가 발생했습니다.");
+        Swal.fire("실패", "이미지 업로드 중 문제가 발생했습니다.", "error");
       }
     }
   };
@@ -147,7 +149,6 @@ const Profile = () => {
           headers: {
             Authorization: `Bearer ${token}`,
           },
-          withCredentials: true,
         }
       );
 
@@ -276,10 +277,10 @@ const Profile = () => {
                 value={content || ""}
                 onChange={(e) => setContent(e.target.value)}
                 placeholder={content ? "" : "자신을 소개해보세요"}
-                maxLength={190}
+                maxLength={500}
               />
               <div className="description-length">
-                {(content || "").length}/190
+                {(content || "").length}/500
               </div>
               <button className="profile-button" onClick={handleContentUpdate}>
                 ✎
