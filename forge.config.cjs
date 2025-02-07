@@ -38,7 +38,7 @@ module.exports = {
       /\.git/,
       /\.github/,
       /\.vscode/,
-      /^\/src\/(?!main\.js|preload\.js)/,
+      /^\/src\/(?!main\.mjs|preload\.js)/,
       /^\/(?!build|src|package\.json)/,
       /^\/build\/static\/js\/.*\.txt$/,
       /^\/build\/static\/media/,
