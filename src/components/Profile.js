@@ -7,9 +7,14 @@ import axiosInstance from "../configs/axios-config.js";
 import Swal from "sweetalert2";
 
 const Profile = () => {
-  const { userName, setUserName, userId } = useContext(AuthContext);
+  const {
+    userName: initialUserName,
+    userId,
+    updateUserName,
+  } = useContext(AuthContext);
   const [description, setDescription] = useState("");
   const [activeSection, setActiveSection] = useState("내 계정");
+  const [userName, setUserName] = useState("username");
   const [profileImage, setProfileImage] = useState("");
   const [content, setContent] = useState("");
   const [showPasswordModal, setShowPasswordModal] = useState(false); // 비밀번호 변경 모달 상태 추가
@@ -69,9 +74,10 @@ const Profile = () => {
           "닉네임이 성공적으로 변경되었습니다!",
           "success"
         );
-        setUserName(res.data.data.nickname || userName);
-        localStorage.setItem("res.data.data.nickname", userName);
-        console.log("바뀐 닉네임", res.data.data.nickname);
+        updateUserName(res.data.data);
+        console.log("resdata", res.data);
+
+        localStorage.setItem("userName", userName);
       } else if (res.data.code === 400) {
         Swal.fire("실패", res.data.message, "error");
       } else {
